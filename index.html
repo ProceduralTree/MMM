@@ -1,0 +1,1443 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<!-- 2025-07-05 Sa 20:43 -->
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Fv</title>
+<meta name="author" content="Jonathan Ulmer" />
+<meta name="generator" content="Org Mode" />
+<style type='text/css'>
+<!--/*--><![CDATA[/*><!--*/
+/* nice-org-html.css
+;;==============================================================================
+;; Copyright (C) 2024, Ewan Townshend
+
+;; Author: Ewan Townshend
+;; URL: https://github.com/ewantown/nice-org-html
+;; Version: 1.2
+
+;;==============================================================================
+;; This program is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+;; This file is not part of emacs.
+
+;;==============================================================================
+*/
+
+/* basic layout ***************************************************************/
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+html {
+    font-family: Sans;
+    line-height: 1.3;
+    font-size: calc(15px + 0.390625vw);
+    -webkit-text-size-adjust: 100%;
+}
+
+body {
+    background: #999; /* overwritten with theme --bg */
+    width: 100%;
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family:
+	-apple-system,
+	BlinkMacSystemFont,
+	segoe ui,
+	Roboto,
+	Oxygen,
+	Ubuntu,
+	Cantarell,
+	open sans,
+	helvetica neue,
+	sans-serif,
+	system-ui
+}
+
+#preamble,
+#postamble {
+    width: 100%;
+}
+
+#content {
+    width: 80%;
+    max-width: 80ch;
+    margin-left: 1rem;
+    margin-right: 1rem;
+    flex: 1;
+}
+
+/* custom facing **************************************************************/
+/* The variable values are injected by CSS pre-processing in et-org-html.el */
+:root {
+    --bc-tb: #282a2e;
+    --bc-block: #c5c8c6;
+    --clr: #282a2e;
+    --clr-tb-hd: #282a2e;
+    --clr-code: #282a2e;
+    --bg: #ffffff;
+    --bg-code: #cecece;
+    --bg-tb-hd: #cecece;
+    --bg-block: #f3f3f3;
+    --clr-link: #969896;
+    --clr-title: #282a2e;
+    --clr-todo: #969896;
+    --bg-todo: initial;
+    --clr-done: #c5c8c6;
+    --bg-done: initial;
+    --ts-clr: #282a2e;
+    --mg: 20px;
+    --w-toc: 300px;
+    --bg-keyword: initial;
+    --clr-keyword: #282a2e;
+    --bg-constant: initial;
+    --clr-constant: #969896;
+    --bg-comment: initial;
+    --clr-comment: #c5c8c6;
+    --bg-comment-delimiter: initial;
+    --clr-comment-delimiter: initial;
+    --bg-function: initial;
+    --clr-function: #282a2e;
+    --bg-variable: initial;
+    --clr-variable: #969896;
+    --bg-preprocessor: initial;
+    --clr-preprocessor: #282a2e;
+    --bg-doc: initial;
+    --clr-doc: #c5c8c6;
+    --bg-builtin: initial;
+    --clr-builtin: #969896;
+    --bg-string: initial;
+    --clr-string: #969896;
+    --clr-note: #0969da;
+    --clr-tip: #1a7f37;
+    --clr-important: #8250df;
+    --clr-warning: #9a6700;
+    --clr-caution: #cf222e;
+}
+
+body[data-mode='light'] {
+    background: var(--bg);
+    color: var(--clr);
+}
+
+body[data-mode='dark'] {
+    background: var(--bg);
+    color: var(--clr);
+    --bc-tb: #c5c8c6;
+    --bc-block: #717171;
+    --clr: #c5c8c6;
+    --clr-code: #ffffff;
+    --clr-tb-hd: #ffffff;
+    --bg: #1d1f21;
+    --bg-tb-hd: #0f1011;
+    --bg-code: #0f1011;
+    --bg-block: #292b2b;
+    --clr-link: #de935f;
+    --clr-title: #c5c8c6;
+    --clr-todo: #b5bd68;
+    --bg-todo: initial;
+    --clr-done: #5a5b5a;
+    --bg-done: initial;
+    --ts-clr: #b294bb;
+    --mg: 20px;
+    --w-toc: 300px;
+    --bg-keyword: initial;
+    --clr-keyword: #b294bb;
+    --bg-constant: initial;
+    --clr-constant: #de935f;
+    --bg-comment: initial;
+    --clr-comment: #5a5b5a;
+    --bg-comment-delimiter: initial;
+    --clr-comment-delimiter: initial;
+    --bg-function: initial;
+    --clr-function: #81a2be;
+    --bg-variable: initial;
+    --clr-variable: #cc6666;
+    --bg-preprocessor: initial;
+    --clr-preprocessor: #c5c8c6;
+    --bg-doc: initial;
+    --clr-doc: #717171;
+    --bg-builtin: initial;
+    --clr-builtin: #81a2be;
+    --bg-string: initial;
+    --clr-string: #b5bd68;
+    --clr-note: #0969da;
+    --clr-tip: #1a7f37;
+    --clr-important: #8250df;
+    --clr-warning: #9a6700;
+    --clr-caution: #cf222e;
+}
+
+/* exceptions for badly rendering themes **************************************/
+body[data-theme='leuven'],
+body[data-theme='leuven-dark'] {
+    --bg-code: var(--bg-block);
+}
+
+/* ootb page layout ***********************************************************/
+#view-controls {
+    position: sticky;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background: var(--bg);
+    color: var(--clr-code);
+    height: 2.5rem;
+    padding-top: 1.25rem;
+    padding-bottom: 1.25rem;
+    z-index: 100;
+    border-radius: 5px; /* Rounded corners */
+}
+#toggle-mode {
+    position: absolute;
+    right: 5%;
+    display: block;
+    text-align: center;
+    font-size: 1.5rem;
+    background: var(--bg);
+    color: var(--clr-code);
+    padding: 0.25rem 0;
+}
+#goto-top {
+    display: none;
+}
+#goto-top[data-show="true"] {
+    position: relative;
+    display: block;
+    text-align: center;
+    font-size: 1rem;
+    background: var(--bg);
+    color: var(--clr-code);
+    padding: 0.25rem 0;
+}
+#toggle-toc {
+    display: none;
+}
+#toggle-toc[data-show="true"] {
+    position: absolute;
+    left: 5%;
+    display: block;
+    text-align: center;
+    font-size: 1.5rem;
+    background: var(--bg);
+    color: var(--clr-code);
+    padding: 0.25rem 0;
+}
+
+#toggle-toc:hover,
+#goto-top:hover,
+#toggle-mode:hover {
+    cursor: pointer;
+}
+
+#table-of-contents {
+    display: none;
+}
+#table-of-contents[data-show="true"] {
+    width: 80%;
+    max-width: 80rem;
+    margin-left: 1rem;
+    margin-right: 1rem;
+    background: var(--bg);
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+#table-of-contents::-webkit-scrollbar {
+    display: none;
+}
+
+body[data-toc="true"] #content * {
+    display: none;
+}
+body[data-toc="true"] #content #table-of-contents,
+body[data-toc="true"] #content #table-of-contents * {
+    display: block;
+}
+
+
+/* misc elements **************************************************************/
+
+hr {
+    height: 0;
+    color: inherit;
+}
+
+b,
+strong {
+    font-weight: bolder;
+}
+
+code,
+kbd,
+samp,
+pre {
+    font-family:
+	Menlo,
+	ui-monospace,
+	SFMono-Regular,
+	Consolas,
+	'Liberation Mono',
+	monospace;
+}
+
+small {
+    font-size: 80%;
+}
+
+sub,
+sup {
+    font-size: 75%;
+    line-height: 0;
+    position: relative;
+    vertical-align: baseline;
+}
+
+sub {
+    bottom: -0.25em;
+}
+
+sup {
+    top: -0.5em;
+}
+
+table {
+    text-indent: 0;
+    border-color: inherit;
+}
+
+summary {
+    display: list-item;
+}
+
+h1 {
+    color: var(--clr-title);
+    text-align: center;
+}
+h2 {
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+}
+
+code {
+    color: var(--clr-code);
+    background: var(--bg-code);
+    border-radius: 2px;
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+pre::-webkit-scrollbar {
+    display: none;
+}
+
+.todo {
+    color: var(--clr-todo);
+    background: var(--bg-todo);
+}
+
+.done {
+    color: var(--clr-done);
+    background: var(--bg-done);
+}
+
+.timestamp-wrapper {
+    font-size: 0.8rem;
+    color: var(--clr-ts);
+}
+
+table {
+    width: 100%;
+    border: 2px solid var(--bc-tb);
+}
+
+thead {
+    color: var(--clr-tb-hd);
+    background: var(--bg-tb-hd);
+}
+
+td, th {
+    border: thin solid var(--bc-tb);
+}
+
+li {
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+#text-table-of-contents li a:before {
+    content: "• "
+}
+
+a {
+    text-decoration: none;
+    color: var(--clr-link);
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+.MathJax_Display {
+    font-size: 1.25em;
+}
+
+img {
+    max-width: 100%;
+}
+
+pre {
+    padding: 1rem;
+    border: 1px solid var(--bc-block);
+    border-radius: 0.5rem;
+    background: var(--bg-block);
+    font-size: 0.9rem;
+    overflow-x: auto;
+    -ms-overflow-style: none;
+    scrollbar-width: thin;
+}
+
+.org-src-wrapper {
+    position: relative;
+    border: 1px solid var(--bc-block);
+    border-radius: 0.5rem;
+    background: var(--bg-code);
+}
+
+.org-src-bar {
+    position: relative;
+    top: 0rem;
+    width: 100%;
+    background: var(--bg-code);
+    border-radius: 0.5rem;
+    text-align: right;
+    min-height: 1rem;
+}
+
+.org-src-wrapper .org-src-container {
+    position: relative;
+    border: none;
+    border-radius: 0.5rem;
+    background: var(--bg-code);
+    z-index: 0;
+}
+
+.org-src-wrapper .org-src-container pre.src {
+    border: none !important;
+    background: var(--bg-code) !important;
+    padding-top: 0rem;
+    padding-bottom: 0rem;
+    margin-top: 0rem;
+    margin-bottom: 0rem;
+    padding-bottom: 1.6rem;
+}
+
+.org-src-wrapper .org-src-bar .srcLangLabel {
+    top: 0rem;
+    right: 1.6rem;
+    background-color: transparent;
+    color: var(--clr-doc);
+    border: none;
+    padding: 0.5rem;
+    padding-bottom: 0.3rem;
+    text-align: center;
+    text-decoration: none;
+    font-size: 0.8rem;
+    opacity: 0.5;
+    z-index: 1;
+    display: none;
+}
+
+.org-src-wrapper .org-src-bar .copyBtn {
+    top: 0rem;
+    right: 0.1rem;
+    background-color: transparent;
+    color: var(--clr-doc);
+    border: none;
+    padding: 0.5rem;
+    padding-right: 0.7rem;
+    padding-bottom: 0.3rem;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 0.8rem;
+    cursor: pointer;
+    opacity: 0.5;
+    z-index: 1;
+    transition: opacity 0.3s;
+}
+
+.org-src-wrapper .copyBtn:hover {
+    opacity: 1;
+}
+
+.org-src-wrapper .copyBtn i {
+    margin-right: 0.5rem;
+    padding: 0.5rem;
+}
+
+.admonition {
+    margin: 0.2rem;
+    color: inherit;
+    border-left: .25rem solid;
+}
+.admonition-title {
+    margin: 0 0 0.5rem 0.5rem;
+    padding: 0.5rem 0 0 0;
+    display: flex;
+    align-items: center;
+}
+.admonition-content > p {
+    margin: 0.5rem 0 0 0.5rem;
+    padding: 0 0 0.5rem 0;
+}
+
+.admonition.note {
+    border-left-color: var(--clr-note);
+}
+.admonition-title.note {
+    color: var(--clr-note);
+}
+.admonition-title.note:before {
+    content: '';
+    display: inline-block;
+    margin-right: 0.5rem;
+    width: 1rem;
+    height: 1rem;
+    background-color: var(--clr-note);
+    mask-size: cover;    
+    mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="false"><path class="admonition-icon-note" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"></path></svg>');    
+}
+.admonition-icon-note {
+    fill: var(--clr-note);
+}
+
+.admonition.tip {
+    border-left-color: var(--clr-tip);
+}
+.admonition-title.tip {
+    color: var(--clr-tip);
+}
+.admonition-title.tip:before {
+    content: '';
+    fill: var(--clr-tip);    
+    display: inline-block;
+    margin-right: 0.5rem;
+    width: 1rem;
+    height: 1rem;
+    background-color: var(--clr-tip);
+    mask-size: cover;
+    mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="false"><path d="M8 1.5c-2.363 0-4 1.69-4 3.75 0 .984.424 1.625.984 2.304l.214.253c.223.264.47.556.673.848.284.411.537.896.621 1.49a.75.75 0 0 1-1.484.211c-.04-.282-.163-.547-.37-.847a8.456 8.456 0 0 0-.542-.68c-.084-.1-.173-.205-.268-.32C3.201 7.75 2.5 6.766 2.5 5.25 2.5 2.31 4.863 0 8 0s5.5 2.31 5.5 5.25c0 1.516-.701 2.5-1.328 3.259-.095.115-.184.22-.268.319-.207.245-.383.453-.541.681-.208.3-.33.565-.37.847a.751.751 0 0 1-1.485-.212c.084-.593.337-1.078.621-1.489.203-.292.45-.584.673-.848.075-.088.147-.173.213-.253.561-.679.985-1.32.985-2.304 0-2.06-1.637-3.75-4-3.75ZM5.75 12h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1 0-1.5ZM6 15.25a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5a.75.75 0 0 1-.75-.75Z"></path></svg>');    
+}
+
+.admonition.important {
+    border-left-color: var(--clr-important);
+}
+.admonition-title.important {
+    color: var(--clr-important);
+}
+.admonition-title.important:before {
+    content: '';
+    fill: var(--clr-important);    
+    display: inline-block;
+    margin-right: 0.5rem;
+    width: 1rem;
+    height: 1rem;
+    background-color: var(--clr-important);
+    mask-size: cover;
+    mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="false"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>');    
+}
+
+.admonition.warning {
+    border-left-color: var(--clr-warning);
+}
+.admonition-title.warning {
+    color: var(--clr-warning);
+}
+.admonition-title.warning:before {
+    content: '';
+    color: var(--clr-warning);    
+    display: inline-block;
+    margin-right: 0.5rem;
+    width: 1rem;
+    height: 1rem;
+    background-color: var(--clr-warning);
+    mask-size: cover;
+    mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="false"><path d="M6.457 1.047c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0 1 14.082 15H1.918a1.75 1.75 0 0 1-1.543-2.575Zm1.763.707a.25.25 0 0 0-.44 0L1.698 13.132a.25.25 0 0 0 .22.368h12.164a.25.25 0 0 0 .22-.368Zm.53 3.996v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>');
+}
+
+
+.admonition.caution {
+    border-left-color: var(--clr-caution);
+}
+.admonition-title.caution {
+    color: var(--clr-caution);
+}
+.admonition-title.caution:before {
+    content: '';
+    fill: var(--clr-caution);    
+    display: inline-block;
+    margin-right: 0.5rem;
+    width: 1rem;
+    height: 1rem;
+    background-color: var(--clr-caution);
+    mask-size: cover;
+    mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="false"><path d="M4.47.22A.749.749 0 0 1 5 0h6c.199 0 .389.079.53.22l4.25 4.25c.141.14.22.331.22.53v6a.749.749 0 0 1-.22.53l-4.25 4.25A.749.749 0 0 1 11 16H5a.749.749 0 0 1-.53-.22L.22 11.53A.749.749 0 0 1 0 11V5c0-.199.079-.389.22-.53Zm.84 1.28L1.5 5.31v5.38l3.81 3.81h5.38l3.81-3.81V5.31L10.69 1.5ZM8 4a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 8 4Zm0 8a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"></path></svg>');    
+}
+/* responsive layouts *********************************************************/
+
+@media only screen and (max-width: 768px) {
+    #toggle-toc[data-show='true'] {
+	padding-right: 5%;
+    }
+    #toggle-mode {
+	padding-left: 5%;
+    }
+    #content {
+	width: 90%;
+    }
+}
+
+@media only screen and (max-width: 480px) {
+    #view-controls {
+	padding-top: 1.5em;
+	padding-bottom: 1.5em;
+    }
+    #toggle-toc[data-show='true'] {
+	padding-right: 5%;
+    }
+    #toggle-mode {
+	padding-left: 5%;
+    }
+    #content {
+	width: 90%;
+    }
+}
+
+
+/* generated header and footer ************************************************/
+
+#generated-header,
+#generated-footer {
+    width: 90%;
+    margin-left: 5%;
+    margin-right: 5%;
+    line-height: 1;
+}
+.generated header {
+    top: 0;
+    left: 0;
+}
+.generated footer {
+    bottom: 0;
+    left: 0;
+}
+.generated header a,
+.generated footer a {
+    display: inline;
+    color: var(--clr-title);
+    text-decoration: none;
+    transition: color .15s ease-in;
+}
+.generated header a:hover,
+.generated footer a:hover {
+    color: var(--clr-link);
+}
+
+.generated header nav {
+    position: relative;
+    margin-top: 1rem;
+    top: 0;
+    left: 0;
+}
+.generated footer nav {
+    position: relative;
+    bottom: 0;
+    left: 0;
+}
+
+.generated .separator {
+    display: block;
+    width: 111%;
+    margin-left: -5.5%;
+    max-width: 100vw;
+    height: 0.125rem;
+    background: var(--bg-code);
+}
+
+.generated a .nav-title,
+.generated a .nav-author {
+    display: inline;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    padding-right: 10rem;
+}
+
+.generated .nav-title {
+    letter-spacing: .075rem;
+    font-weight: 500;
+}
+
+.generated .nav-toggle {
+    display: none;
+}
+.generated .nav-button {
+    display: none;
+}
+.generated .nav-list {
+    overflow-y: hidden;
+    display: block;
+    float: right;
+    list-style: none;
+    margin-bottom: 0;
+    margin-top: 0;
+}
+
+.generated .nav-item {
+    position: relative;
+    float: left;
+    margin: 0;
+}
+.generated .nav-link {
+    position: relative;
+    float: right;
+    margin-left: 2rem;
+    margin-right: 0rem;
+}
+
+.generated .nav-toggle {
+    max-height: 0;
+    visibility: hidden;
+    overflow-y: hidden;
+}
+
+.generated header .separator {
+    margin-top: 1rem;
+    margin-bottom: 0;
+}
+
+.generated footer .separator {
+    margin-bottom: 1rem;
+    margin-top: 0;
+}
+
+.generated .menu-sep {
+    display: none;
+    max-height: 0;
+    overflow-y: hidden;
+    transition: max-height 0.2s ease;
+}
+
+.generated footer {
+    padding-bottom: 1rem;
+}
+
+.generated.compact footer {
+    padding-bottom: 0;
+}
+
+.generated.compact header .separator {
+    margin-top: 0;
+    margin-bottom:0;
+}
+.generated.compact footer .separator {
+    margin-bottom: 1rem;
+}
+
+.generated.compact .nav-toggle {
+    visibility: visible;
+}
+
+.generated.compact .nav-toggle + label span::before {
+    transition: all 0.2s ease-in;
+}
+.generated.compact .nav-toggle:checked + label span::before {
+    transform: translateX(0.04rem) translateY(-0.25rem) rotate(90deg);
+    transition: all 0.2s ease;
+}
+
+.generated.compact .menu-sep {
+    display: flex;
+    max-height: 0rem;
+}
+.generated.compact .nav-toggle:checked + label + .menu-sep {
+    display: block;
+    position: relative;
+    max-height: 1rem;
+    transition: max-height 0.2s ease;
+}
+
+.generated.compact .nav-list {
+    float: none !important;
+    position: relative;
+    display: block;
+    padding-left: 0;
+    padding-right: 0;
+    z-index: 5;
+    width: 100%;
+    height: auto;
+    max-height: 0;
+    margin: 0;
+    overflow-x: hidden;
+    overflow-y: hidden;
+    transition: max-height 0.2s ease;
+}
+.generated.compact .nav-toggle:checked + label ~ .nav-list {
+    display: block;
+    max-height: 100rem;
+    overflow-y: hidden;
+}
+.generated.compact header .nav-toggle:checked + label ~ .nav-list {
+    transition: max-height 0.2s ease;
+}
+
+.generated.compact .nav-button {
+    display: inline;
+    position: relative;
+    float: right;
+    font-size: 1rem;
+}
+.generated.compact .nav-button span::before {
+    display: inline-block;
+    content: '\2807';
+    font-size: 2rem;
+    transform: translateX(0.25rem) translateY(-0.5rem);
+}
+
+.generated.compact .nav-item {
+    float: none !important;
+    text-align: center !important;
+}
+.generated.compact .nav-link {
+    line-height: 2rem;
+    margin-left: 2rem;
+    margin-right: 2rem;
+    float: none !important;
+}
+
+.generated.compact footer .separator.menu-sep {
+    margin-bottom: -1rem;
+}
+
+.hidden {
+    display: none;
+}
+
+.collapsible:hover {
+    cursor: pointer;
+}
+
+.collapsible.collapsed::after {
+    display: inline-block;
+    content: '...';
+}
+/*]]>*/-->
+</style>
+<script>
+  window.MathJax = {
+    tex: {
+      ams: {
+        multlineWidth: '85%'
+      },
+      tags: 'ams',
+      tagSide: 'right',
+      tagIndent: '.8em'
+    },
+    chtml: {
+      scale: 1.0,
+      displayAlign: 'center',
+      displayIndent: '0em'
+    },
+    svg: {
+      scale: 1.0,
+      displayAlign: 'center',
+      displayIndent: '0em'
+    },
+    output: {
+      font: 'mathjax-modern',
+      displayOverflow: 'overflow'
+    }
+  };
+</script>
+
+<script
+  id="MathJax-script"
+  async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+</script>
+</head>
+<body>
+<div id="preamble" class="status">
+<div id='view-controls'><div id='toggle-mode' title='Mode'>&#9788;</div><div id='goto-top' title='Top'>&#8963;</div><div id='toggle-toc' title='Contents'>&#9776;</div></div>
+</div>
+<div id="content" class="content">
+<h1 class="title">Fv</h1>
+<div id="table-of-contents" role="doc-toc">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents" role="doc-toc">
+<ul>
+<li><a href="#orgf151c4d">1. Standard Diffusion equation</a></li>
+<li><a href="#org331e232">2. Finite Volume</a></li>
+<li><a href="#org09317a4">3. Multiscale</a></li>
+</ul>
+</div>
+</div>
+<div id="outline-container-orgf151c4d" class="outline-2">
+<h2 id="orgf151c4d"><span class="section-number-2">1.</span> Standard Diffusion equation</h2>
+<div class="outline-text-2" id="text-1">
+\begin{align*}
+\nabla \cdot (D(x) \nabla c) &= f(x) & \text{in}& \, \Omega \\
+c(x) &= 0 &  \text{on}& \, \partial \Omega
+\end{align*}
+</div>
+</div>
+<div id="outline-container-org331e232" class="outline-2">
+<h2 id="org331e232"><span class="section-number-2">2.</span> Finite Volume</h2>
+<div class="outline-text-2" id="text-2">
+<p>
+Integral Form
+</p>
+\begin{align*}
+\int_{Q} \nabla \cdot (D(x) \nabla c )  &= \int_{Q} f(x) \, \mathrm{d}x \\
+\int_{\partial Q} D(x) \nabla c \cdot \vec{n} \mathrm{d}S \, &=   \int_{Q} f(x) \, \mathrm{d} x
+\end{align*}
+<p>
+We assume constant c on \(Q\)
+\(q =D(x) \nabla c\) is not uniquely defined on \(\partial\Omega\) since we assuse c constant and therefore discontinous on \(\partial Q\). We therefore introduce a Numerical Flux \(q = g(c^+ , c^{-} )\)
+for example upwind
+</p>
+
+\begin{align*}
+g(c^+ , c^-) = - D(x^{\frac{1}{2} +}) \frac{c^+ - c^-}{h}
+\end{align*}
+
+\begin{align*}
+g(c^+ , c^-) &= T_{\pm } * \left( c^+ - c^- \right) \\
+T_{\pm } &= - D(x^{\frac{1}{2}+}) \frac{1}{h}
+\end{align*}
+
+
+<p>
+With \(D(x) = \frac{1}{2+ 1.9 \cos \left( \frac{2 \pi x}{\epsilon} \right)}\)
+Linear System
+</p>
+\begin{align*}
+\int_{\partial Q_{i}} D(x_{i}) \nabla c \cdot \vec{n}  \, \mathrm{d}S &= |Q| \overline{f}(x_{i}) \\
+\sum_{j \in \left\{ -1,1 \right\} } j *  g(c_{i+j+1} , c_{i+j})  &=   h \overline{f}(x_{i})
+\end{align*}
+
+<div class='org-src-wrapper'>
+<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_73285f0aa71748dda6fd3a2afc4c33ca>&#10697;</button>
+<script type='text/javascript'>
+var copyBtnbtn_73285f0aa71748dda6fd3a2afc4c33ca=document.querySelector('button[name=btn_73285f0aa71748dda6fd3a2afc4c33ca]');
+copyBtnbtn_73285f0aa71748dda6fd3a2afc4c33ca.addEventListener('click', function(event) {
+let res = copyTextToClipboard(`import numpy as np\nimport scipy as sp\nimport matplotlib.pyplot as plt\nepsilon = 0.1 * np.pi\nN = 10\nn = 100\nh = 1/(N-1)\nD = lambda x: 1 / (2+1.9 * np.cos(2 * np.pi* x / epsilon))\nx = np.linspace(0,1 ,N)\nc = np.zeros(N)\nf = np.ones(N) * h\n# Boundary\nf[0] = 0\nf[-1] = 0\nplt.plot(D(x))\n`);copyBtnbtn_73285f0aa71748dda6fd3a2afc4c33ca.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_73285f0aa71748dda6fd3a2afc4c33ca.innerHTML = '&#10697;'}, 3000);
+});
+</script>
+</div><div class="org-src-container">
+<pre class="src src-python"><code><span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">import</span> numpy <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">as</span> np
+<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">import</span> scipy <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">as</span> sp
+<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">import</span> matplotlib.pyplot <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">as</span> plt
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">epsilon</span> = 0.1 * np.pi
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">N</span> = 10
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">n</span> = 100
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">h</span> = 1/(N-1)
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">D</span> = <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">lambda</span> x: 1 / (2+1.9 * np.cos(2 * np.pi* x / epsilon))
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">x</span> = np.linspace(0,1 ,N)
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">c</span> = np.zeros(N)
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">f</span> = np.ones(N) * h
+<span style="color: var(--clr-comment-delimiter); background-color: var(--bg-comment-delimiter);"># </span><span style="color: var(--clr-comment); background-color: var(--bg-comment);">Boundary</span>
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">f</span>[0] = 0
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">f</span>[-1] = 0
+plt.plot(D(x))
+</code></pre>
+</div></div>
+
+
+<p>
+Matrix Assembly
+</p>
+<div class='org-src-wrapper'>
+<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_b50e90a612dc478fbbc54ff76daee9df>&#10697;</button>
+<script type='text/javascript'>
+var copyBtnbtn_b50e90a612dc478fbbc54ff76daee9df=document.querySelector('button[name=btn_b50e90a612dc478fbbc54ff76daee9df]');
+copyBtnbtn_b50e90a612dc478fbbc54ff76daee9df.addEventListener('click', function(event) {
+let res = copyTextToClipboard(`from scipy.sparse import spdiags\nimport seaborn as sns\ndef assemble_matrix(N ,x, h ):\n    diagp1 = np.zeros(N)\n    diagp1[2:] = np.ones(N-2) * -1/h * D(x[1:-1] + 0.5*h)\n    diagm1 = np.zeros(N)\n    diagm1[:-2] = np.ones(N-2) * -1/h * D(x[1:-1] - 0.5*h)\n    diag0 = np.ones(N)\n    diag0[1:-1] *= 1/h * (D(x[1:-1]-0.5*h) + D(x[1:-1] + 0.5*h))\n    A = spdiags([diagm1 , diag0 , diagp1] , np.array( [-1, 0, 1] ))\n    return A\nA = assemble_matrix(N , x , h)\n#plt.spy(A)\nsns.heatmap(A.todense())\nplt.title(\"Sparsity Patter of A\")\n`);copyBtnbtn_b50e90a612dc478fbbc54ff76daee9df.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_b50e90a612dc478fbbc54ff76daee9df.innerHTML = '&#10697;'}, 3000);
+});
+</script>
+</div><div class="org-src-container">
+<pre class="src src-python"><code><span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">from</span> scipy.sparse <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">import</span> spdiags
+<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">import</span> seaborn <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">as</span> sns
+<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">def</span> <span style="color: var(--function-clr-name); background-color: var(--function-bg-name);">assemble_matrix</span>(N ,x, h ):
+<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diagp1</span> = np.zeros(N)
+<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diagp1</span>[2:] = np.ones(N-2) * -1/h * D(x[1:-1] + 0.5*h)
+<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diagm1</span> = np.zeros(N)
+<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diagm1</span>[:-2] = np.ones(N-2) * -1/h * D(x[1:-1] - 0.5*h)
+<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diag0</span> = np.ones(N)
+<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diag0</span>[1:-1] *= 1/h * (D(x[1:-1]-0.5*h) + D(x[1:-1] + 0.5*h))
+<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">A</span> = spdiags([diagm1 , diag0 , diagp1] , np.array( [-1, 0, 1] ))
+<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">return</span> A
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">A</span> = assemble_matrix(N , x , h)
+<span style="color: var(--clr-comment-delimiter); background-color: var(--bg-comment-delimiter);">#</span><span style="color: var(--clr-comment); background-color: var(--bg-comment);">plt.spy(A)</span>
+sns.heatmap(A.todense())
+plt.title(<span style="color: var(--clr-string); background-color: var(--bg-string);">"Sparsity Patter of A"</span>)
+</code></pre>
+</div></div>
+
+
+<div class='org-src-wrapper'>
+<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_a1230042bd094415aab1bc1682622429>&#10697;</button>
+<script type='text/javascript'>
+var copyBtnbtn_a1230042bd094415aab1bc1682622429=document.querySelector('button[name=btn_a1230042bd094415aab1bc1682622429]');
+copyBtnbtn_a1230042bd094415aab1bc1682622429.addEventListener('click', function(event) {
+let res = copyTextToClipboard(`c = sp.sparse.linalg.spsolve(A.tocsr(),f)\nplt.plot(c)\n`);copyBtnbtn_a1230042bd094415aab1bc1682622429.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_a1230042bd094415aab1bc1682622429.innerHTML = '&#10697;'}, 3000);
+});
+</script>
+</div><div class="org-src-container">
+<pre class="src src-python"><code><span style="color: var(--clr-variable); background-color: var(--bg-variable);">c</span> = sp.sparse.linalg.spsolve(A.tocsr(),f)
+plt.plot(c)
+</code></pre>
+</div></div>
+</div>
+</div>
+<div id="outline-container-org09317a4" class="outline-2">
+<h2 id="org09317a4"><span class="section-number-2">3.</span> Multiscale</h2>
+<div class="outline-text-2" id="text-3">
+<p>
+In 1D
+</p>
+
+\begin{align*}
+T_{\pm } &= \int_{Q} D(x) \phi'_{\pm} (x)\, \mathrm{d}x
+\end{align*}
+
+<p>
+calculate c integral
+</p>
+<div class='org-src-wrapper'>
+<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_17ac2b4c9afe4aec85cdaa30eda763d4>&#10697;</button>
+<script type='text/javascript'>
+var copyBtnbtn_17ac2b4c9afe4aec85cdaa30eda763d4=document.querySelector('button[name=btn_17ac2b4c9afe4aec85cdaa30eda763d4]');
+copyBtnbtn_17ac2b4c9afe4aec85cdaa30eda763d4.addEventListener('click', function(event) {
+let res = copyTextToClipboard(`np.sum((c[1:] - c[:-1])/h * -D(x[1:]))\n`);copyBtnbtn_17ac2b4c9afe4aec85cdaa30eda763d4.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_17ac2b4c9afe4aec85cdaa30eda763d4.innerHTML = '&#10697;'}, 3000);
+});
+</script>
+</div><div class="org-src-container">
+<pre class="src src-python"><code>np.<span style="color: var(--clr-builtin); background-color: var(--bg-builtin);">sum</span>((c[1:] - c[:-1])/h * -D(x[1:]))
+</code></pre>
+</div></div>
+
+<div class='org-src-wrapper'>
+<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_0877ec40c9184544acd9d996d9b86e5c>&#10697;</button>
+<script type='text/javascript'>
+var copyBtnbtn_0877ec40c9184544acd9d996d9b86e5c=document.querySelector('button[name=btn_0877ec40c9184544acd9d996d9b86e5c]');
+copyBtnbtn_0877ec40c9184544acd9d996d9b86e5c.addEventListener('click', function(event) {
+let res = copyTextToClipboard(`from scipy.sparse.linalg import spsolve\nmicro_basis = np.zeros(N*n)\nT = np.zeros(N)\nfor i,x_m in enumerate(x):\n    xm = np.linspace(x_m , x_m + h , n)\n    hm = h/(n-1)\n    A_m = assemble_matrix(n, xm , hm )\n    fm = np.ones(n) * hm\n    fm[0] = 0\n    fm[-1] = 1\n    phi = spsolve(A_m.tocsr(),fm)\n    micro_basis[n * i:n*(i+1)] = phi\n    T[i] =   hm * np.sum(((phi[1:] - phi[:-1])/hm)**2 * D(xm[:-1]))\nplt.plot(x,T)\n`);copyBtnbtn_0877ec40c9184544acd9d996d9b86e5c.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_0877ec40c9184544acd9d996d9b86e5c.innerHTML = '&#10697;'}, 3000);
+});
+</script>
+</div><div class="org-src-container">
+<pre class="src src-python"><code><span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">from</span> scipy.sparse.linalg <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">import</span> spsolve
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">micro_basis</span> = np.zeros(N*n)
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">T</span> = np.zeros(N)
+<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">for</span> i,x_m <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">in</span> <span style="color: var(--clr-builtin); background-color: var(--bg-builtin);">enumerate</span>(x):
+<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">xm</span> = np.linspace(x_m , x_m + h , n)
+<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">hm</span> = h/(n-1)
+<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">A_m</span> = assemble_matrix(n, xm , hm )
+<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">fm</span> = np.ones(n) * hm
+<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">fm</span>[0] = 0
+<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">fm</span>[-1] = 1
+<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">phi</span> = spsolve(A_m.tocsr(),fm)
+<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">micro_basis</span>[n * i:n*(i+1)] = phi
+<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">T</span>[i] =   hm * np.<span style="color: var(--clr-builtin); background-color: var(--bg-builtin);">sum</span>(((phi[1:] - phi[:-1])/hm)**2 * D(xm[:-1]))
+plt.plot(x,T)
+</code></pre>
+</div></div>
+
+<div class='org-src-wrapper'>
+<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_0e1f6279b46349a8ba890008069f3374>&#10697;</button>
+<script type='text/javascript'>
+var copyBtnbtn_0e1f6279b46349a8ba890008069f3374=document.querySelector('button[name=btn_0e1f6279b46349a8ba890008069f3374]');
+copyBtnbtn_0e1f6279b46349a8ba890008069f3374.addEventListener('click', function(event) {
+let res = copyTextToClipboard(`diagp1 = np.zeros(N)\ndiagp1[2:] = np.ones(N-2) * -1* T[1:-1]\ndiagm1 = np.zeros(N)\ndiagm1[:-2] = np.ones(N-2) * -1*  T[:-2]\ndiag0 = np.ones(N)\ndiag0[1:-1] *=  (T[1:-1] + T[:-2])\nA_macro = spdiags([diagm1 , diag0 , diagp1] , np.array( [-1, 0, 1] ))\nsns.heatmap(A_macro.todense())\n`);copyBtnbtn_0e1f6279b46349a8ba890008069f3374.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_0e1f6279b46349a8ba890008069f3374.innerHTML = '&#10697;'}, 3000);
+});
+</script>
+</div><div class="org-src-container">
+<pre class="src src-python"><code><span style="color: var(--clr-variable); background-color: var(--bg-variable);">diagp1</span> = np.zeros(N)
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">diagp1</span>[2:] = np.ones(N-2) * -1* T[1:-1]
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">diagm1</span> = np.zeros(N)
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">diagm1</span>[:-2] = np.ones(N-2) * -1*  T[:-2]
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">diag0</span> = np.ones(N)
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">diag0</span>[1:-1] *=  (T[1:-1] + T[:-2])
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">A_macro</span> = spdiags([diagm1 , diag0 , diagp1] , np.array( [-1, 0, 1] ))
+sns.heatmap(A_macro.todense())
+</code></pre>
+</div></div>
+
+<div class='org-src-wrapper'>
+<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_a44b29b29c7a48dba6b2cc68a0b1ea00>&#10697;</button>
+<script type='text/javascript'>
+var copyBtnbtn_a44b29b29c7a48dba6b2cc68a0b1ea00=document.querySelector('button[name=btn_a44b29b29c7a48dba6b2cc68a0b1ea00]');
+copyBtnbtn_a44b29b29c7a48dba6b2cc68a0b1ea00.addEventListener('click', function(event) {
+let res = copyTextToClipboard(`N_fine = n*N\nx_fine = np.linspace(0,1 , n*N)\nh_fine = 1/(N*n -1)\nA_fine = assemble_matrix(N_fine , x_fine , h_fine)\nf_fine = np.ones(N*n) * h_fine\nf_fine[0] = 0\nf_fine[-1] = 0\nc_fine = sp.sparse.linalg.spsolve(A_fine.tocsr(),f_fine)\n`);copyBtnbtn_a44b29b29c7a48dba6b2cc68a0b1ea00.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_a44b29b29c7a48dba6b2cc68a0b1ea00.innerHTML = '&#10697;'}, 3000);
+});
+</script>
+</div><div class="org-src-container">
+<pre class="src src-python"><code><span style="color: var(--clr-variable); background-color: var(--bg-variable);">N_fine</span> = n*N
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">x_fine</span> = np.linspace(0,1 , n*N)
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">h_fine</span> = 1/(N*n -1)
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">A_fine</span> = assemble_matrix(N_fine , x_fine , h_fine)
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">f_fine</span> = np.ones(N*n) * h_fine
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">f_fine</span>[0] = 0
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">f_fine</span>[-1] = 0
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">c_fine</span> = sp.sparse.linalg.spsolve(A_fine.tocsr(),f_fine)
+</code></pre>
+</div></div>
+
+<div class='org-src-wrapper'>
+<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_df6346c55923472dad045589d18738e5>&#10697;</button>
+<script type='text/javascript'>
+var copyBtnbtn_df6346c55923472dad045589d18738e5=document.querySelector('button[name=btn_df6346c55923472dad045589d18738e5]');
+copyBtnbtn_df6346c55923472dad045589d18738e5.addEventListener('click', function(event) {
+let res = copyTextToClipboard(`c_macro = sp.sparse.linalg.spsolve(A_macro.tocsr(),f)\nc_multi = np.zeros((N-1)* n)\nx = np.linspace(0,1,N)\nx_multi = np.linspace(0,1 , n*(N-1))\nfor i in range(len(c_macro)-1):\n    t = micro_basis[n*i:n*(i+1)]\n    c_multi[n*i:n*(i+1)] = (1-t) * c_macro[i] + t * c_macro[i+1]\nplt.plot(x,c)\nplt.plot(x,c_macro)\nplt.plot(x_multi,c_multi)\nplt.plot(x_fine , c_fine)\nplt.legend([\"macro\" , \"multiscale\", \"multi_fine\" , \"reference\"])\n`);copyBtnbtn_df6346c55923472dad045589d18738e5.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_df6346c55923472dad045589d18738e5.innerHTML = '&#10697;'}, 3000);
+});
+</script>
+</div><div class="org-src-container">
+<pre class="src src-python"><code><span style="color: var(--clr-variable); background-color: var(--bg-variable);">c_macro</span> = sp.sparse.linalg.spsolve(A_macro.tocsr(),f)
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">c_multi</span> = np.zeros((N-1)* n)
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">x</span> = np.linspace(0,1,N)
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">x_multi</span> = np.linspace(0,1 , n*(N-1))
+<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">for</span> i <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">in</span> <span style="color: var(--clr-builtin); background-color: var(--bg-builtin);">range</span>(<span style="color: var(--clr-builtin); background-color: var(--bg-builtin);">len</span>(c_macro)-1):
+<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">t</span> = micro_basis[n*i:n*(i+1)]
+<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">c_multi</span>[n*i:n*(i+1)] = (1-t) * c_macro[i] + t * c_macro[i+1]
+plt.plot(x,c)
+plt.plot(x,c_macro)
+plt.plot(x_multi,c_multi)
+plt.plot(x_fine , c_fine)
+plt.legend([<span style="color: var(--clr-string); background-color: var(--bg-string);">"macro"</span> , <span style="color: var(--clr-string); background-color: var(--bg-string);">"multiscale"</span>, <span style="color: var(--clr-string); background-color: var(--bg-string);">"multi_fine"</span> , <span style="color: var(--clr-string); background-color: var(--bg-string);">"reference"</span>])
+</code></pre>
+</div></div>
+</div>
+</div>
+</div>
+<div id="postamble" class="status">
+<script type="text/javascript">
+<!--/*--><![CDATA[/*><!--*/
+if (!document.cookie.split('; ').find(r => r.startsWith('mode'))) {
+document.cookie = 'mode=dark'
+}
+document.cookie = 'light=doom-plain'
+document.cookie = 'dark=doom-tomorrow-night'
+/*
+;; nice-org-html.js
+;;==============================================================================
+;; Copyright (C) 2024, Ewan Townshend
+
+;; Author: Ewan Townshend
+;; URL: https://github.com/ewantown/nice-org-html
+;; Version: 1.2
+
+;;==============================================================================
+;; This program is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+;; This file is not part of emacs.
+
+;;==============================================================================
+;; JS for html exported by et-org-html.el
+ */
+
+const preamble = document.getElementById("preamble");
+const content = document.getElementById("content");
+const postamble = document.getElementById("postamble");
+
+const controls = document.getElementById("view-controls");
+const toggleTocBtn = document.getElementById("toggle-toc");
+const gotoTopBtn = document.getElementById("goto-top");
+const toggleModeBtn = document.getElementById("toggle-mode");
+const toc = document.getElementById("table-of-contents");
+
+// Get and parse options passed in cookie string
+const optCookie = document.cookie.split('; ').find(r => r.startsWith('options'));
+const options = {};
+if (optCookie) {
+  optCookie.split('=')[1].split('__').forEach(pair => {
+    const [key, val] = pair.split(':');
+    if (key && val) {
+      options[key] = val;
+    }
+  })
+}
+
+// Move sticky control bar (injected within preamble)
+document.body.insertBefore(controls, content);
+
+// Mode handling
+function getMode() {
+  let cookie = document.cookie.split('; ').find(r => r.startsWith('mode'))
+  return cookie && cookie.split("=")[1];
+}
+
+function setMode(mode) {
+  document.body.dataset.mode = mode;
+  let thmCookie = document.cookie.split('; ').find(r => r.startsWith(mode));
+  document.body.dataset.theme = thmCookie ? thmCookie.split('=')[1] : 'unknown';
+  toggleModeBtn.innerHTML = (mode === 'light') ? '&#9789;' : '&#9788;';
+  document.cookie = 'mode=' + mode;
+}
+
+// Initially, set mode based on stored cookie
+let mode = getMode();
+if (mode && ["light", "dark"].includes(mode)) {
+  setMode(mode);
+} else {  
+  let prop = "prefers-color-scheme";
+  let pref = (mode === "query") && window.matchMedia &&
+    ["light", "dark"].find(s => window.matchMedia(`(${prop}: ${s})`).matches);
+  setMode(pref || "dark"); // fallback: dark
+}
+
+// Mode toggling
+toggleModeBtn.addEventListener('click', () => {
+  setMode(document.body.dataset.mode === 'dark' ? 'light' : 'dark');
+})
+
+
+// Jump to top
+let scrollY = document.documentElement.scrollTop;
+window.addEventListener('scroll', () => {
+  let atTop = document.documentElement.scrollTop <= preamble.offsetHeight;
+  gotoTopBtn.dataset.show = !atTop + "";
+});
+gotoTopBtn.addEventListener('click', () => {
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth"
+  });
+})
+
+// Table-of-contents toggling
+if (toc) {
+  toggleTocBtn.dataset.show = 'true';
+  toggleTocBtn.addEventListener('click', () => {
+    let showingToc = document.body.dataset.toc;
+    scrollY = showingToc ? scrollY : document.documentElement.scrollTop;
+    if (showingToc) {
+      document.body.dataset.toc = '';
+      document.documentElement.scrollTop = scrollY;
+    } else {
+      let tocHeight =
+	Math.max(
+	  window.innerHeight - controls.offsetHeight,
+	  toc.offsetHeight
+	);
+      const header = document.getElementById("injected-header");
+      if (header && (scrollY > header.offsetHeight)) {
+	document.documentElement.scrollTop = preamble.offsetHeight;
+      }
+      toc.style.height = `${tocHeight}px`;
+      document.body.dataset.toc = 'true';
+    }
+    toc.addEventListener('click', () => {
+      if (document.body.dataset.toc) {
+	document.body.dataset.toc = '';
+	document.documentElement.scrollTop = scrollY;
+      }
+    })
+  })
+};
+
+// Instrument anchor linking for sticky control bar
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+  anchor.addEventListener('click', (e) => {
+    e.preventDefault();
+    const targetId = e.currentTarget.getAttribute('href');
+    const target = document.querySelector(targetId);
+
+    setTimeout(() => {
+      const targetPos = target.getBoundingClientRect().top;
+      let offset = targetPos + document.documentElement.scrollTop;
+      offset -= controls.offsetHeight;
+      window.scrollTo({
+	top: offset,
+	behavior: "smooth"
+      });
+    }, 0);
+  });
+});
+
+function copyTextToClipboard(text) {
+  // Make invisible textarea
+  var textArea = document.createElement("textarea");
+  textArea.style.position = 'fixed';
+  textArea.style.top = 0;
+  textArea.style.left = 0;
+  textArea.style.width = '2em';
+  textArea.style.height = '2em';
+  textArea.style.padding = 0;
+  textArea.style.border = 'none';
+  textArea.style.outline = 'none';
+  textArea.style.boxShadow = 'none';
+  textArea.style.background = 'transparent';
+
+  // Copy contents into it
+  textArea.value = text;
+
+  // Try to copy from it to clipboard
+  document.body.appendChild(textArea);
+  textArea.focus();
+  textArea.select();
+  var res;
+  try {
+    res = document.execCommand('copy');
+  } catch (err) {
+    res = false;
+  }
+
+  // Remove invisible textarea
+  document.body.removeChild(textArea);
+
+  return res;
+}
+
+// Handle the default header / footer drawers
+const header = document.getElementById("generated-header");
+const footer = document.getElementById("generated-footer");
+
+if (header) {
+  let toggle = header.querySelector("header nav input.nav-toggle");
+  if (toggle) { toggle.checked = false; }
+}
+if (footer) {
+  let nav = footer.querySelector("nav");
+  let toggle = nav && nav.querySelector(".nav-toggle");
+  let navList = nav && nav.querySelector(".nav-list");
+  let navElem = navList && [...navList.querySelectorAll(".nav-item")];
+  let numLink = navElem && navElem.length;
+  if (numLink) {
+    toggle.checked = false;
+    toggle.addEventListener('change', () => {
+      if (toggle.checked) {
+	setTimeout(() => window.scrollTo({
+	  behavior: 'smooth',
+	  top: document.body.scrollHeight	  
+	}), 88);
+      }
+   });
+  }
+}
+
+function autoCompact() {
+  var anchor, links, overlap, trivial;
+  const domCompute = (node) => {
+    if (node) {
+      anchor = node.querySelector('.nav-title, .nav-author');
+      links = node.querySelector('.nav-list');
+      overlap = links.offsetLeft - 5 <= anchor.offsetLeft + anchor.offsetWidth;	
+      trivial = links.offsetLeft === anchor.offsetLeft;
+    }
+  };
+  let mediaMatch = window.matchMedia('(max-width: 768px)').matches;
+  [header, footer].forEach(e => {
+    if (e) {
+      if (mediaMatch) {
+	e.classList.add('compact');
+      } else {
+	domCompute(e);
+	if (overlap && !trivial) {
+	  e.classList.add('compact');
+	} else {	
+	  let clone = e.cloneNode(true);
+	  clone.style.top = '-2000px';
+	  clone.style.maxHeight = '0px';
+	  clone.classList.remove('compact');
+	  e.parentNode.insertBefore(clone, e);
+	  domCompute(clone);
+	  let toggle = e.querySelector('.nav-toggle');
+	  if (!overlap && toggle && !toggle.checked) {
+	    e.classList.remove('compact');
+	  }
+	  e.parentNode.removeChild(clone);
+	}
+      }
+    }
+  })
+}
+
+if ((header || footer)) {
+  if (options.hasOwnProperty('layout')) {
+    [header, footer].forEach(e => e ? e.classList.add(options.layout) : null);
+  } else {
+    autoCompact();
+    window.addEventListener('resize', autoCompact);
+  }
+}
+
+if (options.hasOwnProperty('src-lang') && options['src-lang'] == 't') {
+  let labels = [...document.querySelectorAll('.srcLangLabel')];
+  labels.forEach(l => l.style.display = 'inline-block');
+}
+
+if (options.hasOwnProperty('collapsing') && options.collapsing == 't') {
+  let levels = [2, 3, 4, 5, 6];
+  let containerPrefix = 'outline-container-';
+  levels.forEach(l => {
+    let containers = [...document.querySelectorAll(`.outline-${l}`)];
+    containers.forEach(c => {
+      let id = c.id.slice(containerPrefix.length);
+      let headline = document.getElementById(id);
+      let siblings = [...c.children].filter(child => child.id != id);
+      headline.classList.add('collapsible');
+      headline.addEventListener('click', () => {	
+	if (headline.classList.contains('collapsed')) {
+	  headline.classList.remove('collapsed');
+	  siblings.forEach(child => {
+	    child.classList.remove('hidden');
+	  });	  
+	} else {
+	  headline.classList.add('collapsed');
+	  siblings.forEach(child => {
+	    child.classList.add('hidden');
+	  });
+	}
+      })
+    })
+  })
+}
+/*]]>*/-->
+</script><div hidden>Generated by: https://github.com/ewantown/nice-org-html</div>
+</div>
+</body>
+</html>
