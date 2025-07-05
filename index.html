@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2025-07-05 Sa 20:43 -->
+<!-- 2025-07-05 Sa 20:48 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Fv</title>
@@ -899,14 +899,14 @@ pre {
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents" role="doc-toc">
 <ul>
-<li><a href="#orgf151c4d">1. Standard Diffusion equation</a></li>
-<li><a href="#org331e232">2. Finite Volume</a></li>
-<li><a href="#org09317a4">3. Multiscale</a></li>
+<li><a href="#org32f31d1">1. Standard Diffusion equation</a></li>
+<li><a href="#org0307a0a">2. Finite Volume</a></li>
+<li><a href="#org2261214">3. Multiscale</a></li>
 </ul>
 </div>
 </div>
-<div id="outline-container-orgf151c4d" class="outline-2">
-<h2 id="orgf151c4d"><span class="section-number-2">1.</span> Standard Diffusion equation</h2>
+<div id="outline-container-org32f31d1" class="outline-2">
+<h2 id="org32f31d1"><span class="section-number-2">1.</span> Standard Diffusion equation</h2>
 <div class="outline-text-2" id="text-1">
 \begin{align*}
 \nabla \cdot (D(x) \nabla c) &= f(x) & \text{in}& \, \Omega \\
@@ -914,8 +914,8 @@ c(x) &= 0 &  \text{on}& \, \partial \Omega
 \end{align*}
 </div>
 </div>
-<div id="outline-container-org331e232" class="outline-2">
-<h2 id="org331e232"><span class="section-number-2">2.</span> Finite Volume</h2>
+<div id="outline-container-org0307a0a" class="outline-2">
+<h2 id="org0307a0a"><span class="section-number-2">2.</span> Finite Volume</h2>
 <div class="outline-text-2" id="text-2">
 <p>
 Integral Form
@@ -950,11 +950,11 @@ Linear System
 \end{align*}
 
 <div class='org-src-wrapper'>
-<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_73285f0aa71748dda6fd3a2afc4c33ca>&#10697;</button>
+<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_dfe76a7ab26945259ce52a26f029ae8b>&#10697;</button>
 <script type='text/javascript'>
-var copyBtnbtn_73285f0aa71748dda6fd3a2afc4c33ca=document.querySelector('button[name=btn_73285f0aa71748dda6fd3a2afc4c33ca]');
-copyBtnbtn_73285f0aa71748dda6fd3a2afc4c33ca.addEventListener('click', function(event) {
-let res = copyTextToClipboard(`import numpy as np\nimport scipy as sp\nimport matplotlib.pyplot as plt\nepsilon = 0.1 * np.pi\nN = 10\nn = 100\nh = 1/(N-1)\nD = lambda x: 1 / (2+1.9 * np.cos(2 * np.pi* x / epsilon))\nx = np.linspace(0,1 ,N)\nc = np.zeros(N)\nf = np.ones(N) * h\n# Boundary\nf[0] = 0\nf[-1] = 0\nplt.plot(D(x))\n`);copyBtnbtn_73285f0aa71748dda6fd3a2afc4c33ca.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_73285f0aa71748dda6fd3a2afc4c33ca.innerHTML = '&#10697;'}, 3000);
+var copyBtnbtn_dfe76a7ab26945259ce52a26f029ae8b=document.querySelector('button[name=btn_dfe76a7ab26945259ce52a26f029ae8b]');
+copyBtnbtn_dfe76a7ab26945259ce52a26f029ae8b.addEventListener('click', function(event) {
+let res = copyTextToClipboard(`import numpy as np\nimport scipy as sp\nimport matplotlib.pyplot as plt\nepsilon = 0.1 * np.pi\nN = 10\nn = 100\nh = 1/(N-1)\nD = lambda x: 1 / (2+1.9 * np.cos(2 * np.pi* x / epsilon))\nx = np.linspace(0,1 ,N)\nc = np.zeros(N)\nf = np.ones(N) * h\n# Boundary\nf[0] = 0\nf[-1] = 0\nplt.plot(D(x))\n`);copyBtnbtn_dfe76a7ab26945259ce52a26f029ae8b.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_dfe76a7ab26945259ce52a26f029ae8b.innerHTML = '&#10697;'}, 3000);
 });
 </script>
 </div><div class="org-src-container">
@@ -977,15 +977,21 @@ plt.plot(D(x))
 </div></div>
 
 
+<div id="orgee711e4" class="figure">
+<p><img src="images/D.png" alt="D.png" />
+</p>
+</div>
+
+
 <p>
 Matrix Assembly
 </p>
 <div class='org-src-wrapper'>
-<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_b50e90a612dc478fbbc54ff76daee9df>&#10697;</button>
+<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_3a46df8055ef48e2bb1f7efee83ff017>&#10697;</button>
 <script type='text/javascript'>
-var copyBtnbtn_b50e90a612dc478fbbc54ff76daee9df=document.querySelector('button[name=btn_b50e90a612dc478fbbc54ff76daee9df]');
-copyBtnbtn_b50e90a612dc478fbbc54ff76daee9df.addEventListener('click', function(event) {
-let res = copyTextToClipboard(`from scipy.sparse import spdiags\nimport seaborn as sns\ndef assemble_matrix(N ,x, h ):\n    diagp1 = np.zeros(N)\n    diagp1[2:] = np.ones(N-2) * -1/h * D(x[1:-1] + 0.5*h)\n    diagm1 = np.zeros(N)\n    diagm1[:-2] = np.ones(N-2) * -1/h * D(x[1:-1] - 0.5*h)\n    diag0 = np.ones(N)\n    diag0[1:-1] *= 1/h * (D(x[1:-1]-0.5*h) + D(x[1:-1] + 0.5*h))\n    A = spdiags([diagm1 , diag0 , diagp1] , np.array( [-1, 0, 1] ))\n    return A\nA = assemble_matrix(N , x , h)\n#plt.spy(A)\nsns.heatmap(A.todense())\nplt.title(\"Sparsity Patter of A\")\n`);copyBtnbtn_b50e90a612dc478fbbc54ff76daee9df.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_b50e90a612dc478fbbc54ff76daee9df.innerHTML = '&#10697;'}, 3000);
+var copyBtnbtn_3a46df8055ef48e2bb1f7efee83ff017=document.querySelector('button[name=btn_3a46df8055ef48e2bb1f7efee83ff017]');
+copyBtnbtn_3a46df8055ef48e2bb1f7efee83ff017.addEventListener('click', function(event) {
+let res = copyTextToClipboard(`from scipy.sparse import spdiags\nimport seaborn as sns\ndef assemble_matrix(N ,x, h ):\n    diagp1 = np.zeros(N)\n    diagp1[2:] = np.ones(N-2) * -1/h * D(x[1:-1] + 0.5*h)\n    diagm1 = np.zeros(N)\n    diagm1[:-2] = np.ones(N-2) * -1/h * D(x[1:-1] - 0.5*h)\n    diag0 = np.ones(N)\n    diag0[1:-1] *= 1/h * (D(x[1:-1]-0.5*h) + D(x[1:-1] + 0.5*h))\n    A = spdiags([diagm1 , diag0 , diagp1] , np.array( [-1, 0, 1] ))\n    return A\nA = assemble_matrix(N , x , h)\n#plt.spy(A)\nsns.heatmap(A.todense())\nplt.title(\"Sparsity Patter of A\")\n`);copyBtnbtn_3a46df8055ef48e2bb1f7efee83ff017.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_3a46df8055ef48e2bb1f7efee83ff017.innerHTML = '&#10697;'}, 3000);
 });
 </script>
 </div><div class="org-src-container">
@@ -1008,12 +1014,18 @@ plt.title(<span style="color: var(--clr-string); background-color: var(--bg-stri
 </div></div>
 
 
+<div id="org0052a70" class="figure">
+<p><img src="images/A-sparsity.png" alt="A-sparsity.png" />
+</p>
+</div>
+
+
 <div class='org-src-wrapper'>
-<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_a1230042bd094415aab1bc1682622429>&#10697;</button>
+<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_38559b18463c4a83ba3cfd89eafa8f69>&#10697;</button>
 <script type='text/javascript'>
-var copyBtnbtn_a1230042bd094415aab1bc1682622429=document.querySelector('button[name=btn_a1230042bd094415aab1bc1682622429]');
-copyBtnbtn_a1230042bd094415aab1bc1682622429.addEventListener('click', function(event) {
-let res = copyTextToClipboard(`c = sp.sparse.linalg.spsolve(A.tocsr(),f)\nplt.plot(c)\n`);copyBtnbtn_a1230042bd094415aab1bc1682622429.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_a1230042bd094415aab1bc1682622429.innerHTML = '&#10697;'}, 3000);
+var copyBtnbtn_38559b18463c4a83ba3cfd89eafa8f69=document.querySelector('button[name=btn_38559b18463c4a83ba3cfd89eafa8f69]');
+copyBtnbtn_38559b18463c4a83ba3cfd89eafa8f69.addEventListener('click', function(event) {
+let res = copyTextToClipboard(`c = sp.sparse.linalg.spsolve(A.tocsr(),f)\nplt.plot(c)\n`);copyBtnbtn_38559b18463c4a83ba3cfd89eafa8f69.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_38559b18463c4a83ba3cfd89eafa8f69.innerHTML = '&#10697;'}, 3000);
 });
 </script>
 </div><div class="org-src-container">
@@ -1021,10 +1033,16 @@ let res = copyTextToClipboard(`c = sp.sparse.linalg.spsolve(A.tocsr(),f)\nplt.pl
 plt.plot(c)
 </code></pre>
 </div></div>
+
+
+<div id="orgb6521d9" class="figure">
+<p><img src="images/plot.png" alt="plot.png" />
+</p>
 </div>
 </div>
-<div id="outline-container-org09317a4" class="outline-2">
-<h2 id="org09317a4"><span class="section-number-2">3.</span> Multiscale</h2>
+</div>
+<div id="outline-container-org2261214" class="outline-2">
+<h2 id="org2261214"><span class="section-number-2">3.</span> Multiscale</h2>
 <div class="outline-text-2" id="text-3">
 <p>
 In 1D
@@ -1038,11 +1056,11 @@ T_{\pm } &= \int_{Q} D(x) \phi'_{\pm} (x)\, \mathrm{d}x
 calculate c integral
 </p>
 <div class='org-src-wrapper'>
-<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_17ac2b4c9afe4aec85cdaa30eda763d4>&#10697;</button>
+<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_7dc3282c43a04e719771ba604a53015a>&#10697;</button>
 <script type='text/javascript'>
-var copyBtnbtn_17ac2b4c9afe4aec85cdaa30eda763d4=document.querySelector('button[name=btn_17ac2b4c9afe4aec85cdaa30eda763d4]');
-copyBtnbtn_17ac2b4c9afe4aec85cdaa30eda763d4.addEventListener('click', function(event) {
-let res = copyTextToClipboard(`np.sum((c[1:] - c[:-1])/h * -D(x[1:]))\n`);copyBtnbtn_17ac2b4c9afe4aec85cdaa30eda763d4.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_17ac2b4c9afe4aec85cdaa30eda763d4.innerHTML = '&#10697;'}, 3000);
+var copyBtnbtn_7dc3282c43a04e719771ba604a53015a=document.querySelector('button[name=btn_7dc3282c43a04e719771ba604a53015a]');
+copyBtnbtn_7dc3282c43a04e719771ba604a53015a.addEventListener('click', function(event) {
+let res = copyTextToClipboard(`np.sum((c[1:] - c[:-1])/h * -D(x[1:]))\n`);copyBtnbtn_7dc3282c43a04e719771ba604a53015a.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_7dc3282c43a04e719771ba604a53015a.innerHTML = '&#10697;'}, 3000);
 });
 </script>
 </div><div class="org-src-container">
@@ -1050,12 +1068,16 @@ let res = copyTextToClipboard(`np.sum((c[1:] - c[:-1])/h * -D(x[1:]))\n`);copyBt
 </code></pre>
 </div></div>
 
+<pre class="example">
+0.46376797462459873
+</pre>
+
 <div class='org-src-wrapper'>
-<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_0877ec40c9184544acd9d996d9b86e5c>&#10697;</button>
+<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_4f2e9c5d69ab4ca8a34d6123583229b0>&#10697;</button>
 <script type='text/javascript'>
-var copyBtnbtn_0877ec40c9184544acd9d996d9b86e5c=document.querySelector('button[name=btn_0877ec40c9184544acd9d996d9b86e5c]');
-copyBtnbtn_0877ec40c9184544acd9d996d9b86e5c.addEventListener('click', function(event) {
-let res = copyTextToClipboard(`from scipy.sparse.linalg import spsolve\nmicro_basis = np.zeros(N*n)\nT = np.zeros(N)\nfor i,x_m in enumerate(x):\n    xm = np.linspace(x_m , x_m + h , n)\n    hm = h/(n-1)\n    A_m = assemble_matrix(n, xm , hm )\n    fm = np.ones(n) * hm\n    fm[0] = 0\n    fm[-1] = 1\n    phi = spsolve(A_m.tocsr(),fm)\n    micro_basis[n * i:n*(i+1)] = phi\n    T[i] =   hm * np.sum(((phi[1:] - phi[:-1])/hm)**2 * D(xm[:-1]))\nplt.plot(x,T)\n`);copyBtnbtn_0877ec40c9184544acd9d996d9b86e5c.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_0877ec40c9184544acd9d996d9b86e5c.innerHTML = '&#10697;'}, 3000);
+var copyBtnbtn_4f2e9c5d69ab4ca8a34d6123583229b0=document.querySelector('button[name=btn_4f2e9c5d69ab4ca8a34d6123583229b0]');
+copyBtnbtn_4f2e9c5d69ab4ca8a34d6123583229b0.addEventListener('click', function(event) {
+let res = copyTextToClipboard(`from scipy.sparse.linalg import spsolve\nmicro_basis = np.zeros(N*n)\nT = np.zeros(N)\nfor i,x_m in enumerate(x):\n    xm = np.linspace(x_m , x_m + h , n)\n    hm = h/(n-1)\n    A_m = assemble_matrix(n, xm , hm )\n    fm = np.ones(n) * hm\n    fm[0] = 0\n    fm[-1] = 1\n    phi = spsolve(A_m.tocsr(),fm)\n    micro_basis[n * i:n*(i+1)] = phi\n    T[i] =   hm * np.sum(((phi[1:] - phi[:-1])/hm)**2 * D(xm[:-1]))\nplt.plot(x,T)\n`);copyBtnbtn_4f2e9c5d69ab4ca8a34d6123583229b0.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_4f2e9c5d69ab4ca8a34d6123583229b0.innerHTML = '&#10697;'}, 3000);
 });
 </script>
 </div><div class="org-src-container">
@@ -1076,12 +1098,18 @@ plt.plot(x,T)
 </code></pre>
 </div></div>
 
+
+<div id="org6a270de" class="figure">
+<p><img src="images/T.png" alt="T.png" />
+</p>
+</div>
+
 <div class='org-src-wrapper'>
-<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_0e1f6279b46349a8ba890008069f3374>&#10697;</button>
+<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_dc91d2b015da49e6b9f061001e5cb063>&#10697;</button>
 <script type='text/javascript'>
-var copyBtnbtn_0e1f6279b46349a8ba890008069f3374=document.querySelector('button[name=btn_0e1f6279b46349a8ba890008069f3374]');
-copyBtnbtn_0e1f6279b46349a8ba890008069f3374.addEventListener('click', function(event) {
-let res = copyTextToClipboard(`diagp1 = np.zeros(N)\ndiagp1[2:] = np.ones(N-2) * -1* T[1:-1]\ndiagm1 = np.zeros(N)\ndiagm1[:-2] = np.ones(N-2) * -1*  T[:-2]\ndiag0 = np.ones(N)\ndiag0[1:-1] *=  (T[1:-1] + T[:-2])\nA_macro = spdiags([diagm1 , diag0 , diagp1] , np.array( [-1, 0, 1] ))\nsns.heatmap(A_macro.todense())\n`);copyBtnbtn_0e1f6279b46349a8ba890008069f3374.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_0e1f6279b46349a8ba890008069f3374.innerHTML = '&#10697;'}, 3000);
+var copyBtnbtn_dc91d2b015da49e6b9f061001e5cb063=document.querySelector('button[name=btn_dc91d2b015da49e6b9f061001e5cb063]');
+copyBtnbtn_dc91d2b015da49e6b9f061001e5cb063.addEventListener('click', function(event) {
+let res = copyTextToClipboard(`diagp1 = np.zeros(N)\ndiagp1[2:] = np.ones(N-2) * -1* T[1:-1]\ndiagm1 = np.zeros(N)\ndiagm1[:-2] = np.ones(N-2) * -1*  T[:-2]\ndiag0 = np.ones(N)\ndiag0[1:-1] *=  (T[1:-1] + T[:-2])\nA_macro = spdiags([diagm1 , diag0 , diagp1] , np.array( [-1, 0, 1] ))\nsns.heatmap(A_macro.todense())\n`);copyBtnbtn_dc91d2b015da49e6b9f061001e5cb063.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_dc91d2b015da49e6b9f061001e5cb063.innerHTML = '&#10697;'}, 3000);
 });
 </script>
 </div><div class="org-src-container">
@@ -1096,12 +1124,18 @@ sns.heatmap(A_macro.todense())
 </code></pre>
 </div></div>
 
+
+<div id="orgc988472" class="figure">
+<p><img src="A.png" alt="A.png" />
+</p>
+</div>
+
 <div class='org-src-wrapper'>
-<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_a44b29b29c7a48dba6b2cc68a0b1ea00>&#10697;</button>
+<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_e3b716edf733418ab847dc34186627d8>&#10697;</button>
 <script type='text/javascript'>
-var copyBtnbtn_a44b29b29c7a48dba6b2cc68a0b1ea00=document.querySelector('button[name=btn_a44b29b29c7a48dba6b2cc68a0b1ea00]');
-copyBtnbtn_a44b29b29c7a48dba6b2cc68a0b1ea00.addEventListener('click', function(event) {
-let res = copyTextToClipboard(`N_fine = n*N\nx_fine = np.linspace(0,1 , n*N)\nh_fine = 1/(N*n -1)\nA_fine = assemble_matrix(N_fine , x_fine , h_fine)\nf_fine = np.ones(N*n) * h_fine\nf_fine[0] = 0\nf_fine[-1] = 0\nc_fine = sp.sparse.linalg.spsolve(A_fine.tocsr(),f_fine)\n`);copyBtnbtn_a44b29b29c7a48dba6b2cc68a0b1ea00.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_a44b29b29c7a48dba6b2cc68a0b1ea00.innerHTML = '&#10697;'}, 3000);
+var copyBtnbtn_e3b716edf733418ab847dc34186627d8=document.querySelector('button[name=btn_e3b716edf733418ab847dc34186627d8]');
+copyBtnbtn_e3b716edf733418ab847dc34186627d8.addEventListener('click', function(event) {
+let res = copyTextToClipboard(`N_fine = n*N\nx_fine = np.linspace(0,1 , n*N)\nh_fine = 1/(N*n -1)\nA_fine = assemble_matrix(N_fine , x_fine , h_fine)\nf_fine = np.ones(N*n) * h_fine\nf_fine[0] = 0\nf_fine[-1] = 0\nc_fine = sp.sparse.linalg.spsolve(A_fine.tocsr(),f_fine)\n`);copyBtnbtn_e3b716edf733418ab847dc34186627d8.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_e3b716edf733418ab847dc34186627d8.innerHTML = '&#10697;'}, 3000);
 });
 </script>
 </div><div class="org-src-container">
@@ -1116,12 +1150,18 @@ let res = copyTextToClipboard(`N_fine = n*N\nx_fine = np.linspace(0,1 , n*N)\nh_
 </code></pre>
 </div></div>
 
+
+<div id="orga04d96c" class="figure">
+<p><img src="images/fine.png" alt="fine.png" />
+</p>
+</div>
+
 <div class='org-src-wrapper'>
-<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_df6346c55923472dad045589d18738e5>&#10697;</button>
+<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_9f30ae116e4d48458979e58d21f3c6d6>&#10697;</button>
 <script type='text/javascript'>
-var copyBtnbtn_df6346c55923472dad045589d18738e5=document.querySelector('button[name=btn_df6346c55923472dad045589d18738e5]');
-copyBtnbtn_df6346c55923472dad045589d18738e5.addEventListener('click', function(event) {
-let res = copyTextToClipboard(`c_macro = sp.sparse.linalg.spsolve(A_macro.tocsr(),f)\nc_multi = np.zeros((N-1)* n)\nx = np.linspace(0,1,N)\nx_multi = np.linspace(0,1 , n*(N-1))\nfor i in range(len(c_macro)-1):\n    t = micro_basis[n*i:n*(i+1)]\n    c_multi[n*i:n*(i+1)] = (1-t) * c_macro[i] + t * c_macro[i+1]\nplt.plot(x,c)\nplt.plot(x,c_macro)\nplt.plot(x_multi,c_multi)\nplt.plot(x_fine , c_fine)\nplt.legend([\"macro\" , \"multiscale\", \"multi_fine\" , \"reference\"])\n`);copyBtnbtn_df6346c55923472dad045589d18738e5.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_df6346c55923472dad045589d18738e5.innerHTML = '&#10697;'}, 3000);
+var copyBtnbtn_9f30ae116e4d48458979e58d21f3c6d6=document.querySelector('button[name=btn_9f30ae116e4d48458979e58d21f3c6d6]');
+copyBtnbtn_9f30ae116e4d48458979e58d21f3c6d6.addEventListener('click', function(event) {
+let res = copyTextToClipboard(`c_macro = sp.sparse.linalg.spsolve(A_macro.tocsr(),f)\nc_multi = np.zeros((N-1)* n)\nx = np.linspace(0,1,N)\nx_multi = np.linspace(0,1 , n*(N-1))\nfor i in range(len(c_macro)-1):\n    t = micro_basis[n*i:n*(i+1)]\n    c_multi[n*i:n*(i+1)] = (1-t) * c_macro[i] + t * c_macro[i+1]\nplt.plot(x,c)\nplt.plot(x,c_macro)\nplt.plot(x_multi,c_multi)\nplt.plot(x_fine , c_fine)\nplt.legend([\"macro\" , \"multiscale\", \"multi_fine\" , \"reference\"])\n`);copyBtnbtn_9f30ae116e4d48458979e58d21f3c6d6.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_9f30ae116e4d48458979e58d21f3c6d6.innerHTML = '&#10697;'}, 3000);
 });
 </script>
 </div><div class="org-src-container">
@@ -1139,6 +1179,12 @@ plt.plot(x_fine , c_fine)
 plt.legend([<span style="color: var(--clr-string); background-color: var(--bg-string);">"macro"</span> , <span style="color: var(--clr-string); background-color: var(--bg-string);">"multiscale"</span>, <span style="color: var(--clr-string); background-color: var(--bg-string);">"multi_fine"</span> , <span style="color: var(--clr-string); background-color: var(--bg-string);">"reference"</span>])
 </code></pre>
 </div></div>
+
+
+<div id="org15f48eb" class="figure">
+<p><img src="images/multiscaleplot.png" alt="multiscaleplot.png" />
+</p>
+</div>
 </div>
 </div>
 </div>
