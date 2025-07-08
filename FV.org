@@ -6,7 +6,7 @@
 :END:
 #+title: Fv
 #+latex_compiler: lualatex
-#+property: header-args:python :session :tangle fv.py :comments org
+#+property: header-args:python :session :tangle fv.py :comments org :exports both
 
 
 * Standard Diffusion equation
@@ -179,6 +179,9 @@ plt.plot(x,c)
 plt.plot(x,c_macro)
 plt.plot(x_multi,c_multi)
 plt.plot(x_fine , c_fine)
+plt.title("Comparison Of Different Solvers")
+plt.xlabel(r"$x$")
+plt.ylabel(r"$c(x)$")
 plt.legend(["macro" , "multiscale", "multi_fine" , "reference"])
 #+end_src
 
