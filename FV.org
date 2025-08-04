@@ -219,7 +219,18 @@ plug in Flux Approach with \(\Delta_x = \Delta_y = h\)
 \end{align*}
 
 #+begin_src python
-epsilon = 0.1
+import os
+
+# Set this before importing NumPy/SciPy
+os.environ["OMP_NUM_THREADS"] = "16"       # For MKL/OpenMP
+os.environ["OPENBLAS_NUM_THREADS"] = "16"  # For OpenBLAS
+os.environ["MKL_NUM_THREADS"] = "16"       # For Intel MKL
+os.environ["NUMEXPR_NUM_THREADS"] = "16"   # Just in case
+
+import numpy as np
+import scipy
+
+epsilon =10.
 D_1D = lambda x: 1 / (2+1.9 * np.cos(2 * np.pi* x / epsilon))
 D = lambda x,y: D_1D(x) * D_1D(y)
 #+end_src
@@ -233,6 +244,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 N = 1000
 M = 1000
+h = 1/N
 x = np.linspace(0.,1., N)
 y= np.linspace(0.,1., M)
 grid = np.meshgrid(x,y)
@@ -247,19 +259,65 @@ sns.heatmap(diffusion)
 #+begin_src python
 import scipy as sp
 import numpy as np
-f = np.ones((N,M))
 def assemble_matrix_2d(h , N,M):
-    A = sp.sparse()
     main_diag = np.ones((N,M))
+    diag_north = np.zeros((N,M))
+    diag_south = np.zeros((N,M))
+    diag_east = np.zeros((N,M))
+    diag_west = np.zeros((N,M))
     x_h = (np.arange(0,N-1) + 0.5) * h
     y_h = (np.arange(0,M-1) + 0.5) * h
     x = np.arange(0,N)* h
     y = np.arange(0,M)* h
-    halfgrid_x = np.meshgrid(x_h,y)
-    halfgrid_y = np.meshgrid(x,y_h)
+    halfgrid_x = np.meshgrid(x_h,y,indexing="ij")
+    halfgrid_y = np.meshgrid(x,y_h , indexing="ij")
     half_diffusion_x = D(halfgrid_x[0] , halfgrid_x[1])
     half_diffusion_y = D(halfgrid_y[0] , halfgrid_y[1])
-    main_diag[1:-1,1:-1] =  half_diffusion_x[:-1,:] + half_diffusion_x[1:,:] + half_diffusion_y[:,:-1] + half_diffusion_y[:,1:]
-    main_diag = np.ravel(D)
+    main_diag[1:-1,1:-1] =  half_diffusion_x[:-1,1:-1] + half_diffusion_x[1:,1:-1] + half_diffusion_y[1:-1,:-1] + half_diffusion_y[1:-1,1:]
+    main_diag = np.ravel(main_diag)
 
+    diag_north[1:-1,1:-1] = - half_diffusion_y[1:-1,:-1]
+    diag_north = diag_north.ravel()
+    diag_south[1:-1,1:-1] = - half_diffusion_y[1:-1,1:]
+    diag_south = diag_south.ravel()
+    diag_east[1:-1,1:-1] = - half_diffusion_x[1:,1:-1]
+    diag_east = diag_east.ravel()
+    diag_west[1:-1,1:-1] = - half_diffusion_x[:-1,1:-1]
+    diag_west = diag_west.ravel()
+
+    A = sp.sparse.spdiags([main_diag , diag_north , diag_south , diag_east , diag_west] , [0 , -N , N , 1 , -1] , N*M , M*N)
+    return A
 #+end_src
+
+#+RESULTS:
+: None
+
+#+begin_src python :results file graphics output :file images/spy.svg
+A = assemble_matrix_2d(h , N,M)
+#plt.spy(A.T, markersize=0.01)
+#+end_src
+
+#+RESULTS:
+[[file:images/spy.svg]]
+#+begin_src python :results file graphics output :file images/2d-result.png :async t
+from scipy.sparse.linalg import cg
+f = np.zeros((N,M))
+f[1:-1 ,  1:-1]= h**2
+f = f.ravel()
+c , info = cg(A.tocsr(),f)
+print("info" , info)
+c = c.reshape((N,M))
+sns.heatmap(c , cmap="magma")
+#+end_src
+
+#+RESULTS:
+[[file:images/2d-result.png]]
+
+#+begin_src python :results file graphics output :file images/2d-surf.png
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
+ax.plot_surface(grid[0] ,grid[1],c , cmap="magma")
+#+end_src
+
+#+RESULTS:
+[[file:images/2d-surf.png]]
