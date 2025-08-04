@@ -1,9 +1,3 @@
-:PROPERTIES:
-:GPTEL_MODEL: deepseek-r1:8b
-:GPTEL_BACKEND: Ollama
-:GPTEL_SYSTEM: You are a large language model living in Emacs and a helpful assistant. Respond concisely.
-:GPTEL_BOUNDS: nil
-:END:
 #+title: Fv
 #+latex_compiler: lualatex
 #+property: header-args:python :session :tangle fv.py :comments org :exports both
@@ -18,7 +12,6 @@ c(x) &= 0 &  \text{on}& \, \partial \Omega
 * Finite Volume
 Integral Form
 \begin{align*}
-\int_{Q} \nabla \cdot (D(x) \nabla c )  &= \int_{Q} f(x) \, \mathrm{d}x \\
 \int_{\partial Q} D(x) \nabla c \cdot \vec{n} \mathrm{d}S \, &=   \int_{Q} f(x) \, \mathrm{d} x
 \end{align*}
 We assume constant c on \(Q\)
@@ -187,3 +180,86 @@ plt.legend(["macro" , "multiscale", "multi_fine" , "reference"])
 
 #+RESULTS:
 [[file:images/multiscaleplot.svg]]
+* 2D
+on a \(N \times M\) grid
+** Numerical Flux in 2D
+\begin{align*}
+g_{x}(c_{i+1,j} , c_{ij}) &= - \Delta_y D(x_{i+ \frac{1}{2},j }) \frac{c_{i+1,j} - c_{ij}}{\Delta_x}\\
+g_y(c_{i,j+1} , c_{ij}) &= - \Delta_x D(x_{i,j+ \frac{1}{2}}) \frac{c_{i,j+1} - c_{ij}}{\Delta_y}
+\end{align*}
+The boundary term can then be approximated by
+\begin{align*}
+ - g_{x}(c_{i,j} , c_{i-1,j}) + g_{x}(c_{i+1,j} , c_{ij})  -  g_y(c_{i,j} , c_{i,j-1}) + g_y(c_{i,j+1} , c_{ij}) &= \Delta_x \Delta_y f(x_{ij})
+\end{align*}
+One Dimensionalize the index
+\begin{align*}
+ - g_{x}(c_{i + Nj} , c_{i-1 + Nj}) + g_{x}(c_{i+1 + Nj} , c_{i + Nj})  -  g_y(c_{i + Nj} , c_{i + N(j-1)}) + g_y(c_{i + N(j+1)} , c_{i + Nj}) &= \Delta_x \Delta_y f(x_{i + Nj})
+\end{align*}
+plug in Flux Approach with \(\Delta_x = \Delta_y = h\)
+\begin{align*}
+& \left(D(x-\frac{h}{2},y)c_{i+Nj}-D(x-\frac{h}{2},y)c_{i-1+Nj}\right)\\
+&-\left(D(x+\frac{h}{2},y)c_{i+1+Nj}-D(x+\frac{h}{2},y)c_{i+Nj}\right)\\
+&+\left(D(x,y-\frac{h}{2})c_{i+Nj}-D(x,y-\frac{h}{2})c_{i+N(j-1)}\right)\\
+&-\left(D(x,y+\frac{h}{2})c_{i+N(j+1)}-D(x,y+\frac{h}{2})c_{i+Nj}\right)
+\end{align*}
+
+\begin{align*}
+& D(x-\frac{h}{2},y)c_{i+Nj}-D(x-\frac{h}{2},y)c_{i-1+Nj}  \\
+&-D(x+\frac{h}{2},y)c_{i+1+Nj}+D(x+\frac{h}{2},y)c_{i+Nj}  \\
+& D(x,y-\frac{h}{2})c_{i+Nj}-D(x,y-\frac{h}{2})c_{i+N(j-1)}\\
+&-D(x,y+\frac{h}{2})c_{i+N(j+1)}+D(x,y+\frac{h}{2})c_{i+Nj}
+\end{align*}
+
+\begin{align*}
+& -D(x-\frac{h}{2},y)c_{i-1+Nj}  \\
+&-D(x+\frac{h}{2},y)c_{i+1+Nj}  \\
+& -D(x,y-\frac{h}{2})c_{i+N(j-1)}\\
+&-D(x,y+\frac{h}{2})c_{i+N(j+1)}\\
+\left(D(x-\frac{h}{2},y) + D(x+\frac{h}{2},y) + D(x,y-\frac{h}{2}) + D(x,y+\frac{h}{2}) \right) c_{i+Nj}
+\end{align*}
+
+#+begin_src python
+epsilon = 0.1
+D_1D = lambda x: 1 / (2+1.9 * np.cos(2 * np.pi* x / epsilon))
+D = lambda x,y: D_1D(x) * D_1D(y)
+#+end_src
+
+#+RESULTS:
+: None
+
+#+begin_src python :results file graphics output :file images/2D_Diffusion.png
+import seaborn as sns
+import matplotlib.pyplot as plt
+import numpy as np
+N = 1000
+M = 1000
+x = np.linspace(0.,1., N)
+y= np.linspace(0.,1., M)
+grid = np.meshgrid(x,y)
+diffusion = D(grid[0] , grid[1])
+diffusion = np.reshape(diffusion , (N,M))
+sns.heatmap(diffusion)
+#+end_src
+
+#+RESULTS:
+[[file:images/2D_Diffusion.png]]
+
+#+begin_src python
+import scipy as sp
+import numpy as np
+f = np.ones((N,M))
+def assemble_matrix_2d(h , N,M):
+    A = sp.sparse()
+    main_diag = np.ones((N,M))
+    x_h = (np.arange(0,N-1) + 0.5) * h
+    y_h = (np.arange(0,M-1) + 0.5) * h
+    x = np.arange(0,N)* h
+    y = np.arange(0,M)* h
+    halfgrid_x = np.meshgrid(x_h,y)
+    halfgrid_y = np.meshgrid(x,y_h)
+    half_diffusion_x = D(halfgrid_x[0] , halfgrid_x[1])
+    half_diffusion_y = D(halfgrid_y[0] , halfgrid_y[1])
+    main_diag[1:-1,1:-1] =  half_diffusion_x[:-1,:] + half_diffusion_x[1:,:] + half_diffusion_y[:,:-1] + half_diffusion_y[:,1:]
+    main_diag = np.ravel(D)
+
+#+end_src
