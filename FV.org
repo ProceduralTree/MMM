@@ -1,4 +1,5 @@
 #+title: Fv
+#+startup: latexpreview
 #+latex_compiler: lualatex
 #+property: header-args:python :session :tangle fv.py :comments org :exports both
 
@@ -230,7 +231,7 @@ os.environ["NUMEXPR_NUM_THREADS"] = "16"   # Just in case
 import numpy as np
 import scipy
 
-epsilon =10.
+epsilon =0.25
 D_1D = lambda x: 1 / (2+1.9 * np.cos(2 * np.pi* x / epsilon))
 D = lambda x,y: D_1D(x) * D_1D(y)
 #+end_src
@@ -293,19 +294,21 @@ def assemble_matrix_2d(h , N,M):
 : None
 
 #+begin_src python :results file graphics output :file images/spy.svg
-A = assemble_matrix_2d(h , N,M)
-#plt.spy(A.T, markersize=0.01)
+A = assemble_matrix_2d(h , 10,10)
+plt.imshow(A.todense() )
+#plt.spy(A.T, markersize=1)
 #+end_src
 
 #+RESULTS:
 [[file:images/spy.svg]]
+
 #+begin_src python :results file graphics output :file images/2d-result.png :async t
-from scipy.sparse.linalg import cg
+A = assemble_matrix_2d(h , N,M)
+from scipy.sparse.linalg import cg , spsolve
 f = np.zeros((N,M))
 f[1:-1 ,  1:-1]= h**2
 f = f.ravel()
-c , info = cg(A.tocsr(),f)
-print("info" , info)
+c = spsolve(A.tocsr(),f)
 c = c.reshape((N,M))
 sns.heatmap(c , cmap="magma")
 #+end_src
