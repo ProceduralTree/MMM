@@ -3,11 +3,11 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2025-07-08 Tue 10:54 -->
+<!-- 2025-08-05 Di 23:02 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Fv</title>
-<meta name="author" content="tree" />
+<meta name="author" content="Jonathan Ulmer" />
 <meta name="generator" content="Org Mode" />
 <style type='text/css'>
 <!--/*--><![CDATA[/*><!--*/
@@ -899,14 +899,19 @@ pre {
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents" role="doc-toc">
 <ul>
-<li><a href="#org2827069">1. Standard Diffusion equation</a></li>
-<li><a href="#orgbb45121">2. Finite Volume</a></li>
-<li><a href="#orgf391633">3. Multiscale</a></li>
+<li><a href="#org3a11907">1. Standard Diffusion equation</a></li>
+<li><a href="#org391e55e">2. Finite Volume</a></li>
+<li><a href="#org75cee86">3. Multiscale</a></li>
+<li><a href="#orgfdebd32">4. 2D</a>
+<ul>
+<li><a href="#orgd12541a">4.1. Numerical Flux in 2D</a></li>
+</ul>
+</li>
 </ul>
 </div>
 </div>
-<div id="outline-container-org2827069" class="outline-2">
-<h2 id="org2827069"><span class="section-number-2">1.</span> Standard Diffusion equation</h2>
+<div id="outline-container-org3a11907" class="outline-2">
+<h2 id="org3a11907"><span class="section-number-2">1.</span> Standard Diffusion equation</h2>
 <div class="outline-text-2" id="text-1">
 \begin{align*}
 \nabla \cdot (D(x) \nabla c) &= f(x) & \text{in}& \, \Omega \\
@@ -914,14 +919,13 @@ c(x) &= 0 &  \text{on}& \, \partial \Omega
 \end{align*}
 </div>
 </div>
-<div id="outline-container-orgbb45121" class="outline-2">
-<h2 id="orgbb45121"><span class="section-number-2">2.</span> Finite Volume</h2>
+<div id="outline-container-org391e55e" class="outline-2">
+<h2 id="org391e55e"><span class="section-number-2">2.</span> Finite Volume</h2>
 <div class="outline-text-2" id="text-2">
 <p>
 Integral Form
 </p>
 \begin{align*}
-\int_{Q} \nabla \cdot (D(x) \nabla c )  &= \int_{Q} f(x) \, \mathrm{d}x \\
 \int_{\partial Q} D(x) \nabla c \cdot \vec{n} \mathrm{d}S \, &=   \int_{Q} f(x) \, \mathrm{d} x
 \end{align*}
 <p>
@@ -950,38 +954,38 @@ Linear System
 \end{align*}
 
 <div class='org-src-wrapper'>
-<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_dd0dd7078c374f4c9890f6b6ea364c30>&#10697;</button>
+<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_f4b7c6039536466a85da9a061b5a4d06>&#10697;</button>
 <script type='text/javascript'>
-var copyBtnbtn_dd0dd7078c374f4c9890f6b6ea364c30=document.querySelector('button[name=btn_dd0dd7078c374f4c9890f6b6ea364c30]');
-copyBtnbtn_dd0dd7078c374f4c9890f6b6ea364c30.addEventListener('click', function(event) {
-let res = copyTextToClipboard(`import numpy as np\nimport scipy as sp\nimport matplotlib.pyplot as plt\nepsilon = 0.1 #* np.pi\nN = 10\nn = 100\nh = 1/(N-1)\nD = lambda x: 1 / (2+1.9 * np.cos(2 * np.pi* x / epsilon))\nx = np.linspace(0,1 ,N)\nx_highres = np.linspace(0,1 , 100000)\nc = np.zeros(N)\nsource = np.ones(N) * h\n# Boundary\nsource[0] = 0\nsource[-1] = 0\nplt.plot(x , D(x))\nplt.plot(x_highres , D(x_highres))\nplt.legend([r\"$D$ Sampled on the course grid\" , r\"$D$\"])\nplt.title(\"Diffusion Coefficient\")\n`);copyBtnbtn_dd0dd7078c374f4c9890f6b6ea364c30.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_dd0dd7078c374f4c9890f6b6ea364c30.innerHTML = '&#10697;'}, 3000);
+var copyBtnbtn_f4b7c6039536466a85da9a061b5a4d06=document.querySelector('button[name=btn_f4b7c6039536466a85da9a061b5a4d06]');
+copyBtnbtn_f4b7c6039536466a85da9a061b5a4d06.addEventListener('click', function(event) {
+let res = copyTextToClipboard(`import numpy as np\nimport scipy as sp\nimport matplotlib.pyplot as plt\nepsilon = 0.1 #* np.pi\nN = 10\nn = 100\nh = 1/(N-1)\nD = lambda x: 1 / (2+1.9 * np.cos(2 * np.pi* x / epsilon))\nx = np.linspace(0,1 ,N)\nx_highres = np.linspace(0,1 , 100000)\nc = np.zeros(N)\nsource = np.ones(N) * h\n# Boundary\nsource[0] = 0\nsource[-1] = 0\nplt.plot(x , D(x))\nplt.plot(x_highres , D(x_highres))\nplt.legend([r\"$D$ Sampled on the course grid\" , r\"$D$\"])\nplt.title(\"Diffusion Coefficient\")\n`);copyBtnbtn_f4b7c6039536466a85da9a061b5a4d06.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_f4b7c6039536466a85da9a061b5a4d06.innerHTML = '&#10697;'}, 3000);
 });
 </script>
 </div><div class="org-src-container">
-<pre class="src src-python"><span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">import</span> numpy <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">as</span> np
+<pre class="src src-python"><code><span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">import</span> numpy <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">as</span> np
 <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">import</span> scipy <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">as</span> sp
 <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">import</span> matplotlib.pyplot <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">as</span> plt
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">epsilon</span> = <span style="color: #de935f; font-weight: bold;">0.1</span> <span style="color: var(--clr-comment-delimiter); background-color: var(--bg-comment-delimiter);">#</span><span style="color: var(--clr-comment); background-color: var(--bg-comment);">* np.pi</span>
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">N</span> = <span style="color: #de935f; font-weight: bold;">10</span>
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">n</span> = <span style="color: #de935f; font-weight: bold;">100</span>
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">h</span> = <span style="color: #de935f; font-weight: bold;">1</span>/(N-<span style="color: #de935f; font-weight: bold;">1</span>)
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">D</span> = <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">lambda</span> x: <span style="color: #de935f; font-weight: bold;">1</span> / (<span style="color: #de935f; font-weight: bold;">2</span>+<span style="color: #de935f; font-weight: bold;">1.9</span> * np.cos(<span style="color: #de935f; font-weight: bold;">2</span> * np.pi* x / epsilon))
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">x</span> = np.linspace(<span style="color: #de935f; font-weight: bold;">0</span>,<span style="color: #de935f; font-weight: bold;">1</span> ,N)
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">x_highres</span> = np.linspace(<span style="color: #de935f; font-weight: bold;">0</span>,<span style="color: #de935f; font-weight: bold;">1</span> , <span style="color: #de935f; font-weight: bold;">100000</span>)
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">epsilon</span> = 0.1 <span style="color: var(--clr-comment-delimiter); background-color: var(--bg-comment-delimiter);">#</span><span style="color: var(--clr-comment); background-color: var(--bg-comment);">* np.pi</span>
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">N</span> = 10
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">n</span> = 100
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">h</span> = 1/(N-1)
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">D</span> = <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">lambda</span> x: 1 / (2+1.9 * np.cos(2 * np.pi* x / epsilon))
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">x</span> = np.linspace(0,1 ,N)
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">x_highres</span> = np.linspace(0,1 , 100000)
 <span style="color: var(--clr-variable); background-color: var(--bg-variable);">c</span> = np.zeros(N)
 <span style="color: var(--clr-variable); background-color: var(--bg-variable);">source</span> = np.ones(N) * h
 <span style="color: var(--clr-comment-delimiter); background-color: var(--bg-comment-delimiter);"># </span><span style="color: var(--clr-comment); background-color: var(--bg-comment);">Boundary</span>
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">source</span>[<span style="color: #de935f; font-weight: bold;">0</span>] = <span style="color: #de935f; font-weight: bold;">0</span>
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">source</span>[-<span style="color: #de935f; font-weight: bold;">1</span>] = <span style="color: #de935f; font-weight: bold;">0</span>
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">source</span>[0] = 0
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">source</span>[-1] = 0
 plt.plot(x , D(x))
 plt.plot(x_highres , D(x_highres))
 plt.legend([r<span style="color: var(--clr-string); background-color: var(--bg-string);">"$D$ Sampled on the course grid"</span> , r<span style="color: var(--clr-string); background-color: var(--bg-string);">"$D$"</span>])
 plt.title(<span style="color: var(--clr-string); background-color: var(--bg-string);">"Diffusion Coefficient"</span>)
-</pre>
+</code></pre>
 </div></div>
 
 
-<div id="orgeeb8681" class="figure">
+<div id="org53ebe05" class="figure">
 <p><img src="images/D.svg" alt="D.svg" class="org-svg" />
 </p>
 </div>
@@ -991,63 +995,63 @@ plt.title(<span style="color: var(--clr-string); background-color: var(--bg-stri
 Matrix Assembly
 </p>
 <div class='org-src-wrapper'>
-<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_51b04a58db2841809d6537281f42d0e5>&#10697;</button>
+<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_e38e568e363c42a9b0390164f96118e3>&#10697;</button>
 <script type='text/javascript'>
-var copyBtnbtn_51b04a58db2841809d6537281f42d0e5=document.querySelector('button[name=btn_51b04a58db2841809d6537281f42d0e5]');
-copyBtnbtn_51b04a58db2841809d6537281f42d0e5.addEventListener('click', function(event) {
-let res = copyTextToClipboard(`from scipy.sparse import spdiags\nimport seaborn as sns\ndef assemble_matrix(N ,x, h ):\n    diagp1 = np.zeros(N)\n    diagp1[2:] = np.ones(N-2) * -1/h * D(x[1:-1] + 0.5*h)\n    diagm1 = np.zeros(N)\n    diagm1[:-2] = np.ones(N-2) * -1/h * D(x[1:-1] - 0.5*h)\n    diag0 = np.ones(N)\n    diag0[1:-1] *= 1/h * (D(x[1:-1]-0.5*h) + D(x[1:-1] + 0.5*h))\n    A = spdiags([diagm1 , diag0 , diagp1] , np.array( [-1, 0, 1] ))\n    return A\nA = assemble_matrix(N , x , h)\n#plt.spy(A)\nsns.heatmap(A.todense())\nplt.title(\"Sparsity Patter of A\")\n`);copyBtnbtn_51b04a58db2841809d6537281f42d0e5.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_51b04a58db2841809d6537281f42d0e5.innerHTML = '&#10697;'}, 3000);
+var copyBtnbtn_e38e568e363c42a9b0390164f96118e3=document.querySelector('button[name=btn_e38e568e363c42a9b0390164f96118e3]');
+copyBtnbtn_e38e568e363c42a9b0390164f96118e3.addEventListener('click', function(event) {
+let res = copyTextToClipboard(`from scipy.sparse import spdiags\nimport seaborn as sns\ndef assemble_matrix(N ,x, h ):\n    diagp1 = np.zeros(N)\n    diagp1[2:] = np.ones(N-2) * -1/h * D(x[1:-1] + 0.5*h)\n    diagm1 = np.zeros(N)\n    diagm1[:-2] = np.ones(N-2) * -1/h * D(x[1:-1] - 0.5*h)\n    diag0 = np.ones(N)\n    diag0[1:-1] *= 1/h * (D(x[1:-1]-0.5*h) + D(x[1:-1] + 0.5*h))\n    A = spdiags([diagm1 , diag0 , diagp1] , np.array( [-1, 0, 1] ))\n    return A\nA = assemble_matrix(N , x , h)\n#plt.spy(A)\nsns.heatmap(A.todense())\nplt.title(\"Sparsity Patter of A\")\n`);copyBtnbtn_e38e568e363c42a9b0390164f96118e3.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_e38e568e363c42a9b0390164f96118e3.innerHTML = '&#10697;'}, 3000);
 });
 </script>
 </div><div class="org-src-container">
-<pre class="src src-python"><span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">from</span> scipy.sparse <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">import</span> spdiags
+<pre class="src src-python"><code><span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">from</span> scipy.sparse <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">import</span> spdiags
 <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">import</span> seaborn <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">as</span> sns
 <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">def</span> <span style="color: var(--function-clr-name); background-color: var(--function-bg-name);">assemble_matrix</span>(N ,x, h ):
-    <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diagp1</span> = np.zeros(N)
-    <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diagp1</span>[<span style="color: #de935f; font-weight: bold;">2</span>:] = np.ones(N-<span style="color: #de935f; font-weight: bold;">2</span>) * -<span style="color: #de935f; font-weight: bold;">1</span>/h * D(x[<span style="color: #de935f; font-weight: bold;">1</span>:-<span style="color: #de935f; font-weight: bold;">1</span>] + <span style="color: #de935f; font-weight: bold;">0.5</span>*h)
-    <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diagm1</span> = np.zeros(N)
-    <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diagm1</span>[:-<span style="color: #de935f; font-weight: bold;">2</span>] = np.ones(N-<span style="color: #de935f; font-weight: bold;">2</span>) * -<span style="color: #de935f; font-weight: bold;">1</span>/h * D(x[<span style="color: #de935f; font-weight: bold;">1</span>:-<span style="color: #de935f; font-weight: bold;">1</span>] - <span style="color: #de935f; font-weight: bold;">0.5</span>*h)
-    <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diag0</span> = np.ones(N)
-    <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diag0</span>[<span style="color: #de935f; font-weight: bold;">1</span>:-<span style="color: #de935f; font-weight: bold;">1</span>] *= <span style="color: #de935f; font-weight: bold;">1</span>/h * (D(x[<span style="color: #de935f; font-weight: bold;">1</span>:-<span style="color: #de935f; font-weight: bold;">1</span>]-<span style="color: #de935f; font-weight: bold;">0.5</span>*h) + D(x[<span style="color: #de935f; font-weight: bold;">1</span>:-<span style="color: #de935f; font-weight: bold;">1</span>] + <span style="color: #de935f; font-weight: bold;">0.5</span>*h))
-    <span style="color: var(--clr-variable); background-color: var(--bg-variable);">A</span> = spdiags([diagm1 , diag0 , diagp1] , np.array( [-<span style="color: #de935f; font-weight: bold;">1</span>, <span style="color: #de935f; font-weight: bold;">0</span>, <span style="color: #de935f; font-weight: bold;">1</span>] ))
-    <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">return</span> A
+<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diagp1</span> = np.zeros(N)
+<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diagp1</span>[2:] = np.ones(N-2) * -1/h * D(x[1:-1] + 0.5*h)
+<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diagm1</span> = np.zeros(N)
+<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diagm1</span>[:-2] = np.ones(N-2) * -1/h * D(x[1:-1] - 0.5*h)
+<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diag0</span> = np.ones(N)
+<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diag0</span>[1:-1] *= 1/h * (D(x[1:-1]-0.5*h) + D(x[1:-1] + 0.5*h))
+<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">A</span> = spdiags([diagm1 , diag0 , diagp1] , np.array( [-1, 0, 1] ))
+<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">return</span> A
 <span style="color: var(--clr-variable); background-color: var(--bg-variable);">A</span> = assemble_matrix(N , x , h)
 <span style="color: var(--clr-comment-delimiter); background-color: var(--bg-comment-delimiter);">#</span><span style="color: var(--clr-comment); background-color: var(--bg-comment);">plt.spy(A)</span>
 sns.heatmap(A.todense())
 plt.title(<span style="color: var(--clr-string); background-color: var(--bg-string);">"Sparsity Patter of A"</span>)
-</pre>
+</code></pre>
 </div></div>
 
 
-<div id="org26a2375" class="figure">
+<div id="org45c2496" class="figure">
 <p><img src="images/A-sparsity.svg" alt="A-sparsity.svg" class="org-svg" />
 </p>
 </div>
 
 
 <div class='org-src-wrapper'>
-<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_d0db1461074a40d0a53052e944771e02>&#10697;</button>
+<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_47a737d658064909b793bb765aa17a6f>&#10697;</button>
 <script type='text/javascript'>
-var copyBtnbtn_d0db1461074a40d0a53052e944771e02=document.querySelector('button[name=btn_d0db1461074a40d0a53052e944771e02]');
-copyBtnbtn_d0db1461074a40d0a53052e944771e02.addEventListener('click', function(event) {
-let res = copyTextToClipboard(`c = sp.sparse.linalg.spsolve(A.tocsr(),source)\nplt.plot(c)\nplt.title(\"Course Grid Solution\")\n`);copyBtnbtn_d0db1461074a40d0a53052e944771e02.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_d0db1461074a40d0a53052e944771e02.innerHTML = '&#10697;'}, 3000);
+var copyBtnbtn_47a737d658064909b793bb765aa17a6f=document.querySelector('button[name=btn_47a737d658064909b793bb765aa17a6f]');
+copyBtnbtn_47a737d658064909b793bb765aa17a6f.addEventListener('click', function(event) {
+let res = copyTextToClipboard(`c = sp.sparse.linalg.spsolve(A.tocsr(),source)\nplt.plot(c)\nplt.title(\"Course Grid Solution\")\n`);copyBtnbtn_47a737d658064909b793bb765aa17a6f.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_47a737d658064909b793bb765aa17a6f.innerHTML = '&#10697;'}, 3000);
 });
 </script>
 </div><div class="org-src-container">
-<pre class="src src-python"><span style="color: var(--clr-variable); background-color: var(--bg-variable);">c</span> = sp.sparse.linalg.spsolve(A.tocsr(),source)
+<pre class="src src-python"><code><span style="color: var(--clr-variable); background-color: var(--bg-variable);">c</span> = sp.sparse.linalg.spsolve(A.tocsr(),source)
 plt.plot(c)
 plt.title(<span style="color: var(--clr-string); background-color: var(--bg-string);">"Course Grid Solution"</span>)
-</pre>
+</code></pre>
 </div></div>
 
 
-<div id="org109a0f8" class="figure">
+<div id="org83c3646" class="figure">
 <p><img src="images/plot.svg" alt="plot.svg" class="org-svg" />
 </p>
 </div>
 </div>
 </div>
-<div id="outline-container-orgf391633" class="outline-2">
-<h2 id="orgf391633"><span class="section-number-2">3.</span> Multiscale</h2>
+<div id="outline-container-org75cee86" class="outline-2">
+<h2 id="org75cee86"><span class="section-number-2">3.</span> Multiscale</h2>
 <div class="outline-text-2" id="text-3">
 <p>
 In 1D
@@ -1061,126 +1065,125 @@ T_{\pm } &= \int_{Q} D(x) \phi'_{\pm} (x)\, \mathrm{d}x
 calculate c integral
 </p>
 <div class='org-src-wrapper'>
-<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_5f28c23617bb41d69761ec7d2a3e2537>&#10697;</button>
+<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_f2bd57f6f57d41149576a2401721aa31>&#10697;</button>
 <script type='text/javascript'>
-var copyBtnbtn_5f28c23617bb41d69761ec7d2a3e2537=document.querySelector('button[name=btn_5f28c23617bb41d69761ec7d2a3e2537]');
-copyBtnbtn_5f28c23617bb41d69761ec7d2a3e2537.addEventListener('click', function(event) {
-let res = copyTextToClipboard(`np.sum((c[1:] - c[:-1])/h * -D(x[1:]))\n`);copyBtnbtn_5f28c23617bb41d69761ec7d2a3e2537.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_5f28c23617bb41d69761ec7d2a3e2537.innerHTML = '&#10697;'}, 3000);
+var copyBtnbtn_f2bd57f6f57d41149576a2401721aa31=document.querySelector('button[name=btn_f2bd57f6f57d41149576a2401721aa31]');
+copyBtnbtn_f2bd57f6f57d41149576a2401721aa31.addEventListener('click', function(event) {
+let res = copyTextToClipboard(`np.sum((c[1:] - c[:-1])/h * -D(x[1:]))\n`);copyBtnbtn_f2bd57f6f57d41149576a2401721aa31.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_f2bd57f6f57d41149576a2401721aa31.innerHTML = '&#10697;'}, 3000);
 });
 </script>
 </div><div class="org-src-container">
-<pre class="src src-python">np.<span style="color: var(--clr-builtin); background-color: var(--bg-builtin);">sum</span>((c[<span style="color: #de935f; font-weight: bold;">1</span>:] - c[:-<span style="color: #de935f; font-weight: bold;">1</span>])/h * -D(x[<span style="color: #de935f; font-weight: bold;">1</span>:]))
-</pre>
+<pre class="src src-python"><code>np.<span style="color: var(--clr-builtin); background-color: var(--bg-builtin);">sum</span>((c[1:] - c[:-1])/h * -D(x[1:]))
+</code></pre>
 </div></div>
 
 <pre class="example">
 -1.7465436574208233
 </pre>
 
-
 <div class='org-src-wrapper'>
-<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_3b4437d076ce41a88e473bd50c3b7838>&#10697;</button>
+<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_96454e54cefa42389c9ad2bc52b24c56>&#10697;</button>
 <script type='text/javascript'>
-var copyBtnbtn_3b4437d076ce41a88e473bd50c3b7838=document.querySelector('button[name=btn_3b4437d076ce41a88e473bd50c3b7838]');
-copyBtnbtn_3b4437d076ce41a88e473bd50c3b7838.addEventListener('click', function(event) {
-let res = copyTextToClipboard(`from scipy.sparse.linalg import spsolve\nmicro_basis = np.zeros(N*n)\nT = np.zeros(N)\nfor i,x_m in enumerate(x):\n    xm = np.linspace(x_m , x_m + h , n)\n    hm = h/(n-1)\n    A_m = assemble_matrix(n, xm , hm )\n    fm = np.ones(n) * hm\n    fm[0] = 0\n    fm[-1] = 1\n    phi = spsolve(A_m.tocsr(),fm)\n    micro_basis[n * i:n*(i+1)] = phi\n    T[i] =   hm * np.sum(((phi[1:] - phi[:-1])/hm)**2 * D(xm[:-1]))\nplt.plot(x,T)\nplt.xlabel(r\"$x$\")\nplt.ylabel(r\"$T(x)$\")\nplt.title(r\"Multiscale Transmission Coeficcients $T$\")\n`);copyBtnbtn_3b4437d076ce41a88e473bd50c3b7838.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_3b4437d076ce41a88e473bd50c3b7838.innerHTML = '&#10697;'}, 3000);
+var copyBtnbtn_96454e54cefa42389c9ad2bc52b24c56=document.querySelector('button[name=btn_96454e54cefa42389c9ad2bc52b24c56]');
+copyBtnbtn_96454e54cefa42389c9ad2bc52b24c56.addEventListener('click', function(event) {
+let res = copyTextToClipboard(`from scipy.sparse.linalg import spsolve\nmicro_basis = np.zeros(N*n)\nT = np.zeros(N)\nfor i,x_m in enumerate(x):\n    xm = np.linspace(x_m , x_m + h , n)\n    hm = h/(n-1)\n    A_m = assemble_matrix(n, xm , hm )\n    fm = np.ones(n) * hm\n    fm[0] = 0\n    fm[-1] = 1\n    phi = spsolve(A_m.tocsr(),fm)\n    micro_basis[n * i:n*(i+1)] = phi\n    T[i] =   hm * np.sum(((phi[1:] - phi[:-1])/hm)**2 * D(xm[:-1]))\nplt.plot(x,T)\nplt.xlabel(r\"$x$\")\nplt.ylabel(r\"$T(x)$\")\nplt.title(r\"Multiscale Transmission Coeficcients $T$\")\n`);copyBtnbtn_96454e54cefa42389c9ad2bc52b24c56.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_96454e54cefa42389c9ad2bc52b24c56.innerHTML = '&#10697;'}, 3000);
 });
 </script>
 </div><div class="org-src-container">
-<pre class="src src-python"><span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">from</span> scipy.sparse.linalg <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">import</span> spsolve
+<pre class="src src-python"><code><span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">from</span> scipy.sparse.linalg <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">import</span> spsolve
 <span style="color: var(--clr-variable); background-color: var(--bg-variable);">micro_basis</span> = np.zeros(N*n)
 <span style="color: var(--clr-variable); background-color: var(--bg-variable);">T</span> = np.zeros(N)
 <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">for</span> i,x_m <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">in</span> <span style="color: var(--clr-builtin); background-color: var(--bg-builtin);">enumerate</span>(x):
-    <span style="color: var(--clr-variable); background-color: var(--bg-variable);">xm</span> = np.linspace(x_m , x_m + h , n)
-    <span style="color: var(--clr-variable); background-color: var(--bg-variable);">hm</span> = h/(n-<span style="color: #de935f; font-weight: bold;">1</span>)
-    <span style="color: var(--clr-variable); background-color: var(--bg-variable);">A_m</span> = assemble_matrix(n, xm , hm )
-    <span style="color: var(--clr-variable); background-color: var(--bg-variable);">fm</span> = np.ones(n) * hm
-    <span style="color: var(--clr-variable); background-color: var(--bg-variable);">fm</span>[<span style="color: #de935f; font-weight: bold;">0</span>] = <span style="color: #de935f; font-weight: bold;">0</span>
-    <span style="color: var(--clr-variable); background-color: var(--bg-variable);">fm</span>[-<span style="color: #de935f; font-weight: bold;">1</span>] = <span style="color: #de935f; font-weight: bold;">1</span>
-    <span style="color: var(--clr-variable); background-color: var(--bg-variable);">phi</span> = spsolve(A_m.tocsr(),fm)
-    <span style="color: var(--clr-variable); background-color: var(--bg-variable);">micro_basis</span>[n * i:n*(i+<span style="color: #de935f; font-weight: bold;">1</span>)] = phi
-    <span style="color: var(--clr-variable); background-color: var(--bg-variable);">T</span>[i] =   hm * np.<span style="color: var(--clr-builtin); background-color: var(--bg-builtin);">sum</span>(((phi[<span style="color: #de935f; font-weight: bold;">1</span>:] - phi[:-<span style="color: #de935f; font-weight: bold;">1</span>])/hm)**<span style="color: #de935f; font-weight: bold;">2</span> * D(xm[:-<span style="color: #de935f; font-weight: bold;">1</span>]))
+<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">xm</span> = np.linspace(x_m , x_m + h , n)
+<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">hm</span> = h/(n-1)
+<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">A_m</span> = assemble_matrix(n, xm , hm )
+<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">fm</span> = np.ones(n) * hm
+<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">fm</span>[0] = 0
+<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">fm</span>[-1] = 1
+<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">phi</span> = spsolve(A_m.tocsr(),fm)
+<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">micro_basis</span>[n * i:n*(i+1)] = phi
+<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">T</span>[i] =   hm * np.<span style="color: var(--clr-builtin); background-color: var(--bg-builtin);">sum</span>(((phi[1:] - phi[:-1])/hm)**2 * D(xm[:-1]))
 plt.plot(x,T)
 plt.xlabel(r<span style="color: var(--clr-string); background-color: var(--bg-string);">"$x$"</span>)
 plt.ylabel(r<span style="color: var(--clr-string); background-color: var(--bg-string);">"$T(x)$"</span>)
 plt.title(r<span style="color: var(--clr-string); background-color: var(--bg-string);">"Multiscale Transmission Coeficcients $T$"</span>)
-</pre>
+</code></pre>
 </div></div>
 
 
-<div id="org916bfc9" class="figure">
+<div id="org96f44ea" class="figure">
 <p><img src="images/T.svg" alt="T.svg" class="org-svg" />
 </p>
 </div>
 
 <div class='org-src-wrapper'>
-<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_d2d21fdebba64f76a538f42c6ed728be>&#10697;</button>
+<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_bf2b0608dbeb478e94637d51df51e142>&#10697;</button>
 <script type='text/javascript'>
-var copyBtnbtn_d2d21fdebba64f76a538f42c6ed728be=document.querySelector('button[name=btn_d2d21fdebba64f76a538f42c6ed728be]');
-copyBtnbtn_d2d21fdebba64f76a538f42c6ed728be.addEventListener('click', function(event) {
-let res = copyTextToClipboard(`diagp1 = np.zeros(N)\ndiagp1[2:] = np.ones(N-2) * -1* T[1:-1]\ndiagm1 = np.zeros(N)\ndiagm1[:-2] = np.ones(N-2) * -1*  T[:-2]\ndiag0 = np.ones(N)\ndiag0[1:-1] *=  (T[1:-1] + T[:-2])\nA_macro = spdiags([diagm1 , diag0 , diagp1] , np.array( [-1, 0, 1] ))\nsns.heatmap(A_macro.todense())\n`);copyBtnbtn_d2d21fdebba64f76a538f42c6ed728be.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_d2d21fdebba64f76a538f42c6ed728be.innerHTML = '&#10697;'}, 3000);
+var copyBtnbtn_bf2b0608dbeb478e94637d51df51e142=document.querySelector('button[name=btn_bf2b0608dbeb478e94637d51df51e142]');
+copyBtnbtn_bf2b0608dbeb478e94637d51df51e142.addEventListener('click', function(event) {
+let res = copyTextToClipboard(`diagp1 = np.zeros(N)\ndiagp1[2:] = np.ones(N-2) * -1* T[1:-1]\ndiagm1 = np.zeros(N)\ndiagm1[:-2] = np.ones(N-2) * -1*  T[:-2]\ndiag0 = np.ones(N)\ndiag0[1:-1] *=  (T[1:-1] + T[:-2])\nA_macro = spdiags([diagm1 , diag0 , diagp1] , np.array( [-1, 0, 1] ))\nsns.heatmap(A_macro.todense())\n`);copyBtnbtn_bf2b0608dbeb478e94637d51df51e142.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_bf2b0608dbeb478e94637d51df51e142.innerHTML = '&#10697;'}, 3000);
 });
 </script>
 </div><div class="org-src-container">
-<pre class="src src-python"><span style="color: var(--clr-variable); background-color: var(--bg-variable);">diagp1</span> = np.zeros(N)
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">diagp1</span>[<span style="color: #de935f; font-weight: bold;">2</span>:] = np.ones(N-<span style="color: #de935f; font-weight: bold;">2</span>) * -<span style="color: #de935f; font-weight: bold;">1</span>* T[<span style="color: #de935f; font-weight: bold;">1</span>:-<span style="color: #de935f; font-weight: bold;">1</span>]
+<pre class="src src-python"><code><span style="color: var(--clr-variable); background-color: var(--bg-variable);">diagp1</span> = np.zeros(N)
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">diagp1</span>[2:] = np.ones(N-2) * -1* T[1:-1]
 <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diagm1</span> = np.zeros(N)
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">diagm1</span>[:-<span style="color: #de935f; font-weight: bold;">2</span>] = np.ones(N-<span style="color: #de935f; font-weight: bold;">2</span>) * -<span style="color: #de935f; font-weight: bold;">1</span>*  T[:-<span style="color: #de935f; font-weight: bold;">2</span>]
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">diagm1</span>[:-2] = np.ones(N-2) * -1*  T[:-2]
 <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diag0</span> = np.ones(N)
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">diag0</span>[<span style="color: #de935f; font-weight: bold;">1</span>:-<span style="color: #de935f; font-weight: bold;">1</span>] *=  (T[<span style="color: #de935f; font-weight: bold;">1</span>:-<span style="color: #de935f; font-weight: bold;">1</span>] + T[:-<span style="color: #de935f; font-weight: bold;">2</span>])
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">A_macro</span> = spdiags([diagm1 , diag0 , diagp1] , np.array( [-<span style="color: #de935f; font-weight: bold;">1</span>, <span style="color: #de935f; font-weight: bold;">0</span>, <span style="color: #de935f; font-weight: bold;">1</span>] ))
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">diag0</span>[1:-1] *=  (T[1:-1] + T[:-2])
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">A_macro</span> = spdiags([diagm1 , diag0 , diagp1] , np.array( [-1, 0, 1] ))
 sns.heatmap(A_macro.todense())
-</pre>
+</code></pre>
 </div></div>
 
 
-<div id="org23afde5" class="figure">
+<div id="org5fd0c30" class="figure">
 <p><img src="A.png" alt="A.png" />
 </p>
 </div>
 
 <div class='org-src-wrapper'>
-<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_699eb1fcc02b463c9ef7831308892a55>&#10697;</button>
+<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_4987ba73818945dc9227f07c7992da35>&#10697;</button>
 <script type='text/javascript'>
-var copyBtnbtn_699eb1fcc02b463c9ef7831308892a55=document.querySelector('button[name=btn_699eb1fcc02b463c9ef7831308892a55]');
-copyBtnbtn_699eb1fcc02b463c9ef7831308892a55.addEventListener('click', function(event) {
-let res = copyTextToClipboard(`N_fine = n*N\nx_fine = np.linspace(0,1 , n*N)\nh_fine = 1/(N*n -1)\nA_fine = assemble_matrix(N_fine , x_fine , h_fine)\nf_fine = np.ones(N*n) * h_fine\nf_fine[0] = 0\nf_fine[-1] = 0\nc_fine = sp.sparse.linalg.spsolve(A_fine.tocsr(),f_fine)\n`);copyBtnbtn_699eb1fcc02b463c9ef7831308892a55.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_699eb1fcc02b463c9ef7831308892a55.innerHTML = '&#10697;'}, 3000);
+var copyBtnbtn_4987ba73818945dc9227f07c7992da35=document.querySelector('button[name=btn_4987ba73818945dc9227f07c7992da35]');
+copyBtnbtn_4987ba73818945dc9227f07c7992da35.addEventListener('click', function(event) {
+let res = copyTextToClipboard(`N_fine = n*N\nx_fine = np.linspace(0,1 , n*N)\nh_fine = 1/(N*n -1)\nA_fine = assemble_matrix(N_fine , x_fine , h_fine)\nf_fine = np.ones(N*n) * h_fine\nf_fine[0] = 0\nf_fine[-1] = 0\nc_fine = sp.sparse.linalg.spsolve(A_fine.tocsr(),f_fine)\n`);copyBtnbtn_4987ba73818945dc9227f07c7992da35.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_4987ba73818945dc9227f07c7992da35.innerHTML = '&#10697;'}, 3000);
 });
 </script>
 </div><div class="org-src-container">
-<pre class="src src-python"><span style="color: var(--clr-variable); background-color: var(--bg-variable);">N_fine</span> = n*N
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">x_fine</span> = np.linspace(<span style="color: #de935f; font-weight: bold;">0</span>,<span style="color: #de935f; font-weight: bold;">1</span> , n*N)
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">h_fine</span> = <span style="color: #de935f; font-weight: bold;">1</span>/(N*n -<span style="color: #de935f; font-weight: bold;">1</span>)
+<pre class="src src-python"><code><span style="color: var(--clr-variable); background-color: var(--bg-variable);">N_fine</span> = n*N
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">x_fine</span> = np.linspace(0,1 , n*N)
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">h_fine</span> = 1/(N*n -1)
 <span style="color: var(--clr-variable); background-color: var(--bg-variable);">A_fine</span> = assemble_matrix(N_fine , x_fine , h_fine)
 <span style="color: var(--clr-variable); background-color: var(--bg-variable);">f_fine</span> = np.ones(N*n) * h_fine
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">f_fine</span>[<span style="color: #de935f; font-weight: bold;">0</span>] = <span style="color: #de935f; font-weight: bold;">0</span>
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">f_fine</span>[-<span style="color: #de935f; font-weight: bold;">1</span>] = <span style="color: #de935f; font-weight: bold;">0</span>
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">f_fine</span>[0] = 0
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">f_fine</span>[-1] = 0
 <span style="color: var(--clr-variable); background-color: var(--bg-variable);">c_fine</span> = sp.sparse.linalg.spsolve(A_fine.tocsr(),f_fine)
-</pre>
+</code></pre>
 </div></div>
 
 
-<div id="org0c5bfd6" class="figure">
+<div id="orgc9dea01" class="figure">
 <p><img src="images/fine.svg" alt="fine.svg" class="org-svg" />
 </p>
 </div>
 
 <div class='org-src-wrapper'>
-<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_94421bf1997a4ae98c556f5ba10050b6>&#10697;</button>
+<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_05ef9764136d4148919474e13f9eb49c>&#10697;</button>
 <script type='text/javascript'>
-var copyBtnbtn_94421bf1997a4ae98c556f5ba10050b6=document.querySelector('button[name=btn_94421bf1997a4ae98c556f5ba10050b6]');
-copyBtnbtn_94421bf1997a4ae98c556f5ba10050b6.addEventListener('click', function(event) {
-let res = copyTextToClipboard(`c_macro = sp.sparse.linalg.spsolve(A_macro.tocsr(),source)\nc_multi = np.zeros((N-1)* n)\nx = np.linspace(0,1,N)\nx_multi = np.linspace(0,1 , n*(N-1))\nfor i in range(len(c_macro)-1):\n    t = micro_basis[n*i:n*(i+1)]\n    c_multi[n*i:n*(i+1)] = (1-t) * c_macro[i] + t * c_macro[i+1]\nplt.plot(x,c)\nplt.plot(x,c_macro)\nplt.plot(x_multi,c_multi)\nplt.plot(x_fine , c_fine)\nplt.title(\"Comparison Of Different Solvers\")\nplt.xlabel(r\"$x$\")\nplt.ylabel(r\"$c(x)$\")\nplt.legend([\"macro\" , \"multiscale\", \"multi_fine\" , \"reference\"])\n`);copyBtnbtn_94421bf1997a4ae98c556f5ba10050b6.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_94421bf1997a4ae98c556f5ba10050b6.innerHTML = '&#10697;'}, 3000);
+var copyBtnbtn_05ef9764136d4148919474e13f9eb49c=document.querySelector('button[name=btn_05ef9764136d4148919474e13f9eb49c]');
+copyBtnbtn_05ef9764136d4148919474e13f9eb49c.addEventListener('click', function(event) {
+let res = copyTextToClipboard(`c_macro = sp.sparse.linalg.spsolve(A_macro.tocsr(),source)\nc_multi = np.zeros((N-1)* n)\nx = np.linspace(0,1,N)\nx_multi = np.linspace(0,1 , n*(N-1))\nfor i in range(len(c_macro)-1):\n    t = micro_basis[n*i:n*(i+1)]\n    c_multi[n*i:n*(i+1)] = (1-t) * c_macro[i] + t * c_macro[i+1]\nplt.plot(x,c)\nplt.plot(x,c_macro)\nplt.plot(x_multi,c_multi)\nplt.plot(x_fine , c_fine)\nplt.title(\"Comparison Of Different Solvers\")\nplt.xlabel(r\"$x$\")\nplt.ylabel(r\"$c(x)$\")\nplt.legend([\"macro\" , \"multiscale\", \"multi_fine\" , \"reference\"])\n`);copyBtnbtn_05ef9764136d4148919474e13f9eb49c.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_05ef9764136d4148919474e13f9eb49c.innerHTML = '&#10697;'}, 3000);
 });
 </script>
 </div><div class="org-src-container">
-<pre class="src src-python"><span style="color: var(--clr-variable); background-color: var(--bg-variable);">c_macro</span> = sp.sparse.linalg.spsolve(A_macro.tocsr(),source)
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">c_multi</span> = np.zeros((N-<span style="color: #de935f; font-weight: bold;">1</span>)* n)
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">x</span> = np.linspace(<span style="color: #de935f; font-weight: bold;">0</span>,<span style="color: #de935f; font-weight: bold;">1</span>,N)
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">x_multi</span> = np.linspace(<span style="color: #de935f; font-weight: bold;">0</span>,<span style="color: #de935f; font-weight: bold;">1</span> , n*(N-<span style="color: #de935f; font-weight: bold;">1</span>))
-<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">for</span> i <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">in</span> <span style="color: var(--clr-builtin); background-color: var(--bg-builtin);">range</span>(<span style="color: var(--clr-builtin); background-color: var(--bg-builtin);">len</span>(c_macro)-<span style="color: #de935f; font-weight: bold;">1</span>):
-    <span style="color: var(--clr-variable); background-color: var(--bg-variable);">t</span> = micro_basis[n*i:n*(i+<span style="color: #de935f; font-weight: bold;">1</span>)]
-    <span style="color: var(--clr-variable); background-color: var(--bg-variable);">c_multi</span>[n*i:n*(i+<span style="color: #de935f; font-weight: bold;">1</span>)] = (<span style="color: #de935f; font-weight: bold;">1</span>-t) * c_macro[i] + t * c_macro[i+<span style="color: #de935f; font-weight: bold;">1</span>]
+<pre class="src src-python"><code><span style="color: var(--clr-variable); background-color: var(--bg-variable);">c_macro</span> = sp.sparse.linalg.spsolve(A_macro.tocsr(),source)
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">c_multi</span> = np.zeros((N-1)* n)
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">x</span> = np.linspace(0,1,N)
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">x_multi</span> = np.linspace(0,1 , n*(N-1))
+<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">for</span> i <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">in</span> <span style="color: var(--clr-builtin); background-color: var(--bg-builtin);">range</span>(<span style="color: var(--clr-builtin); background-color: var(--bg-builtin);">len</span>(c_macro)-1):
+<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">t</span> = micro_basis[n*i:n*(i+1)]
+<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">c_multi</span>[n*i:n*(i+1)] = (1-t) * c_macro[i] + t * c_macro[i+1]
 plt.plot(x,c)
 plt.plot(x,c_macro)
 plt.plot(x_multi,c_multi)
@@ -1189,13 +1192,240 @@ plt.title(<span style="color: var(--clr-string); background-color: var(--bg-stri
 plt.xlabel(r<span style="color: var(--clr-string); background-color: var(--bg-string);">"$x$"</span>)
 plt.ylabel(r<span style="color: var(--clr-string); background-color: var(--bg-string);">"$c(x)$"</span>)
 plt.legend([<span style="color: var(--clr-string); background-color: var(--bg-string);">"macro"</span> , <span style="color: var(--clr-string); background-color: var(--bg-string);">"multiscale"</span>, <span style="color: var(--clr-string); background-color: var(--bg-string);">"multi_fine"</span> , <span style="color: var(--clr-string); background-color: var(--bg-string);">"reference"</span>])
-</pre>
+</code></pre>
 </div></div>
 
 
-<div id="org517e847" class="figure">
+<div id="org2320894" class="figure">
 <p><img src="images/multiscaleplot.svg" alt="multiscaleplot.svg" class="org-svg" />
 </p>
+</div>
+</div>
+</div>
+<div id="outline-container-orgfdebd32" class="outline-2">
+<h2 id="orgfdebd32"><span class="section-number-2">4.</span> 2D</h2>
+<div class="outline-text-2" id="text-4">
+<p>
+on a \(N \times M\) grid
+</p>
+</div>
+<div id="outline-container-orgd12541a" class="outline-3">
+<h3 id="orgd12541a"><span class="section-number-3">4.1.</span> Numerical Flux in 2D</h3>
+<div class="outline-text-3" id="text-4-1">
+\begin{align*}
+g_{x}(c_{i+1,j} , c_{ij}) &= - \Delta_y D(x_{i+ \frac{1}{2},j }) \frac{c_{i+1,j} - c_{ij}}{\Delta_x}\\
+g_y(c_{i,j+1} , c_{ij}) &= - \Delta_x D(x_{i,j+ \frac{1}{2}}) \frac{c_{i,j+1} - c_{ij}}{\Delta_y}
+\end{align*}
+<p>
+The boundary term can then be approximated by
+</p>
+\begin{align*}
+ - g_{x}(c_{i,j} , c_{i-1,j}) + g_{x}(c_{i+1,j} , c_{ij})  -  g_y(c_{i,j} , c_{i,j-1}) + g_y(c_{i,j+1} , c_{ij}) &= \Delta_x \Delta_y f(x_{ij})
+\end{align*}
+<p>
+One Dimensionalize the index
+</p>
+\begin{align*}
+ - g_{x}(c_{i + Nj} , c_{i-1 + Nj}) + g_{x}(c_{i+1 + Nj} , c_{i + Nj})  -  g_y(c_{i + Nj} , c_{i + N(j-1)}) + g_y(c_{i + N(j+1)} , c_{i + Nj}) &= \Delta_x \Delta_y f(x_{i + Nj})
+\end{align*}
+<p>
+plug in Flux Approach with \(\Delta_x = \Delta_y = h\)
+</p>
+\begin{align*}
+& \left(D(x-\frac{h}{2},y)c_{i+Nj}-D(x-\frac{h}{2},y)c_{i-1+Nj}\right)\\
+&-\left(D(x+\frac{h}{2},y)c_{i+1+Nj}-D(x+\frac{h}{2},y)c_{i+Nj}\right)\\
+&+\left(D(x,y-\frac{h}{2})c_{i+Nj}-D(x,y-\frac{h}{2})c_{i+N(j-1)}\right)\\
+&-\left(D(x,y+\frac{h}{2})c_{i+N(j+1)}-D(x,y+\frac{h}{2})c_{i+Nj}\right)
+\end{align*}
+
+\begin{align*}
+& D(x-\frac{h}{2},y)c_{i+Nj}-D(x-\frac{h}{2},y)c_{i-1+Nj}  \\
+&-D(x+\frac{h}{2},y)c_{i+1+Nj}+D(x+\frac{h}{2},y)c_{i+Nj}  \\
+& D(x,y-\frac{h}{2})c_{i+Nj}-D(x,y-\frac{h}{2})c_{i+N(j-1)}\\
+&-D(x,y+\frac{h}{2})c_{i+N(j+1)}+D(x,y+\frac{h}{2})c_{i+Nj}
+\end{align*}
+
+\begin{align*}
+& -D(x-\frac{h}{2},y)c_{i-1+Nj}  \\
+&-D(x+\frac{h}{2},y)c_{i+1+Nj}  \\
+& -D(x,y-\frac{h}{2})c_{i+N(j-1)}\\
+&-D(x,y+\frac{h}{2})c_{i+N(j+1)}\\
+\left(D(x-\frac{h}{2},y) + D(x+\frac{h}{2},y) + D(x,y-\frac{h}{2}) + D(x,y+\frac{h}{2}) \right) c_{i+Nj}
+\end{align*}
+
+<div class='org-src-wrapper'>
+<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_c9b2af6541964f9db43e2023cc69a07e>&#10697;</button>
+<script type='text/javascript'>
+var copyBtnbtn_c9b2af6541964f9db43e2023cc69a07e=document.querySelector('button[name=btn_c9b2af6541964f9db43e2023cc69a07e]');
+copyBtnbtn_c9b2af6541964f9db43e2023cc69a07e.addEventListener('click', function(event) {
+let res = copyTextToClipboard(`import os\n\n# Set this before importing NumPy/SciPy\nos.environ[\"OMP_NUM_THREADS\"] = \"16\"       # For MKL/OpenMP\nos.environ[\"OPENBLAS_NUM_THREADS\"] = \"16\"  # For OpenBLAS\nos.environ[\"MKL_NUM_THREADS\"] = \"16\"       # For Intel MKL\nos.environ[\"NUMEXPR_NUM_THREADS\"] = \"16\"   # Just in case\n\nimport numpy as np\nimport scipy\n\nepsilon =0.25\nD_1D = lambda x: 1 / (2+1.9 * np.cos(2 * np.pi* x / epsilon))\nD = lambda x,y: D_1D(x) * D_1D(y)\n`);copyBtnbtn_c9b2af6541964f9db43e2023cc69a07e.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_c9b2af6541964f9db43e2023cc69a07e.innerHTML = '&#10697;'}, 3000);
+});
+</script>
+</div><div class="org-src-container">
+<pre class="src src-python"><code><span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">import</span> os
+
+<span style="color: var(--clr-comment-delimiter); background-color: var(--bg-comment-delimiter);"># </span><span style="color: var(--clr-comment); background-color: var(--bg-comment);">Set this before importing NumPy/SciPy</span>
+os.<span style="color: var(--clr-variable); background-color: var(--bg-variable);">environ</span>[<span style="color: var(--clr-string); background-color: var(--bg-string);">"OMP_NUM_THREADS"</span>] = <span style="color: var(--clr-string); background-color: var(--bg-string);">"16"</span>       <span style="color: var(--clr-comment-delimiter); background-color: var(--bg-comment-delimiter);"># </span><span style="color: var(--clr-comment); background-color: var(--bg-comment);">For MKL/OpenMP</span>
+os.<span style="color: var(--clr-variable); background-color: var(--bg-variable);">environ</span>[<span style="color: var(--clr-string); background-color: var(--bg-string);">"OPENBLAS_NUM_THREADS"</span>] = <span style="color: var(--clr-string); background-color: var(--bg-string);">"16"</span>  <span style="color: var(--clr-comment-delimiter); background-color: var(--bg-comment-delimiter);"># </span><span style="color: var(--clr-comment); background-color: var(--bg-comment);">For OpenBLAS</span>
+os.<span style="color: var(--clr-variable); background-color: var(--bg-variable);">environ</span>[<span style="color: var(--clr-string); background-color: var(--bg-string);">"MKL_NUM_THREADS"</span>] = <span style="color: var(--clr-string); background-color: var(--bg-string);">"16"</span>       <span style="color: var(--clr-comment-delimiter); background-color: var(--bg-comment-delimiter);"># </span><span style="color: var(--clr-comment); background-color: var(--bg-comment);">For Intel MKL</span>
+os.<span style="color: var(--clr-variable); background-color: var(--bg-variable);">environ</span>[<span style="color: var(--clr-string); background-color: var(--bg-string);">"NUMEXPR_NUM_THREADS"</span>] = <span style="color: var(--clr-string); background-color: var(--bg-string);">"16"</span>   <span style="color: var(--clr-comment-delimiter); background-color: var(--bg-comment-delimiter);"># </span><span style="color: var(--clr-comment); background-color: var(--bg-comment);">Just in case</span>
+
+<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">import</span> numpy <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">as</span> np
+<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">import</span> scipy
+
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">epsilon</span> =0.25
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">D_1D</span> = <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">lambda</span> x: 1 / (2+1.9 * np.cos(2 * np.pi* x / epsilon))
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">D</span> = <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">lambda</span> x,y: D_1D(x) * D_1D(y)
+</code></pre>
+</div></div>
+
+<pre class="example">
+None
+</pre>
+
+<div class='org-src-wrapper'>
+<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_052910ae1bec436daf79ea07eb4f12a9>&#10697;</button>
+<script type='text/javascript'>
+var copyBtnbtn_052910ae1bec436daf79ea07eb4f12a9=document.querySelector('button[name=btn_052910ae1bec436daf79ea07eb4f12a9]');
+copyBtnbtn_052910ae1bec436daf79ea07eb4f12a9.addEventListener('click', function(event) {
+let res = copyTextToClipboard(`import seaborn as sns\nimport matplotlib.pyplot as plt\nimport numpy as np\nN = 1000\nM = 1000\nh = 1/N\nx = np.linspace(0.,1., N)\ny= np.linspace(0.,1., M)\ngrid = np.meshgrid(x,y)\ndiffusion = D(grid[0] , grid[1])\ndiffusion = np.reshape(diffusion , (N,M))\nsns.heatmap(diffusion)\n`);copyBtnbtn_052910ae1bec436daf79ea07eb4f12a9.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_052910ae1bec436daf79ea07eb4f12a9.innerHTML = '&#10697;'}, 3000);
+});
+</script>
+</div><div class="org-src-container">
+<pre class="src src-python"><code><span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">import</span> seaborn <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">as</span> sns
+<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">import</span> matplotlib.pyplot <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">as</span> plt
+<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">import</span> numpy <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">as</span> np
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">N</span> = 1000
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">M</span> = 1000
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">h</span> = 1/N
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">x</span> = np.linspace(0.,1., N)
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">y</span>= np.linspace(0.,1., M)
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">grid</span> = np.meshgrid(x,y)
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">diffusion</span> = D(grid[0] , grid[1])
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">diffusion</span> = np.reshape(diffusion , (N,M))
+sns.heatmap(diffusion)
+</code></pre>
+</div></div>
+
+
+<div id="orgccbabbb" class="figure">
+<p><img src="images/2D_Diffusion.png" alt="2D_Diffusion.png" />
+</p>
+</div>
+
+<div class='org-src-wrapper'>
+<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_85ee0db38ffc4408aaf259611dbbf7ac>&#10697;</button>
+<script type='text/javascript'>
+var copyBtnbtn_85ee0db38ffc4408aaf259611dbbf7ac=document.querySelector('button[name=btn_85ee0db38ffc4408aaf259611dbbf7ac]');
+copyBtnbtn_85ee0db38ffc4408aaf259611dbbf7ac.addEventListener('click', function(event) {
+let res = copyTextToClipboard(`import scipy as sp\nimport numpy as np\ndef assemble_matrix_2d(h , N,M):\n    main_diag = np.ones((N,M))\n    diag_north = np.zeros((N,M))\n    diag_south = np.zeros((N,M))\n    diag_east = np.zeros((N,M))\n    diag_west = np.zeros((N,M))\n    x_h = (np.arange(0,N-1) + 0.5) * h\n    y_h = (np.arange(0,M-1) + 0.5) * h\n    x = np.arange(0,N)* h\n    y = np.arange(0,M)* h\n    halfgrid_x = np.meshgrid(x_h,y,indexing=\"ij\")\n    halfgrid_y = np.meshgrid(x,y_h , indexing=\"ij\")\n    half_diffusion_x = D(halfgrid_x[0] , halfgrid_x[1])\n    half_diffusion_y = D(halfgrid_y[0] , halfgrid_y[1])\n    main_diag[1:-1,1:-1] =  half_diffusion_x[:-1,1:-1] + half_diffusion_x[1:,1:-1] + half_diffusion_y[1:-1,:-1] + half_diffusion_y[1:-1,1:]\n    main_diag = np.ravel(main_diag)\n\n    diag_north[1:-1,1:-1] = - half_diffusion_y[1:-1,:-1]\n    diag_north = diag_north.ravel()\n    diag_south[1:-1,1:-1] = - half_diffusion_y[1:-1,1:]\n    diag_south = diag_south.ravel()\n    diag_east[1:-1,1:-1] = - half_diffusion_x[1:,1:-1]\n    diag_east = diag_east.ravel()\n    diag_west[1:-1,1:-1] = - half_diffusion_x[:-1,1:-1]\n    diag_west = diag_west.ravel()\n\n    A = sp.sparse.spdiags([main_diag , diag_north , diag_south , diag_east , diag_west] , [0 , -N , N , 1 , -1] , N*M , M*N)\n    return A\n`);copyBtnbtn_85ee0db38ffc4408aaf259611dbbf7ac.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_85ee0db38ffc4408aaf259611dbbf7ac.innerHTML = '&#10697;'}, 3000);
+});
+</script>
+</div><div class="org-src-container">
+<pre class="src src-python"><code><span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">import</span> scipy <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">as</span> sp
+<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">import</span> numpy <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">as</span> np
+<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">def</span> <span style="color: var(--function-clr-name); background-color: var(--function-bg-name);">assemble_matrix_2d</span>(h , N,M):
+<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">main_diag</span> = np.ones((N,M))
+<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diag_north</span> = np.zeros((N,M))
+<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diag_south</span> = np.zeros((N,M))
+<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diag_east</span> = np.zeros((N,M))
+<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diag_west</span> = np.zeros((N,M))
+<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">x_h</span> = (np.arange(0,N-1) + 0.5) * h
+<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">y_h</span> = (np.arange(0,M-1) + 0.5) * h
+<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">x</span> = np.arange(0,N)* h
+<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">y</span> = np.arange(0,M)* h
+<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">halfgrid_x</span> = np.meshgrid(x_h,y,indexing=<span style="color: var(--clr-string); background-color: var(--bg-string);">"ij"</span>)
+<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">halfgrid_y</span> = np.meshgrid(x,y_h , indexing=<span style="color: var(--clr-string); background-color: var(--bg-string);">"ij"</span>)
+<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">half_diffusion_x</span> = D(halfgrid_x[0] , halfgrid_x[1])
+<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">half_diffusion_y</span> = D(halfgrid_y[0] , halfgrid_y[1])
+<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">main_diag</span>[1:-1,1:-1] =  half_diffusion_x[:-1,1:-1] + half_diffusion_x[1:,1:-1] + half_diffusion_y[1:-1,:-1] + half_diffusion_y[1:-1,1:]
+<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">main_diag</span> = np.ravel(main_diag)
+ 
+<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diag_north</span>[1:-1,1:-1] = - half_diffusion_y[1:-1,:-1]
+<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diag_north</span> = diag_north.ravel()
+<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diag_south</span>[1:-1,1:-1] = - half_diffusion_y[1:-1,1:]
+<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diag_south</span> = diag_south.ravel()
+<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diag_east</span>[1:-1,1:-1] = - half_diffusion_x[1:,1:-1]
+<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diag_east</span> = diag_east.ravel()
+<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diag_west</span>[1:-1,1:-1] = - half_diffusion_x[:-1,1:-1]
+<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diag_west</span> = diag_west.ravel()
+ 
+<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">A</span> = sp.sparse.spdiags([main_diag , diag_north , diag_south , diag_east , diag_west] , [0 , -N , N , 1 , -1] , N*M , M*N)
+<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">return</span> A
+</code></pre>
+</div></div>
+
+<pre class="example">
+None
+</pre>
+
+<div class='org-src-wrapper'>
+<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_ca335736e3484be896a9d82c16a97f3a>&#10697;</button>
+<script type='text/javascript'>
+var copyBtnbtn_ca335736e3484be896a9d82c16a97f3a=document.querySelector('button[name=btn_ca335736e3484be896a9d82c16a97f3a]');
+copyBtnbtn_ca335736e3484be896a9d82c16a97f3a.addEventListener('click', function(event) {
+let res = copyTextToClipboard(`A = assemble_matrix_2d(h , 10,10)\nplt.imshow(A.todense() )\n#plt.spy(A.T, markersize=1)\n`);copyBtnbtn_ca335736e3484be896a9d82c16a97f3a.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_ca335736e3484be896a9d82c16a97f3a.innerHTML = '&#10697;'}, 3000);
+});
+</script>
+</div><div class="org-src-container">
+<pre class="src src-python"><code><span style="color: var(--clr-variable); background-color: var(--bg-variable);">A</span> = assemble_matrix_2d(h , 10,10)
+plt.imshow(A.todense() )
+<span style="color: var(--clr-comment-delimiter); background-color: var(--bg-comment-delimiter);">#</span><span style="color: var(--clr-comment); background-color: var(--bg-comment);">plt.spy(A.T, markersize=1)</span>
+</code></pre>
+</div></div>
+
+
+<div id="orgdda92b2" class="figure">
+<p><img src="images/spy.svg" alt="spy.svg" class="org-svg" />
+</p>
+</div>
+
+<div class='org-src-wrapper'>
+<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_f8cb8308873c48388e5b4e7941882b4a>&#10697;</button>
+<script type='text/javascript'>
+var copyBtnbtn_f8cb8308873c48388e5b4e7941882b4a=document.querySelector('button[name=btn_f8cb8308873c48388e5b4e7941882b4a]');
+copyBtnbtn_f8cb8308873c48388e5b4e7941882b4a.addEventListener('click', function(event) {
+let res = copyTextToClipboard(`A = assemble_matrix_2d(h , N,M)\nfrom scipy.sparse.linalg import cg , spsolve\nf = np.zeros((N,M))\nf[1:-1 ,  1:-1]= h**2\nf = f.ravel()\nc = spsolve(A.tocsr(),f)\nc = c.reshape((N,M))\nsns.heatmap(c , cmap=\"magma\")\n`);copyBtnbtn_f8cb8308873c48388e5b4e7941882b4a.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_f8cb8308873c48388e5b4e7941882b4a.innerHTML = '&#10697;'}, 3000);
+});
+</script>
+</div><div class="org-src-container">
+<pre class="src src-python"><code><span style="color: var(--clr-variable); background-color: var(--bg-variable);">A</span> = assemble_matrix_2d(h , N,M)
+<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">from</span> scipy.sparse.linalg <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">import</span> cg , spsolve
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">f</span> = np.zeros((N,M))
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">f</span>[1:-1 ,  1:-1]= h**2
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">f</span> = f.ravel()
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">c</span> = spsolve(A.tocsr(),f)
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">c</span> = c.reshape((N,M))
+sns.heatmap(c , cmap=<span style="color: var(--clr-string); background-color: var(--bg-string);">"magma"</span>)
+</code></pre>
+</div></div>
+
+
+<div id="orgac52cff" class="figure">
+<p><img src="images/2d-result.png" alt="2d-result.png" />
+</p>
+</div>
+
+<div class='org-src-wrapper'>
+<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_e1b1ca5a1a5d4ca7a4ffe2d6fd82753c>&#10697;</button>
+<script type='text/javascript'>
+var copyBtnbtn_e1b1ca5a1a5d4ca7a4ffe2d6fd82753c=document.querySelector('button[name=btn_e1b1ca5a1a5d4ca7a4ffe2d6fd82753c]');
+copyBtnbtn_e1b1ca5a1a5d4ca7a4ffe2d6fd82753c.addEventListener('click', function(event) {
+let res = copyTextToClipboard(`fig = plt.figure()\nax = fig.add_subplot(111, projection='3d')\nax.plot_surface(grid[0] ,grid[1],c , cmap=\"magma\")\n`);copyBtnbtn_e1b1ca5a1a5d4ca7a4ffe2d6fd82753c.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_e1b1ca5a1a5d4ca7a4ffe2d6fd82753c.innerHTML = '&#10697;'}, 3000);
+});
+</script>
+</div><div class="org-src-container">
+<pre class="src src-python"><code><span style="color: var(--clr-variable); background-color: var(--bg-variable);">fig</span> = plt.figure()
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">ax</span> = fig.add_subplot(111, projection=<span style="color: var(--clr-string); background-color: var(--bg-string);">'3d'</span>)
+ax.plot_surface(grid[0] ,grid[1],c , cmap=<span style="color: var(--clr-string); background-color: var(--bg-string);">"magma"</span>)
+</code></pre>
+</div></div>
+
+
+<div id="orgf17c80d" class="figure">
+<p><img src="images/2d-surf.png" alt="2d-surf.png" />
+</p>
+</div>
 </div>
 </div>
 </div>

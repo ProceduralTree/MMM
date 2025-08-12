@@ -1,10 +1,5 @@
-:PROPERTIES:
-:GPTEL_MODEL: deepseek-r1:8b
-:GPTEL_BACKEND: Ollama
-:GPTEL_SYSTEM: You are a large language model living in Emacs and a helpful assistant. Respond concisely.
-:GPTEL_BOUNDS: nil
-:END:
 #+title: Fv
+#+startup: latexpreview
 #+latex_compiler: lualatex
 #+property: header-args:python :session :tangle fv.py :comments org :exports both
 
