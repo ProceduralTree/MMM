@@ -179,6 +179,57 @@ plt.legend(["macro" , "multiscale", "multi_fine" , "reference"])
 
 #+RESULTS:
 [[file:images/multiscaleplot.svg]]
+
+* 2D Multiscale
+#+begin_src python
+
+
+#+end_src
+
+#+begin_src python
+from scipy.sparse.linalg import cg , spsolve
+import numpy as np
+def solve_microscale(p0 , p1,resolution , D):
+    step = np.linspace(0.,1.,resolution)
+    hm = 1/resolution
+    range_x = lambda x: p0[0] + x * p1[0]
+    range_y = lambda x: p0[0] + x * p1[0]
+    D_micro = lambda x: D(range_x(x) , range_y(x))
+    A = assemble_matrix(resolution , step, hm , D_micro)
+    fm = np.ones_like(step) * hm
+    fm[0] = 0
+    phi = spsolve(A.tocsr(),fm)
+    return phi
+#+end_src
+
+#+RESULTS:
+: None
+
+#+begin_src python
+def microscale_basis(N , M , resolution , h , D):
+    micro_basis = np.zeros((N,M ,2, resolution))
+    for i in range(N):
+        for j in range(M):
+            p0 = np.array([x[i] + 0.5 * h, y[j] + 0.5 * h])
+            p_north = np.array([x[i+1]+ 0.5 * h, y[j]+ 0.5 * h])
+            p_east = np.array([x[i+1]+ 0.5 * h, y[j]+ 0.5 * h])
+            phi_north = solve_microscale(p0 , p_north ,resolution , D )
+            phi_east = solve_microscale(p0 , p_east ,resolution , D )
+            micro_basis[i,j,0,:] = phi_north
+            micro_basis[i,j,1,:] = phi_east
+    return micro_basis
+#+end_src
+
+#+RESULTS:
+: None
+
+#+begin_src python
+m = microscale_basis(10 ,10 , 10 , 1/100 , D_lin)
+#+end_src
+
+#+RESULTS:
+: None
+
 * Cleanup
 #+begin_src python :tangle src/fvsolver.py
 from typing import Callable
@@ -227,9 +278,6 @@ class FVSolver:
       pass
 
 #+end_src
-
-#+RESULTS:
-: None
 
 #+begin_src python
 from importlib import reload
