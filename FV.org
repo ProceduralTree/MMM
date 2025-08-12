@@ -66,7 +66,7 @@ Matrix Assembly
 #+begin_src python :session :results output graphics file :file images/A-sparsity.svg
 from scipy.sparse import spdiags
 import seaborn as sns
-def assemble_matrix(N ,x, h ):
+def assemble_matrix(N ,x, h, D ):
     diagp1 = np.zeros(N)
     diagp1[2:] = np.ones(N-2) * -1/h * D(x[1:-1] + 0.5*h)
     diagm1 = np.zeros(N)
@@ -75,7 +75,7 @@ def assemble_matrix(N ,x, h ):
     diag0[1:-1] *= 1/h * (D(x[1:-1]-0.5*h) + D(x[1:-1] + 0.5*h))
     A = spdiags([diagm1 , diag0 , diagp1] , np.array( [-1, 0, 1] ))
     return A
-A = assemble_matrix(N , x , h)
+A = assemble_matrix(10 , np.linspace(0,1.,10), h , D_1D)
 #plt.spy(A)
 sns.heatmap(A.todense())
 plt.title("Sparsity Patter of A")
@@ -129,9 +129,6 @@ plt.xlabel(r"$x$")
 plt.ylabel(r"$T(x)$")
 plt.title(r"Multiscale Transmission Coeficcients $T$")
 #+end_src
-
-#+RESULTS:
-[[file:images/T.svg]]
 
 #+begin_src python :results file graphics output :file A.png
 diagp1 = np.zeros(N)
@@ -234,6 +231,18 @@ import scipy
 epsilon =0.25
 D_1D = lambda x: 1 / (2+1.9 * np.cos(2 * np.pi* x / epsilon))
 D = lambda x,y: D_1D(x) * D_1D(y)
+
+alpha = 1.
+gamma = 0.001
+
+center = np.array([0.5,0.5])
+exp_kernel = lambda r: alpha * np.exp( - r / gamma)
+r = 0.2
+p = 100.0
+thicc = 0.02
+R = lambda x,y: np.maximum(0. , np.abs((np.abs(x -center[0])**p + np.abs(y - center[1])**p)**(1/p) - r) - thicc)
+D = lambda x,y:   np.maximum(0.0005 , 1. -  exp_kernel(R(x,y)))
+D_lin = lambda x,y: x
 #+end_src
 
 #+RESULTS:
@@ -249,7 +258,7 @@ h = 1/N
 x = np.linspace(0.,1., N)
 y= np.linspace(0.,1., M)
 grid = np.meshgrid(x,y)
-diffusion = D(grid[0] , grid[1])
+diffusion = D_lin(grid[0] , grid[1])
 diffusion = np.reshape(diffusion , (N,M))
 sns.heatmap(diffusion)
 #+end_src
@@ -286,15 +295,15 @@ def assemble_matrix_2d(h , N,M):
     diag_west[1:-1,1:-1] = - half_diffusion_x[:-1,1:-1]
     diag_west = diag_west.ravel()
 
-    A = sp.sparse.spdiags([main_diag , diag_north , diag_south , diag_east , diag_west] , [0 , -N , N , 1 , -1] , N*M , M*N)
-    return A
+    A = sp.sparse.spdiags([main_diag , diag_north , diag_south ,  diag_west , diag_east] , [0 , -N  , N , 1 , -1] , N*M , M*N)
+    return A.T
 #+end_src
 
 #+RESULTS:
 : None
 
 #+begin_src python :results file graphics output :file images/spy.svg
-A = assemble_matrix_2d(h , 10,10)
+A = assemble_matrix_2d(0.1 , 10,10)
 plt.imshow(A.todense() )
 #plt.spy(A.T, markersize=1)
 #+end_src
@@ -308,13 +317,21 @@ from scipy.sparse.linalg import cg , spsolve
 f = np.zeros((N,M))
 f[1:-1 ,  1:-1]= h**2
 f = f.ravel()
-c = spsolve(A.tocsr(),f)
-c = c.reshape((N,M))
-sns.heatmap(c , cmap="magma")
+c_vec = spsolve(A.tocsr(),f)
+c = c_vec.reshape((N,M))
+sns.heatmap(c, cmap="magma")
 #+end_src
 
 #+RESULTS:
 [[file:images/2d-result.png]]
+
+#+begin_src python :results output
+error =np.linalg.norm(A@c_vec - f)
+print(error)
+#+end_src
+
+#+RESULTS:
+: 5.617446002405277e-12
 
 #+begin_src python :results file graphics output :file images/2d-surf.png
 fig = plt.figure()
@@ -324,3 +341,52 @@ ax.plot_surface(grid[0] ,grid[1],c , cmap="magma")
 
 #+RESULTS:
 [[file:images/2d-surf.png]]
+* 2D Multiscale
+#+begin_src python
+
+
+#+end_src
+
+#+begin_src python
+from scipy.sparse.linalg import cg , spsolve
+import numpy as np
+def solve_microscale(p0 , p1,resolution , D):
+    step = np.linspace(0.,1.,resolution)
+    hm = 1/resolution
+    range_x = lambda x: p0[0] + x * p1[0]
+    range_y = lambda x: p0[0] + x * p1[0]
+    D_micro = lambda x: D(range_x(x) , range_y(x))
+    A = assemble_matrix(resolution , step, hm , D_micro)
+    fm = np.ones_like(step) * hm
+    fm[0] = 0
+    phi = spsolve(A.tocsr(),fm)
+    return phi
+#+end_src
+
+#+RESULTS:
+: None
+
+#+begin_src python
+def microscale_basis(N , M , resolution , h , D):
+    micro_basis = np.zeros((N,M ,2, resolution))
+    for i in range(N):
+        for j in range(M):
+            p0 = np.array([x[i] + 0.5 * h, y[j] + 0.5 * h])
+            p_north = np.array([x[i+1]+ 0.5 * h, y[j]+ 0.5 * h])
+            p_east = np.array([x[i+1]+ 0.5 * h, y[j]+ 0.5 * h])
+            phi_north = solve_microscale(p0 , p_north ,resolution , D )
+            phi_east = solve_microscale(p0 , p_east ,resolution , D )
+            micro_basis[i,j,0,:] = phi_north
+            micro_basis[i,j,1,:] = phi_east
+    return micro_basis
+#+end_src
+
+#+RESULTS:
+: None
+
+#+begin_src python
+m = microscale_basis(10 ,10 , 10 , 1/100 , D_lin)
+#+end_src
+
+#+RESULTS:
+: None
