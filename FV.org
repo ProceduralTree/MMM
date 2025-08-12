@@ -210,7 +210,7 @@ class FVSolver:
        self.D = D
        self.x = np.linspace(domain[0] , domain[1] , N)
        self._T = - 1/h * D((self.x[:-1] + self.x[1:]) * 0.5)
-       self.f = np.ones(N)
+       self.f = h* np.ones(N)
 
 
 
