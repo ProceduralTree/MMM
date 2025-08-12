@@ -29,23 +29,27 @@
 import numpy as np
 import scipy as sp
 import matplotlib.pyplot as plt
-epsilon = 0.1 * np.pi
+epsilon = 0.1 #* np.pi
 N = 10
 n = 100
 h = 1/(N-1)
 D = lambda x: 1 / (2+1.9 * np.cos(2 * np.pi* x / epsilon))
 x = np.linspace(0,1 ,N)
+x_highres = np.linspace(0,1 , 100000)
 c = np.zeros(N)
-f = np.ones(N) * h
+source = np.ones(N) * h
 # Boundary
-f[0] = 0
-f[-1] = 0
-plt.plot(D(x))
+source[0] = 0
+source[-1] = 0
+plt.plot(x , D(x))
+plt.plot(x_highres , D(x_highres))
+plt.legend([r"$D$ Sampled on the course grid" , r"$D$"])
+plt.title("Diffusion Coefficient")
 
 
 
 # #+RESULTS:
-# [[file:images/D.png]]
+# [[file:images/D.svg]]
 
 
 # Matrix Assembly
@@ -69,12 +73,13 @@ plt.title("Sparsity Patter of A")
 
 
 # #+RESULTS:
-# [[file:images/A-sparsity.png]]
+# [[file:images/A-sparsity.svg]]
 
 
 
-c = sp.sparse.linalg.spsolve(A.tocsr(),f)
+c = sp.sparse.linalg.spsolve(A.tocsr(),source)
 plt.plot(c)
+plt.title("Course Grid Solution")
 
 # Multiscale
 # In 1D
@@ -90,7 +95,6 @@ np.sum((c[1:] - c[:-1])/h * -D(x[1:]))
 
 
 # #+RESULTS:
-# : -0.545120640924482
 
 
 from scipy.sparse.linalg import spsolve
@@ -107,11 +111,14 @@ for i,x_m in enumerate(x):
     micro_basis[n * i:n*(i+1)] = phi
     T[i] =   hm * np.sum(((phi[1:] - phi[:-1])/hm)**2 * D(xm[:-1]))
 plt.plot(x,T)
+plt.xlabel(r"$x$")
+plt.ylabel(r"$T(x)$")
+plt.title(r"Multiscale Transmission Coeficcients $T$")
 
 
 
 # #+RESULTS:
-# [[file:images/T.png]]
+# [[file:images/T.svg]]
 
 
 diagp1 = np.zeros(N)
@@ -141,10 +148,10 @@ c_fine = sp.sparse.linalg.spsolve(A_fine.tocsr(),f_fine)
 
 
 # #+RESULTS:
-# [[file:images/fine.png]]
+# [[file:images/fine.svg]]
 
 
-c_macro = sp.sparse.linalg.spsolve(A_macro.tocsr(),f)
+c_macro = sp.sparse.linalg.spsolve(A_macro.tocsr(),source)
 c_multi = np.zeros((N-1)* n)
 x = np.linspace(0,1,N)
 x_multi = np.linspace(0,1 , n*(N-1))
@@ -155,4 +162,21 @@ plt.plot(x,c)
 plt.plot(x,c_macro)
 plt.plot(x_multi,c_multi)
 plt.plot(x_fine , c_fine)
+plt.title("Comparison Of Different Solvers")
+plt.xlabel(r"$x$")
+plt.ylabel(r"$c(x)$")
 plt.legend(["macro" , "multiscale", "multi_fine" , "reference"])
+
+
+
+# #+RESULTS:
+# : None
+
+
+from importlib import reload
+from src.fvsolver import FVSolver
+reload(src.fvsolver)
+fv = FVSolver(100 , 0.1 , lambda x: np.ones_like(x))
+fv.assemble_matrix()
+fv.set_boundary()
+c = fv.solve()
