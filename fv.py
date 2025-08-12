@@ -56,7 +56,7 @@ plt.title("Diffusion Coefficient")
 
 from scipy.sparse import spdiags
 import seaborn as sns
-def assemble_matrix(N ,x, h ):
+def assemble_matrix(N ,x, h, D ):
     diagp1 = np.zeros(N)
     diagp1[2:] = np.ones(N-2) * -1/h * D(x[1:-1] + 0.5*h)
     diagm1 = np.zeros(N)
@@ -65,7 +65,7 @@ def assemble_matrix(N ,x, h ):
     diag0[1:-1] *= 1/h * (D(x[1:-1]-0.5*h) + D(x[1:-1] + 0.5*h))
     A = spdiags([diagm1 , diag0 , diagp1] , np.array( [-1, 0, 1] ))
     return A
-A = assemble_matrix(N , x , h)
+A = assemble_matrix(10 , np.linspace(0,1.,10), h , D_1D)
 #plt.spy(A)
 sns.heatmap(A.todense())
 plt.title("Sparsity Patter of A")
@@ -85,7 +85,7 @@ plt.title("Course Grid Solution")
 # In 1D
 
 # \begin{align*}
-# T_{\pm } &= \int_{Q} D(x) \phi'_{\pm} (x)\, \mathrm{d}x
+# T_{\pm } &= -\int_{Q} D(x) (\phi'_{\pm} (x))^2\, \mathrm{d}x
 # \end{align*}
 
 # calculate c integral
@@ -114,12 +114,6 @@ plt.plot(x,T)
 plt.xlabel(r"$x$")
 plt.ylabel(r"$T(x)$")
 plt.title(r"Multiscale Transmission Coeficcients $T$")
-
-
-
-# #+RESULTS:
-# [[file:images/T.svg]]
-
 
 diagp1 = np.zeros(N)
 diagp1[2:] = np.ones(N-2) * -1* T[1:-1]
@@ -169,14 +163,264 @@ plt.legend(["macro" , "multiscale", "multi_fine" , "reference"])
 
 
 
+# #+name: Assemble 2D Matrix
+
+   def assemble_matrix(self)->None:
+       main_diag = np.ones((  self.N,self.M))
+       diag_north = np.zeros((self.N,self.M))
+       diag_south = np.zeros((self.N,self.M))
+       diag_east = np.zeros(( self.N,self.M))
+       diag_west = np.zeros(( self.N,self.M))
+       main_diag[1:-1,1:-1] =  -1* (self._T_x[:-1,1:-1] + self._T_x[1:,1:-1] + self._T_y[1:-1,:-1] + self._T_y[1:-1,1:])
+       main_diag = np.ravel(main_diag)
+
+       diag_north[1:-1,1:-1] =  self._T_y[1:-1,:-1]
+       diag_south[1:-1,1:-1] =  self._T_y[1:-1,1:]
+       diag_east[1:-1,1:-1] =   self._T_x[1:,1:-1]
+       diag_west[1:-1,1:-1] =   self._T_x[:-1,1:-1]
+       diag_north = diag_north.ravel()
+       diag_south = diag_south.ravel()
+       diag_west = diag_west.ravel()
+       diag_east = diag_east.ravel()
+
+       A = sp.sparse.spdiags([main_diag , diag_north , diag_south ,  diag_west , diag_east] , [0 , -self.N  , self.N , 1 , -1] , self.N*self.M , self.M*self.N)
+       self._A = A.T
+
+# Numerical Flux in 2D
+# \begin{align*}
+# g_{x}(c_{i+1,j} , c_{ij}) &= - \Delta_y D(x_{i+ \frac{1}{2},j }) \frac{c_{i+1,j} - c_{ij}}{\Delta_x}\\
+# g_y(c_{i,j+1} , c_{ij}) &= - \Delta_x D(x_{i,j+ \frac{1}{2}}) \frac{c_{i,j+1} - c_{ij}}{\Delta_y} \\
+# g_x(c_{i+1j} , c_{ij}) &=   T^x_{i+1j} \left( c_{i+1j} - c_{ij}  \right)\\
+# g_y(c_{ij+1} , c_{ij}) &=   T^y_{ij+1} \left( c_{i+1j} - c_{ij}  \right)
+# \end{align*}
+# The boundary term can then be approximated by
+# \begin{align*}
+#  - g_{x}(c_{i,j} , c_{i-1,j}) + g_{x}(c_{i+1,j} , c_{ij})  -  g_y(c_{i,j} , c_{i,j-1}) + g_y(c_{i,j+1} , c_{ij}) &= \Delta_x \Delta_y f(x_{ij})
+# \end{align*}
+# One Dimensionalize the index
+# \begin{align*}
+#  - g_{x}(c_{i + Nj} , c_{i-1 + Nj}) + g_{x}(c_{i+1 + Nj} , c_{i + Nj})  -  g_y(c_{i + Nj} , c_{i + N(j-1)}) + g_y(c_{i + N(j+1)} , c_{i + Nj}) &= \Delta_x \Delta_y f(x_{i + Nj})
+# \end{align*}
+# plug in Flux Approach with \(\Delta_x = \Delta_y = h\)
+# \begin{align*}
+# & \left(D(x-\frac{h}{2},y)c_{i+Nj}-D(x-\frac{h}{2},y)c_{i-1+Nj}\right)\\
+# &-\left(D(x+\frac{h}{2},y)c_{i+1+Nj}-D(x+\frac{h}{2},y)c_{i+Nj}\right)\\
+# &+\left(D(x,y-\frac{h}{2})c_{i+Nj}-D(x,y-\frac{h}{2})c_{i+N(j-1)}\right)\\
+# &-\left(D(x,y+\frac{h}{2})c_{i+N(j+1)}-D(x,y+\frac{h}{2})c_{i+Nj}\right)
+# \end{align*}
+
+# \begin{align*}
+# & D(x-\frac{h}{2},y)c_{i+Nj}-D(x-\frac{h}{2},y)c_{i-1+Nj}  \\
+# &-D(x+\frac{h}{2},y)c_{i+1+Nj}+D(x+\frac{h}{2},y)c_{i+Nj}  \\
+# & D(x,y-\frac{h}{2})c_{i+Nj}-D(x,y-\frac{h}{2})c_{i+N(j-1)}\\
+# &-D(x,y+\frac{h}{2})c_{i+N(j+1)}+D(x,y+\frac{h}{2})c_{i+Nj}
+# \end{align*}
+
+# \begin{align*}
+# & -D(x-\frac{h}{2},y)c_{i-1+Nj}  \\
+# &-D(x+\frac{h}{2},y)c_{i+1+Nj}  \\
+# & -D(x,y-\frac{h}{2})c_{i+N(j-1)}\\
+# &-D(x,y+\frac{h}{2})c_{i+N(j+1)}\\
+# \left(D(x-\frac{h}{2},y) + D(x+\frac{h}{2},y) + D(x,y-\frac{h}{2}) + D(x,y+\frac{h}{2}) \right) c_{i+Nj}
+# \end{align*}
+
+
+import os
+
+# Set this before importing NumPy/SciPy
+os.environ["OMP_NUM_THREADS"] = "16"       # For MKL/OpenMP
+os.environ["OPENBLAS_NUM_THREADS"] = "16"  # For OpenBLAS
+os.environ["MKL_NUM_THREADS"] = "16"       # For Intel MKL
+os.environ["NUMEXPR_NUM_THREADS"] = "16"   # Just in case
+
+import numpy as np
+import scipy
+
+epsilon =0.25
+D_1D = lambda x: 1 / (2+1.9 * np.cos(2 * np.pi* x / epsilon))
+D = lambda x,y: D_1D(x) * D_1D(y)
+
+alpha = 1.
+gamma = 0.001
+
+center = np.array([0.5,0.5])
+exp_kernel = lambda r: alpha * np.exp( - r / gamma)
+r = 0.2
+p = 100.0
+thicc = 0.02
+R = lambda x,y: np.maximum(0. , np.abs((np.abs(x -center[0])**p + np.abs(y - center[1])**p)**(1/p) - r) - thicc)
+D = lambda x,y:   np.maximum(0.0005 , 1. -  exp_kernel(R(x,y)))
+D_lin = lambda x,y: x
+
+
+
+# #+RESULTS:
+# : None
+
+
+import seaborn as sns
+import matplotlib.pyplot as plt
+import numpy as np
+N = 1000
+M = 1000
+x = np.linspace(0.,1., N)
+y= np.linspace(0.,1., M)
+grid = np.meshgrid(x,y)
+diffusion = D(grid[0] , grid[1])
+diffusion = np.reshape(diffusion , (N,M))
+sns.heatmap(diffusion)
+
+
+
+# #+RESULTS:
+# [[file:images/2D_Diffusion.png]]
+
+
+
+reload(src.fvsolver)
+from src.fvsolver import FVSolver2D
+smol_fv = FVSolver2D(10,10,D)
+smol_fv.assemble_matrix()
+sns.heatmap(smol_fv._A.todense())
+#plt.spy(A.T, markersize=1)
+
+
+
+# #+RESULTS:
+# [[file:images/spy.svg]]
+
+
+fv2D = FVSolver2D(N,M,D)
+fv2D.assemble_matrix()
+fv2D.set_boundary()
+c = fv2D.solve()
+sns.heatmap(c, cmap="magma")
+
+
+
+# #+RESULTS:
+# [[file:images/2d-result.png]]
+
+
+error =np.linalg.norm(A@c_vec - f)
+print(error)
+
+
+
+# #+RESULTS:
+# : 1.025105313314805e-12
+
+
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
+ax.plot_surface(grid[0] ,grid[1],c , cmap="magma")
+
+# 2D Multiscale
+
+
+from scipy.sparse.linalg import cg , spsolve
+import numpy as np
+def solve_microscale(p0 , p1,resolution , D):
+    step = np.linspace(0.,1.,resolution)
+    hm = 1/resolution
+    range_x = lambda x: p0[0] + x * p1[0]
+    range_y = lambda x: p0[0] + x * p1[0]
+    D_micro = lambda x: D(range_x(x) , range_y(x))
+    A = assemble_matrix(resolution , step, hm , D_micro)
+    fm = np.ones_like(step) * hm
+    fm[0] = 0
+    phi = spsolve(A.tocsr(),fm)
+    return phi
+
+
+
+# #+RESULTS:
+# : None
+
+
+def microscale_basis(N , M , resolution , h , D):
+    micro_basis = np.zeros((N,M ,2, resolution))
+    for i in range(N):
+        for j in range(M):
+            p0 = np.array([x[i] + 0.5 * h, y[j] + 0.5 * h])
+            p_north = np.array([x[i+1]+ 0.5 * h, y[j]+ 0.5 * h])
+            p_east = np.array([x[i+1]+ 0.5 * h, y[j]+ 0.5 * h])
+            phi_north = solve_microscale(p0 , p_north ,resolution , D )
+            phi_east = solve_microscale(p0 , p_east ,resolution , D )
+            micro_basis[i,j,0,:] = phi_north
+            micro_basis[i,j,1,:] = phi_east
+    return micro_basis
+
+
+
+# #+RESULTS:
+# : None
+
+
+m = microscale_basis(10 ,10 , 10 , 1/100 , D_lin)
+
+# Cleanup
+# #+name: Assemble Matrix
+
+   def assemble_matrix(self)-> None:
+      diagp1 = np.zeros(self.N)
+      diagp1[2:] =  self._T[1:]
+      diagm1 = np.zeros(self.N)
+      diagm1[:-2] =  self._T[:-1]
+      diag0 = np.ones(self.N)
+      diag0[1:-1] = -1 * (self._T[1:] + self._T[:-1])
+      self._A = spdiags([diagm1 , diag0 , diagp1] , np.array( [-1, 0, 1] ))
+
+
+
+# #+name: Microscale Transmissions
+
+   def set_multiscale_transmissions(self, resolution)->NDArray[np.float64]:
+      micro_basis = np.zeros((self.N -1)*resolution)
+      for i in range(self.N -1):
+         micro_fv = FVSolver(resolution , self.D , domain=(self.x[i] , self.x[i+1]))
+         micro_fv.set_boundary(bc=(0.,1.))
+         micro_fv.assemble_matrix()
+         phi = micro_fv.solve()
+
+         micro_basis[resolution * i:resolution*(i+1)] = phi
+         hm = micro_fv.h
+         self._T[i] = -hm * np.sum(((phi[1:] - phi[:-1])/hm)**2 * self.D(micro_fv.x[:-1]))
+      return micro_basis
+
+
+
 # #+RESULTS:
 # : None
 
 
 from importlib import reload
+import src.fvsolver
 from src.fvsolver import FVSolver
 reload(src.fvsolver)
-fv = FVSolver(100 , 0.1 , lambda x: np.ones_like(x))
+epsilon = 0.1
+D = lambda x: 1 / (2+1.9 * np.cos(2 * np.pi* x / epsilon))
+fv = FVSolver(10 ,  D)
 fv.assemble_matrix()
 fv.set_boundary()
-c = fv.solve()
+c_course = fv.solve()
+plt.plot(c_course)
+
+
+
+# #+RESULTS:
+# [[file:images/course1D.png]]
+
+
+mb = fv.set_multiscale_transmissions(100)
+plt.plot(mb)
+
+
+
+# #+RESULTS:
+# [[file:images/msbasis.png]]
+
+
+fv.assemble_matrix()
+c_multi = fv.solve()
+plt.plot(c_multi)
