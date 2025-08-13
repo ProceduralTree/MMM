@@ -48,9 +48,6 @@ plt.title("Diffusion Coefficient")
 
 
 
-# #+RESULTS:
-# [[file:images/D.svg]]
-
 
 # Matrix Assembly
 
@@ -161,6 +158,91 @@ plt.xlabel(r"$x$")
 plt.ylabel(r"$c(x)$")
 plt.legend(["macro" , "multiscale", "multi_fine" , "reference"])
 
+# Cleanup
+# #+name: Assemble Matrix
+
+   def assemble_matrix(self)-> None:
+      diagp1 = np.zeros(self.N)
+      diagp1[2:] =  self._T[1:]
+      diagm1 = np.zeros(self.N)
+      diagm1[:-2] =  self._T[:-1]
+      diag0 = np.ones(self.N)
+      diag0[1:-1] = -1 * (self._T[1:] + self._T[:-1])
+      self._A = spdiags([diagm1 , diag0 , diagp1] , np.array( [-1, 0, 1] ))
+
+
+
+# #+name: Microscale Transmissions
+
+   def set_multiscale_transmissions(self, resolution)->NDArray[np.float64]:
+      micro_basis = np.zeros((self.N -1)*resolution)
+      for i in range(self.N -1):
+         micro_fv = FVSolver(resolution , self.D , domain=(self.x[i] , self.x[i+1]))
+         micro_fv.set_boundary(bc=(0.,1.))
+         micro_fv.assemble_matrix()
+         phi = micro_fv.solve()
+
+         micro_basis[resolution * i:resolution*(i+1)] = phi
+         hm = micro_fv.h
+         self._T[i] = -hm * np.sum(((phi[1:] - phi[:-1])/hm)**2 * self.D(micro_fv.x[:-1]))
+      return micro_basis
+
+
+
+# #+RESULTS:
+# : None
+
+
+from importlib import reload
+import src.fvsolver
+from src.fvsolver import FVSolver
+reload(src.fvsolver)
+epsilon = 0.1
+D = lambda x: 1 / (2+1.9 * np.cos(2 * np.pi* x / epsilon))
+fv = FVSolver(10 ,  D)
+fv.assemble_matrix()
+fv.set_boundary()
+c_course = fv.solve()
+plt.plot(c_course)
+
+mb = fv.set_multiscale_transmissions(100)
+plt.plot(mb)
+
+
+
+# #+RESULTS:
+# [[file:images/msbasis.png]]
+
+
+fv.assemble_matrix()
+c_multi = fv.solve()
+plt.plot(c_multi)
+
+
+
+# #+name: Init 2D
+
+   def __init__(self ,
+                N:int,
+                M:int ,
+                D :Callable  ,
+                domain=np.array([[0.,0.] , [1.,1.]]),
+                )->None:
+      self.h_x = (domain[1,0] - domain[0,0]) / N
+      self.h_y = (domain[1,1] - domain[0,1]) / M
+      self.x = np.linspace(domain[0,0] , domain[1,0] , N)
+      self.y = np.linspace(domain[0,1] , domain[1,1] , M)
+      x_h = self.x[:-1] + 0.5 * self.h_x
+      y_h = self.y[:-1] + 0.5 * self.h_y
+      halfgrid_x = np.meshgrid(x_h,self.y,indexing="ij")
+      halfgrid_y = np.meshgrid(self.x,y_h , indexing="ij")
+      self._T_x = -self.h_y/self.h_x * D(halfgrid_x[0] , halfgrid_x[1])
+      self._T_y = -self.h_x/self.h_y * D(halfgrid_y[0] , halfgrid_y[1])
+      self.N = N
+      self.M = M
+      self.D = D
+      self.f = self.h_x * self.h_y* np.ones((N, M))
+
 
 
 # #+name: Assemble 2D Matrix
@@ -246,10 +328,10 @@ gamma = 0.001
 center = np.array([0.5,0.5])
 exp_kernel = lambda r: alpha * np.exp( - r / gamma)
 r = 0.2
-p = 100.0
+p = 2.0
 thicc = 0.02
 R = lambda x,y: np.maximum(0. , np.abs((np.abs(x -center[0])**p + np.abs(y - center[1])**p)**(1/p) - r) - thicc)
-D = lambda x,y:   np.maximum(0.0005 , 1. -  exp_kernel(R(x,y)))
+#D = lambda x,y:   np.maximum(0.0005 , 1. -  exp_kernel(R(x,y)))
 D_lin = lambda x,y: x
 
 
@@ -261,8 +343,8 @@ D_lin = lambda x,y: x
 import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
-N = 1000
-M = 1000
+N = 100
+M = 100
 x = np.linspace(0.,1., N)
 y= np.linspace(0.,1., M)
 grid = np.meshgrid(x,y)
@@ -281,13 +363,22 @@ reload(src.fvsolver)
 from src.fvsolver import FVSolver2D
 smol_fv = FVSolver2D(10,10,D)
 smol_fv.assemble_matrix()
-sns.heatmap(smol_fv._A.todense())
+plt.imshow(smol_fv._A.todense())
 #plt.spy(A.T, markersize=1)
 
 
 
 # #+RESULTS:
 # [[file:images/spy.svg]]
+
+
+fv2D = FVSolver2D(N,M,D)
+sns.heatmap(fv2D._T_y, cmap="magma")
+
+
+
+# #+RESULTS:
+# [[file:images/_T_x.png]]
 
 
 fv2D = FVSolver2D(N,M,D)
@@ -316,111 +407,45 @@ ax = fig.add_subplot(111, projection='3d')
 ax.plot_surface(grid[0] ,grid[1],c , cmap="magma")
 
 # 2D Multiscale
+# #+name:2D Microscale Transmissions
 
+   def set_multiscale_transmissions(self, resolution):
+      microscale_basis_x = np.zeros((self._T_x.shape[0] , self._T_x.shape[1] , resolution))
+      microscale_basis_y = np.zeros((self._T_y.shape[0] , self._T_y.shape[1] , resolution))
+      for i in range(self._T_x.shape[0]):
+         for j in range(self._T_x.shape[1]):
+            #Do mircroscale x
+            D_micro = lambda x: self.D(x, self.y[j])
+            fv_micro = FVSolver(resolution , D_micro, domain=(self.x[i] , self.x[i+1]))
+            fv_micro.assemble_matrix()
+            fv_micro.set_boundary(bc=(0.,1.))
+            phi =fv_micro.solve()
+            microscale_basis_x[i,j,:] = phi
+            self._T_x[i,j] =   -fv_micro.h * self.h_y* np.sum(((phi[1:] - phi[:-1])/fv_micro.h)**2 * D_micro(fv_micro.x[:-1]))
 
-from scipy.sparse.linalg import cg , spsolve
-import numpy as np
-def solve_microscale(p0 , p1,resolution , D):
-    step = np.linspace(0.,1.,resolution)
-    hm = 1/resolution
-    range_x = lambda x: p0[0] + x * p1[0]
-    range_y = lambda x: p0[0] + x * p1[0]
-    D_micro = lambda x: D(range_x(x) , range_y(x))
-    A = assemble_matrix(resolution , step, hm , D_micro)
-    fm = np.ones_like(step) * hm
-    fm[0] = 0
-    phi = spsolve(A.tocsr(),fm)
-    return phi
+      for i in range(self._T_y.shape[0]):
+         for j in range(self._T_y.shape[1]):
+            # Do microscale y
+            D_micro = lambda y: self.D(self.x[i], y)
+            fv_micro = FVSolver(resolution , D_micro, domain=(self.y[j] , self.y[j+1]))
+            fv_micro.assemble_matrix()
+            fv_micro.set_boundary(bc=(0.,1.))
+            phi =fv_micro.solve()
+            microscale_basis_y[i,j,:] = phi
+            self._T_y[i,j] =   -fv_micro.h * self.h_x  * np.sum(((phi[1:] - phi[:-1])/fv_micro.h)**2 * D_micro(fv_micro.x[:-1]))
 
-
-
-# #+RESULTS:
-# : None
-
-
-def microscale_basis(N , M , resolution , h , D):
-    micro_basis = np.zeros((N,M ,2, resolution))
-    for i in range(N):
-        for j in range(M):
-            p0 = np.array([x[i] + 0.5 * h, y[j] + 0.5 * h])
-            p_north = np.array([x[i+1]+ 0.5 * h, y[j]+ 0.5 * h])
-            p_east = np.array([x[i+1]+ 0.5 * h, y[j]+ 0.5 * h])
-            phi_north = solve_microscale(p0 , p_north ,resolution , D )
-            phi_east = solve_microscale(p0 , p_east ,resolution , D )
-            micro_basis[i,j,0,:] = phi_north
-            micro_basis[i,j,1,:] = phi_east
-    return micro_basis
+      return microscale_basis_x , microscale_basis_y
 
 
 
-# #+RESULTS:
-# : None
+# #+RESULTS: 2D Microscale Transmissions
 
 
-m = microscale_basis(10 ,10 , 10 , 1/100 , D_lin)
-
-# Cleanup
-# #+name: Assemble Matrix
-
-   def assemble_matrix(self)-> None:
-      diagp1 = np.zeros(self.N)
-      diagp1[2:] =  self._T[1:]
-      diagm1 = np.zeros(self.N)
-      diagm1[:-2] =  self._T[:-1]
-      diag0 = np.ones(self.N)
-      diag0[1:-1] = -1 * (self._T[1:] + self._T[:-1])
-      self._A = spdiags([diagm1 , diag0 , diagp1] , np.array( [-1, 0, 1] ))
-
-
-
-# #+name: Microscale Transmissions
-
-   def set_multiscale_transmissions(self, resolution)->NDArray[np.float64]:
-      micro_basis = np.zeros((self.N -1)*resolution)
-      for i in range(self.N -1):
-         micro_fv = FVSolver(resolution , self.D , domain=(self.x[i] , self.x[i+1]))
-         micro_fv.set_boundary(bc=(0.,1.))
-         micro_fv.assemble_matrix()
-         phi = micro_fv.solve()
-
-         micro_basis[resolution * i:resolution*(i+1)] = phi
-         hm = micro_fv.h
-         self._T[i] = -hm * np.sum(((phi[1:] - phi[:-1])/hm)**2 * self.D(micro_fv.x[:-1]))
-      return micro_basis
-
-
-
-# #+RESULTS:
-# : None
-
-
-from importlib import reload
-import src.fvsolver
-from src.fvsolver import FVSolver
 reload(src.fvsolver)
-epsilon = 0.1
-D = lambda x: 1 / (2+1.9 * np.cos(2 * np.pi* x / epsilon))
-fv = FVSolver(10 ,  D)
-fv.assemble_matrix()
-fv.set_boundary()
-c_course = fv.solve()
-plt.plot(c_course)
-
-
-
-# #+RESULTS:
-# [[file:images/course1D.png]]
-
-
-mb = fv.set_multiscale_transmissions(100)
-plt.plot(mb)
-
-
-
-# #+RESULTS:
-# [[file:images/msbasis.png]]
-
-
-fv.assemble_matrix()
-c_multi = fv.solve()
-plt.plot(c_multi)
+from src.fvsolver import FVSolver2D
+fv2D = FVSolver2D(100,50,D)
+mx,my = fv2D.set_multiscale_transmissions(100)
+fv2D.assemble_matrix()
+fv2D.set_boundary()
+c = fv2D.solve()
+sns.heatmap(c, cmap="magma")

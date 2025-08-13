@@ -59,9 +59,6 @@ plt.legend([r"$D$ Sampled on the course grid" , r"$D$"])
 plt.title("Diffusion Coefficient")
 #+end_src
 
-#+RESULTS:
-[[file:images/D.svg]]
-
 
 Matrix Assembly
 #+begin_src python :session :results output graphics file :file images/A-sparsity.svg
@@ -180,14 +177,121 @@ plt.legend(["macro" , "multiscale", "multi_fine" , "reference"])
 #+RESULTS:
 [[file:images/multiscaleplot.svg]]
 
+* Cleanup
+#+name: Assemble Matrix
+#+begin_src python :eval never
+   def assemble_matrix(self)-> None:
+      diagp1 = np.zeros(self.N)
+      diagp1[2:] =  self._T[1:]
+      diagm1 = np.zeros(self.N)
+      diagm1[:-2] =  self._T[:-1]
+      diag0 = np.ones(self.N)
+      diag0[1:-1] = -1 * (self._T[1:] + self._T[:-1])
+      self._A = spdiags([diagm1 , diag0 , diagp1] , np.array( [-1, 0, 1] ))
+#+end_src
+
+#+name: Microscale Transmissions
+#+begin_src python :eval never
+   def set_multiscale_transmissions(self, resolution)->NDArray[np.float64]:
+      micro_basis = np.zeros((self.N -1)*resolution)
+      for i in range(self.N -1):
+         micro_fv = FVSolver(resolution , self.D , domain=(self.x[i] , self.x[i+1]))
+         micro_fv.set_boundary(bc=(0.,1.))
+         micro_fv.assemble_matrix()
+         phi = micro_fv.solve()
+
+         micro_basis[resolution * i:resolution*(i+1)] = phi
+         hm = micro_fv.h
+         self._T[i] = -hm * np.sum(((phi[1:] - phi[:-1])/hm)**2 * self.D(micro_fv.x[:-1]))
+      return micro_basis
+#+end_src
+
+
+
+#+begin_src python :tangle src/fvsolver.py :noweb no-export
+from typing import Callable
+import numpy as np
+from scipy.sparse import spdiags
+from scipy.sparse.linalg import spsolve
+from numpy.typing import NDArray
+
+class FVSolver:
+   N : int
+   h : np.float64
+   x : NDArray[np.float64]
+   D : Callable
+   f : NDArray[np.float64]
+   c : NDArray[np.float64]
+
+   _T : NDArray[np.float64]
+
+   def __init__(self , N :int , D :Callable  , domain=(0.,1.))->None:
+       self.h = (domain[1] - domain[0]) / N
+       self.N = N
+       self.D = D
+       self.x = np.linspace(domain[0] , domain[1] , N)
+       self._T =  -1/self.h * D((self.x[:-1] + self.x[1:]) * 0.5)
+       self.f = self.h* np.ones(N)
+
+<<Assemble Matrix>>
+
+
+   def set_boundary(self , bc=(0.,0.)):
+      self.f[0] = bc[0]
+      self.f[-1] = bc[1]
+
+
+   def solve(self):
+      self.c = spsolve(self._A.tocsr() , self.f)
+      return self.c
+
+<<Microscale Transmissions>>
+#+end_src
+
+#+RESULTS:
+: None
+
+#+begin_src python :results output file graphics :file images/course1D.png
+from importlib import reload
+import src.fvsolver
+from src.fvsolver import FVSolver
+reload(src.fvsolver)
+epsilon = 0.1
+D = lambda x: 1 / (2+1.9 * np.cos(2 * np.pi* x / epsilon))
+fv = FVSolver(10 ,  D)
+fv.assemble_matrix()
+fv.set_boundary()
+c_course = fv.solve()
+plt.plot(c_course)
+#+end_src
+
+#+begin_src python :results output file graphics :file images/msbasis.png
+mb = fv.set_multiscale_transmissions(100)
+plt.plot(mb)
+#+end_src
+
+#+RESULTS:
+[[file:images/msbasis.png]]
+
+#+begin_src python :results output file graphics :file images/multi1D.png
+fv.assemble_matrix()
+c_multi = fv.solve()
+plt.plot(c_multi)
+#+end_src
+
+#+RESULTS:
+[[file:images/multi1D.png]]
 * 2D
 #+begin_src python :tangle src/fvsolver.py :noweb no-export
 import scipy as sp
+import numpy as np
 class FVSolver2D:
    N : int
    M : int
    h_x : np.float64
    h_y : np.float64
+   x : NDArray[np.float64]
+   y : NDArray[np.float64]
    D : Callable
    f : NDArray[np.float64]
    c : NDArray[np.float64]
@@ -195,6 +299,26 @@ class FVSolver2D:
    _T_x : NDArray[np.float64]
    _T_y : NDArray[np.float64]
 
+<<Init 2D>>
+
+<<Assemble 2D Matrix>>
+
+   def set_boundary(self , bc=(0.,0. , 0. , 0.)):
+      self.f[ 0,1:-1]= bc[0]
+      self.f[-1,1:-1]= bc[1]
+      self.f[1:-1, 0]= bc[2]
+      self.f[1:-1,-1]= bc[3]
+
+
+   def solve(self):
+      self.c = spsolve(self._A.tocsr() , self.f.ravel()).reshape((self.N,self.M))
+      return self.c
+
+<<2D Microscale Transmissions>>
+#+end_src
+
+#+name: Init 2D
+#+begin_src python
    def __init__(self ,
                 N:int,
                 M:int ,
@@ -216,20 +340,6 @@ class FVSolver2D:
       self.D = D
       self.f = self.h_x * self.h_y* np.ones((N, M))
 
-<<Assemble 2D Matrix>>
-
-   def set_boundary(self , bc=(0.,0. , 0. , 0.)):
-      self.f[ 0,1:-1]= bc[0]
-      self.f[-1,1:-1]= bc[1]
-      self.f[1:-1, 1]= bc[2]
-      self.f[1:-1,-1]= bc[3]
-
-
-   def solve(self):
-      self.c = spsolve(self._A.tocsr() , self.f.ravel()).reshape((self.N,self.M))
-      return self.c
-
-<<2D Microscale Transmissions>>
 #+end_src
 
 #+name: Assemble 2D Matrix
@@ -394,155 +504,60 @@ ax.plot_surface(grid[0] ,grid[1],c , cmap="magma")
 #+RESULTS:
 [[file:images/2d-surf.png]]
 * 2D Multiscale
-
-#+begin_src python
-from scipy.sparse.linalg import cg , spsolve
-import numpy as np
-def solve_microscale(p0 , p1,resolution , D):
-    step = np.linspace(0.,1.,resolution)
-    hm = 1/resolution
-    range_x = lambda x: p0[0] + x * p1[0]
-    range_y = lambda x: p0[0] + x * p1[0]
-    D_micro = lambda x: D(range_x(x) , range_y(x))
-    A = assemble_matrix(resolution , step, hm , D_micro)
-    fm = np.ones_like(step) * hm
-    fm[0] = 0
-    phi = spsolve(A.tocsr(),fm)
-    return phi
-#+end_src
-
-#+RESULTS:
-: None
-
-#+begin_src python
-def microscale_basis(N , M , resolution , h , D):
-    micro_basis = np.zeros((N,M ,2, resolution))
-    for i in range(N):
-        for j in range(M):
-            p0 = np.array([x[i] + 0.5 * h, y[j] + 0.5 * h])
-            p_north = np.array([x[i+1]+ 0.5 * h, y[j]+ 0.5 * h])
-            p_east = np.array([x[i+1]+ 0.5 * h, y[j]+ 0.5 * h])
-            phi_north = solve_microscale(p0 , p_north ,resolution , D )
-            phi_east = solve_microscale(p0 , p_east ,resolution , D )
-            micro_basis[i,j,0,:] = phi_north
-            micro_basis[i,j,1,:] = phi_east
-    return micro_basis
-#+end_src
-
-#+RESULTS:
-: None
-
-#+begin_src python
-m = microscale_basis(10 ,10 , 10 , 1/100 , D_lin)
-#+end_src
-
-#+RESULTS:
-: None
-
-* Cleanup
-#+name: Assemble Matrix
+#+name:2D Microscale Transmissions
 #+begin_src python :eval never
-   def assemble_matrix(self)-> None:
-      diagp1 = np.zeros(self.N)
-      diagp1[2:] =  self._T[1:]
-      diagm1 = np.zeros(self.N)
-      diagm1[:-2] =  self._T[:-1]
-      diag0 = np.ones(self.N)
-      diag0[1:-1] = -1 * (self._T[1:] + self._T[:-1])
-      self._A = spdiags([diagm1 , diag0 , diagp1] , np.array( [-1, 0, 1] ))
+   def set_multiscale_transmissions(self, resolution):
+      microscale_basis_x = np.zeros((self._T_x.shape[0] , self._T_x.shape[1] , resolution))
+      microscale_basis_y = np.zeros((self._T_y.shape[0] , self._T_y.shape[1] , resolution))
+      for i in range(self._T_x.shape[0]):
+         for j in range(self._T_x.shape[1]):
+            #Do mircroscale x
+            D_micro = lambda x: self.D(x, self.y[j])
+            fv_micro = FVSolver(resolution , D_micro, domain=(self.x[i] , self.x[i+1]))
+            fv_micro.assemble_matrix()
+            fv_micro.set_boundary(bc=(0.,1.))
+            phi =fv_micro.solve()
+            microscale_basis_x[i,j,:] = phi
+            self._T_x[i,j] =   -fv_micro.h * self.h_y* np.sum(((phi[1:] - phi[:-1])/fv_micro.h)**2 * D_micro(fv_micro.x[:-1]))
+
+      for i in range(self._T_y.shape[0]):
+         for j in range(self._T_y.shape[1]):
+            # Do microscale y
+            D_micro = lambda y: self.D(self.x[i], y)
+            fv_micro = FVSolver(resolution , D_micro, domain=(self.y[j] , self.y[j+1]))
+            fv_micro.assemble_matrix()
+            fv_micro.set_boundary(bc=(0.,1.))
+            phi =fv_micro.solve()
+            microscale_basis_y[i,j,:] = phi
+            self._T_y[i,j] =   -fv_micro.h * self.h_x  * np.sum(((phi[1:] - phi[:-1])/fv_micro.h)**2 * D_micro(fv_micro.x[:-1]))
+
+      return microscale_basis_x , microscale_basis_y
+
 #+end_src
 
-#+name: Microscale Transmissions
-#+begin_src python :eval never
-   def set_multiscale_transmissions(self, resolution)->NDArray[np.float64]:
-      micro_basis = np.zeros((self.N -1)*resolution)
-      for i in range(self.N -1):
-         micro_fv = FVSolver(resolution , self.D , domain=(self.x[i] , self.x[i+1]))
-         micro_fv.set_boundary(bc=(0.,1.))
-         micro_fv.assemble_matrix()
-         phi = micro_fv.solve()
-
-         micro_basis[resolution * i:resolution*(i+1)] = phi
-         hm = micro_fv.h
-         self._T[i] = -hm * np.sum(((phi[1:] - phi[:-1])/hm)**2 * self.D(micro_fv.x[:-1]))
-      return micro_basis
-#+end_src
-
-
-
-#+begin_src python :tangle src/fvsolver.py :noweb no-export
-from typing import Callable
-import numpy as np
-from scipy.sparse import spdiags
-from scipy.sparse.linalg import spsolve
-from numpy.typing import NDArray
-
-class FVSolver:
-   N : int
-   h : np.float64
-   x : NDArray[np.float64]
-   D : Callable
-   f : NDArray[np.float64]
-   c : NDArray[np.float64]
-
-   _T : NDArray[np.float64]
-
-   def __init__(self , N :int , D :Callable  , domain=(0.,1.))->None:
-       self.h = (domain[1] - domain[0]) / N
-       self.N = N
-       self.D = D
-       self.x = np.linspace(domain[0] , domain[1] , N)
-       self._T =  -1/self.h * D((self.x[:-1] + self.x[1:]) * 0.5)
-       self.f = self.h* np.ones(N)
-
-<<Assemble Matrix>>
-
-
-   def set_boundary(self , bc=(0.,0.)):
-      self.f[0] = bc[0]
-      self.f[-1] = bc[1]
-
-
-   def solve(self):
-      self.c = spsolve(self._A.tocsr() , self.f)
-      return self.c
-
-<<Microscale Transmissions>>
-#+end_src
-
-#+RESULTS:
-: None
-
-#+begin_src python :results output file graphics :file images/course1D.png
-from importlib import reload
-import src.fvsolver
-from src.fvsolver import FVSolver
+#+begin_src python :results file graphics output :file images/2d-multi-result.png :async t
 reload(src.fvsolver)
-epsilon = 0.1
-D = lambda x: 1 / (2+1.9 * np.cos(2 * np.pi* x / epsilon))
-fv = FVSolver(10 ,  D)
-fv.assemble_matrix()
-fv.set_boundary()
-c_course = fv.solve()
-plt.plot(c_course)
+from src.fvsolver import FVSolver2D
+fv2D = FVSolver2D(100,100,D)
+mx,my = fv2D.set_multiscale_transmissions(1000)
+fv2D.assemble_matrix()
+fv2D.set_boundary()
+c = fv2D.solve()
+sns.heatmap(c, cmap="magma")
 #+end_src
 
 #+RESULTS:
-[[file:images/course1D.png]]
+[[file:images/2d-multi-result.png]]
 
-#+begin_src python :results output file graphics :file images/msbasis.png
-mb = fv.set_multiscale_transmissions(100)
-plt.plot(mb)
-#+end_src
 
-#+RESULTS:
-[[file:images/msbasis.png]]
-
-#+begin_src python :results output file graphics :file images/multi1D.png
-fv.assemble_matrix()
-c_multi = fv.solve()
-plt.plot(c_multi)
-#+end_src
-
-#+RESULTS:
-[[file:images/multi1D.png]]
+* Reference Solution
+Solution of the 2D Laplace equation:
+\begin{align}
+\label{eq:poisson}
+- \Delta u(x,y) &= f(x,y) & \text{in} \quad \Omega \\
+u(x,y) &= 0 & \text{on} \quad  \Gamma_D
+\end{align}
+where \(f(x,y) = 2 * (x+y - x^2 - y^2) \) the analytical solution is
+\begin{align*}
+u(x,y) &= x * (1-x) * y * (1-y)
+\end{align*}
