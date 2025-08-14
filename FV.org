@@ -1,4 +1,5 @@
-#+title: Fv
+#+title: Multiscale Finite Volume Method
+#+author: Karl Louis Glänzer \\ Jonathan Ulmer
 #+startup: latexpreview
 #+latex_compiler: lualatex
 #+property: header-args:python :session :tangle fv.py :comments org :exports both :eval never-export
@@ -64,8 +65,8 @@ import matplotlib.pyplot as plt
 import src.diffusion as D
 reload(D)
 x = np.linspace(0,1 ,10)
-x_highres = np.linspace(0,1 , 100000)
 plt.plot(x , D.oscillation(x))
+x_highres = np.linspace(0,1 , 100000)
 plt.plot(x_highres , D.oscillation(x_highres))
 plt.legend([r"$D$ Sampled on a course grid" , r"$D$"] , loc="upper right")
 plt.title("1D Diffusion Coefficient")
@@ -193,8 +194,35 @@ plt.plot(D.noise1D(x))
 
 
 *** Noise 2D
-#+begin_src python :results file graphics output :file images/noise-2D.png
+#+begin_src python :tangle src/diffusion.py
+def noise2D(x,y , scale=1. , frequencies=50):
+    s = lambda x ,f , a , o: a* np.sin(f*2*np.pi*(x + o))
+    coeffs = np.random.rand(frequencies,6)
+    res = np.zeros(len(x))
+    for i in range(frequencies):
+        theta = np.pi *coeffs[i,5]
+        x_prime = x * np.cos(theta) - y * np.sin(theta)
+        y_prime = x * np.cos(theta) - y * np.sin(theta)
+        res += 0.5*(s(x_prime, scale *coeffs[i,0] ,coeffs[i,1] , coeffs[i,2] ) + s(y_prime, scale *coeffs[i,1] ,coeffs[i,3] , coeffs[i,4] ))
 
+    res = res / (2*np.sum(coeffs[:,1])) + 0.5
+    return res
+    return
+#+end_src
+
+#+RESULTS:
+: None
+
+#+begin_src python :results file graphics output :file images/noise-2D.png
+import src.diffusion as D
+reload(D)
+N = 1000
+M = 1000
+x = np.linspace(0.,1., N)
+y= np.linspace(0.,1., M)
+grid = np.meshgrid(x,y)
+noise = D.noise2D(grid[0].ravel() , grid[1].ravel(), scale=5 , frequencies=50)
+sns.heatmap(noise.reshape(N,M))
 #+end_src
 
 #+RESULTS:
@@ -240,6 +268,8 @@ class FVSolver:
 <<Solve>>
 
 <<Microscale Transmissions>>
+
+<<Reconstruct Microscale Solution>>
 #+end_src
 
 
@@ -311,13 +341,61 @@ In 1D
          micro_basis[resolution * i:resolution*(i+1)] = phi
          hm = micro_fv.h
          self._T[i] = -hm * np.sum(((phi[1:] - phi[:-1])/hm)**2 * self.D(micro_fv.x[:-1]))
+      self.micro_basis = micro_basis
       return micro_basis
+
 #+end_src
 
 \begin{align*}
 T_{\pm } &= -\int_{Q} D(x) (\phi'_{\pm} (x))^2\, \mathrm{d}x
 \end{align*}
 
+
+#+name: Reconstruct Microscale Solution
+#+begin_src python :eval never
+
+   def reconstruct_multiscale(self)->NDArray[np.float64]:
+        self.reconstruction = np.zeros_like(self.micro_basis)
+        for i in range(len(self.c)-1):
+            n = len(self.micro_basis) // self.N + self.N
+            t = self.micro_basis[n*i:n*(i+1)]
+            self.reconstruction[n*i:n*(i+1)] = (1-t) * self.c[i] + t * self.c[i+1]
+
+#+end_src
+
+#+begin_src python :results graphics file output :file images/reconstruction.png
+from importlib import reload
+import src.fvsolver
+from src.fvsolver import FVSolver
+import src.diffusion as D
+reload(src.fvsolver)
+reload(D)
+fv = FVSolver(10 ,  D.oscillation)
+fv.set_boundary()
+mb = fv.set_multiscale_transmissions(100)
+fv.assemble_matrix()
+c_course = fv.solve()
+fv.reconstruct_multiscale()
+plt.plot(fv.reconstruction)
+#+end_src
+
+#+RESULTS:
+[[file:images/reconstruction.png]]
+
+#+begin_src python :results output file graphics :file images/msbasis.png
+plt.plot(mb)
+#+end_src
+
+#+RESULTS:
+[[file:images/msbasis.png]]
+
+#+begin_src python :results output file graphics :file images/multi1D.png
+fv.assemble_matrix()
+c_multi = fv.solve()
+plt.plot(c_multi)
+#+end_src
+
+#+end_src
 
 #+begin_src python :session :file images/multiscaleplot.svg  :results output file graphics
 c_macro = sp.sparse.linalg.spsolve(A_macro.tocsr(),source)
@@ -352,12 +430,15 @@ from src.fvsolver import FVSolver
 reload(src.fvsolver)
 epsilon = 0.1
 D = lambda x: 1 / (2+1.9 * np.cos(2 * np.pi* x / epsilon))
-fv = FVSolver(10 ,  D)
+fv = FVSolver(100 ,  D)
 fv.assemble_matrix()
 fv.set_boundary()
 c_course = fv.solve()
 plt.plot(c_course)
 #+end_src
+
+#+RESULTS:
+[[file:images/course1D.png]]
 
 #+begin_src python :results output file graphics :file images/msbasis.png
 mb = fv.set_multiscale_transmissions(100)

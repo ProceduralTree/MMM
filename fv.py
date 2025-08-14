@@ -11,8 +11,8 @@ import matplotlib.pyplot as plt
 import src.diffusion as D
 reload(D)
 x = np.linspace(0,1 ,10)
-x_highres = np.linspace(0,1 , 100000)
 plt.plot(x , D.oscillation(x))
+x_highres = np.linspace(0,1 , 100000)
 plt.plot(x_highres , D.oscillation(x_highres))
 plt.legend([r"$D$ Sampled on a course grid" , r"$D$"] , loc="upper right")
 plt.title("1D Diffusion Coefficient")
@@ -80,9 +80,21 @@ reload(D)
 x = np.linspace(0,1)
 plt.plot(D.noise1D(x))
 
-# Noise 2D
 
 
+# #+RESULTS:
+# : None
+
+
+import src.diffusion as D
+reload(D)
+N = 1000
+M = 1000
+x = np.linspace(0.,1., N)
+y= np.linspace(0.,1., M)
+grid = np.meshgrid(x,y)
+noise = D.noise2D(grid[0].ravel() , grid[1].ravel(), scale=5 , frequencies=50)
+sns.heatmap(noise.reshape(N,M))
 
 
 
@@ -149,6 +161,7 @@ plt.title("Sparsity Patter of A")
          micro_basis[resolution * i:resolution*(i+1)] = phi
          hm = micro_fv.h
          self._T[i] = -hm * np.sum(((phi[1:] - phi[:-1])/hm)**2 * self.D(micro_fv.x[:-1]))
+      self.micro_basis = micro_basis
       return micro_basis
 
 
@@ -157,6 +170,51 @@ plt.title("Sparsity Patter of A")
 # T_{\pm } &= -\int_{Q} D(x) (\phi'_{\pm} (x))^2\, \mathrm{d}x
 # \end{align*}
 
+
+# #+name: Reconstruct Microscale Solution
+
+   def reconstruct_multiscale(self)->NDArray[np.float64]:
+        self.reconstruction = np.zeros_like(self.micro_basis)
+        for i in range(len(self.c)-1):
+            n = len(self.micro_basis) // self.N + self.N
+            t = self.micro_basis[n*i:n*(i+1)]
+            self.reconstruction[n*i:n*(i+1)] = (1-t) * self.c[i] + t * self.c[i+1]
+
+from importlib import reload
+import src.fvsolver
+from src.fvsolver import FVSolver
+import src.diffusion as D
+reload(src.fvsolver)
+reload(D)
+fv = FVSolver(10 ,  D.oscillation)
+fv.set_boundary()
+mb = fv.set_multiscale_transmissions(100)
+fv.assemble_matrix()
+c_course = fv.solve()
+fv.reconstruct_multiscale()
+plt.plot(fv.reconstruction)
+
+
+
+# #+RESULTS:
+# [[file:images/reconstruction.png]]
+
+
+plt.plot(mb)
+
+
+
+# #+RESULTS:
+# [[file:images/msbasis.png]]
+
+
+fv.assemble_matrix()
+c_multi = fv.solve()
+plt.plot(c_multi)
+
+
+
+# #+end_src
 
 
 c_macro = sp.sparse.linalg.spsolve(A_macro.tocsr(),source)
@@ -187,11 +245,17 @@ from src.fvsolver import FVSolver
 reload(src.fvsolver)
 epsilon = 0.1
 D = lambda x: 1 / (2+1.9 * np.cos(2 * np.pi* x / epsilon))
-fv = FVSolver(10 ,  D)
+fv = FVSolver(100 ,  D)
 fv.assemble_matrix()
 fv.set_boundary()
 c_course = fv.solve()
 plt.plot(c_course)
+
+
+
+# #+RESULTS:
+# [[file:images/course1D.png]]
+
 
 mb = fv.set_multiscale_transmissions(100)
 plt.plot(mb)

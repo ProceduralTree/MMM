@@ -1,4 +1,5 @@
-# #+title: Fv
+# #+title: Multiscale Finite Volume Method
+# #+author: Karl Louis Glänzer \\ Jonathan Ulmer
 # #+startup: latexpreview
 # #+latex_compiler: lualatex
 # #+property: header-args:python :session :tangle fv.py :comments org :exports both :eval never-export
@@ -62,7 +63,16 @@ class FVSolver:
          micro_basis[resolution * i:resolution*(i+1)] = phi
          hm = micro_fv.h
          self._T[i] = -hm * np.sum(((phi[1:] - phi[:-1])/hm)**2 * self.D(micro_fv.x[:-1]))
+      self.micro_basis = micro_basis
       return micro_basis
+
+
+   def reconstruct_multiscale(self)->NDArray[np.float64]:
+        self.reconstruction = np.zeros_like(self.micro_basis)
+        for i in range(len(self.c)-1):
+            n = len(self.micro_basis) // self.N + self.N
+            t = self.micro_basis[n*i:n*(i+1)]
+            self.reconstruction[n*i:n*(i+1)] = (1-t) * self.c[i] + t * self.c[i+1]
 
 # 2D
 

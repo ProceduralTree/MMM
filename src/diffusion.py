@@ -47,3 +47,19 @@ def noise1D(x,scale=10.  , frequencies=5):
         res += s(x, scale *coeffs[i,0] ,coeffs[i,1] , coeffs[i,2] )
     res = res / (2*np.sum(coeffs[:,1])) + 0.5
     return res
+
+# Noise 2D
+
+def noise2D(x,y , scale=1. , frequencies=50):
+    s = lambda x ,f , a , o: a* np.sin(f*2*np.pi*(x + o))
+    coeffs = np.random.rand(frequencies,6)
+    res = np.zeros(len(x))
+    for i in range(frequencies):
+        theta = np.pi *coeffs[i,5]
+        x_prime = x * np.cos(theta) - y * np.sin(theta)
+        y_prime = x * np.cos(theta) - y * np.sin(theta)
+        res += 0.5*(s(x_prime, scale *coeffs[i,0] ,coeffs[i,1] , coeffs[i,2] ) + s(y_prime, scale *coeffs[i,1] ,coeffs[i,3] , coeffs[i,4] ))
+
+    res = res / (2*np.sum(coeffs[:,1])) + 0.5
+    return res
+    return
