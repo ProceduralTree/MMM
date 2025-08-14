@@ -251,11 +251,13 @@ For convenience in Explanation and Execution, we bundle all required information
 #+begin_src python :tangle src/fvsolver.py :noweb no-export
 class FVSolver:
    N : int
+   resolution : int
    h : np.float64
    x : NDArray[np.float64]
    D : Callable
    f : NDArray[np.float64]
    c : NDArray[np.float64]
+   micro_basis : NDArray[np.float64]
 
    _T : NDArray[np.float64]
 
@@ -271,6 +273,9 @@ class FVSolver:
 
 <<Reconstruct Microscale Solution>>
 #+end_src
+
+#+RESULTS:
+: None
 
 
 #+name: Init
@@ -331,6 +336,7 @@ In 1D
 #+name: Microscale Transmissions
 #+begin_src python :eval never
    def set_multiscale_transmissions(self, resolution)->NDArray[np.float64]:
+      self.resolution = resolution
       micro_basis = np.zeros((self.N -1)*resolution)
       for i in range(self.N -1):
          micro_fv = FVSolver(resolution , self.D , domain=(self.x[i] , self.x[i+1]))
@@ -357,7 +363,7 @@ T_{\pm } &= -\int_{Q} D(x) (\phi'_{\pm} (x))^2\, \mathrm{d}x
    def reconstruct_multiscale(self)->NDArray[np.float64]:
         self.reconstruction = np.zeros_like(self.micro_basis)
         for i in range(len(self.c)-1):
-            n = len(self.micro_basis) // self.N + self.N
+            n = self.resolution
             t = self.micro_basis[n*i:n*(i+1)]
             self.reconstruction[n*i:n*(i+1)] = (1-t) * self.c[i] + t * self.c[i+1]
 
@@ -370,13 +376,20 @@ from src.fvsolver import FVSolver
 import src.diffusion as D
 reload(src.fvsolver)
 reload(D)
-fv = FVSolver(10 ,  D.oscillation)
+fv = FVSolver(30 ,  D.oscillation)
+fv_ref = FVSolver(1000 ,  D.oscillation)
 fv.set_boundary()
+fv_ref.set_boundary()
+fv_ref.assemble_matrix()
+c_fine = fv_ref.solve()
 mb = fv.set_multiscale_transmissions(100)
 fv.assemble_matrix()
 c_course = fv.solve()
 fv.reconstruct_multiscale()
-plt.plot(fv.reconstruction)
+plt.plot(fv.x , c_course)
+x_fine = np.linspace(0,1, len(fv.micro_basis))
+plt.plot(x_fine,fv.reconstruction)
+plt.plot(fv_ref.x,c_fine)
 #+end_src
 
 #+RESULTS:
