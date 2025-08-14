@@ -1,8 +1,17 @@
+# #+title: Fv
+# #+startup: latexpreview
+# #+latex_compiler: lualatex
+# #+property: header-args:python :session :tangle fv.py :comments org :exports both :eval never-export
+
+
 from typing import Callable
 import numpy as np
 from scipy.sparse import spdiags
 from scipy.sparse.linalg import spsolve
 from numpy.typing import NDArray
+
+# Program Structure
+# For convenience in Explanation and Execution, we bundle all required information for solving a 1D system into a python class, which is structured as follows
 
 class FVSolver:
    N : int
@@ -22,6 +31,7 @@ class FVSolver:
        self._T =  -1/self.h * D((self.x[:-1] + self.x[1:]) * 0.5)
        self.f = self.h* np.ones(N)
 
+
    def assemble_matrix(self)-> None:
       diagp1 = np.zeros(self.N)
       diagp1[2:] =  self._T[1:]
@@ -31,7 +41,6 @@ class FVSolver:
       diag0[1:-1] = -1 * (self._T[1:] + self._T[:-1])
       self._A = spdiags([diagm1 , diag0 , diagp1] , np.array( [-1, 0, 1] ))
 
-
    def set_boundary(self , bc=(0.,0.)):
       self.f[0] = bc[0]
       self.f[-1] = bc[1]
@@ -40,6 +49,7 @@ class FVSolver:
    def solve(self):
       self.c = spsolve(self._A.tocsr() , self.f)
       return self.c
+
 
    def set_multiscale_transmissions(self, resolution)->NDArray[np.float64]:
       micro_basis = np.zeros((self.N -1)*resolution)

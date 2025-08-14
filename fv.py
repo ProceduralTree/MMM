@@ -1,145 +1,162 @@
-# Finite Volume
-# Integral Form
-# \begin{align*}
-# \int_{Q} \nabla \cdot (D(x) \nabla c )  &= \int_{Q} f(x) \, \mathrm{d}x \\
-# \int_{\partial Q} D(x) \nabla c \cdot \vec{n} \mathrm{d}S \, &=   \int_{Q} f(x) \, \mathrm{d} x
-# \end{align*}
-# We assume constant c on \(Q\)
-# \(q =D(x) \nabla c\) is not uniquely defined on \(\partial\Omega\) since we assuse c constant and therefore discontinous on \(\partial Q\). We therefore introduce a Numerical Flux \(q = g(c^+ , c^{-} )\)
-# for example upwind
-
-# \begin{align*}
-# g(c^+ , c^-) = - D(x^{\frac{1}{2} +}) \frac{c^+ - c^-}{h}
-# \end{align*}
-
-# \begin{align*}
-# g(c^+ , c^-) &= T_{\pm } * \left( c^+ - c^- \right) \\
-# T_{\pm } &= - D(x^{\frac{1}{2}+}) \frac{1}{h}
-# \end{align*}
+import matplotlib.pyplot as plt
+import seaborn as sns
+import numpy as np
 
 
-# With \(D(x) = \frac{1}{2+ 1.9 \cos \left( \frac{2 \pi x}{\epsilon} \right)}\)
-# Linear System
-# \begin{align*}
-# \int_{\partial Q_{i}} D(x_{i}) \nabla c \cdot \vec{n}  \, \mathrm{d}S &= |Q| \overline{f}(x_{i}) \\
-# \sum_{j \in \left\{ -1,1 \right\} } j *  g(c_{i+j+1} , c_{i+j})  &=   h \overline{f}(x_{i})
-# \end{align*}
 
+# #+name: 1D Diffusion
 
 import numpy as np
-import scipy as sp
 import matplotlib.pyplot as plt
-epsilon = 0.1 #* np.pi
-N = 10
-n = 100
-h = 1/(N-1)
-D = lambda x: 1 / (2+1.9 * np.cos(2 * np.pi* x / epsilon))
-x = np.linspace(0,1 ,N)
+import src.diffusion as D
+reload(D)
+x = np.linspace(0,1 ,10)
 x_highres = np.linspace(0,1 , 100000)
-c = np.zeros(N)
-source = np.ones(N) * h
-# Boundary
-source[0] = 0
-source[-1] = 0
-plt.plot(x , D(x))
-plt.plot(x_highres , D(x_highres))
-plt.legend([r"$D$ Sampled on the course grid" , r"$D$"])
-plt.title("Diffusion Coefficient")
+plt.plot(x , D.oscillation(x))
+plt.plot(x_highres , D.oscillation(x_highres))
+plt.legend([r"$D$ Sampled on a course grid" , r"$D$"] , loc="upper right")
+plt.title("1D Diffusion Coefficient")
+
+
+
+# #+name: 2D Box Constraints
+
+import src.diffusion as D
+reload(D)
+
+N = 1000
+M = 1000
+x = np.linspace(0.,1., N)
+y= np.linspace(0.,1., M)
+grid = np.meshgrid(x,y)
+diffusion_b = D.box(grid[0] , grid[1])
+diffusion_b = diffusion_b.reshape((N,M))
+diffusion_c = D.circle(grid[0] , grid[1])
+diffusion_c = diffusion_c.reshape((N,M))
+diffusion_r = D.rhombus(grid[0] , grid[1])
+diffusion_r = diffusion_r.reshape((N,M))
+
+fig,axis= plt.subplots(1,3)
+im1 = axis[0].imshow(diffusion_b , cmap="magma" , extent=[0,1,0,1])
+axis[0].set_title(r"Square with $L^{100}$ norm")
+im2 = axis[1].imshow(diffusion_c , cmap="magma" , extent=[0,1,0,1])
+axis[1].set_title(r"Circle with $L^{2}$ norm")
+im2 = axis[2].imshow(diffusion_r , cmap="magma" , extent=[0,1,0,1])
+axis[2].set_title(r"Rhombus with $L^{1}$ norm")
+
+#fig.colorbar()
+fig.suptitle(r"2D Box Constraints")
+fig.colorbar(im1 ,ax=axis , fraction=0.025)
+
+
+# #+name: 2D Ocillation
+
+import src.diffusion as D
+reload(D)
+
+
+N = 1000
+M = 1000
+x = np.linspace(0.,1., N)
+y= np.linspace(0.,1., M)
+grid = np.meshgrid(x,y)
+diffusion_b = D.osc2D_point(grid[0] , grid[1])
+diffusion_b = diffusion_b.reshape((N,M))
+diffusion_c = D.osc2D_line(grid[0] , grid[1])
+diffusion_c = diffusion_c.reshape((N,M))
+
+fig,axis= plt.subplots(1,2)
+im1 = axis[0].imshow(diffusion_b , cmap="magma" , extent=[0,1,0,1])
+axis[0].set_title(r"0D Obstacles")
+im2 = axis[1].imshow(diffusion_c , cmap="magma" , extent=[0,1,0,1])
+axis[1].set_title(r"1D Obstacles")
+
+#fig.colorbar()
+fig.suptitle(r"Osscillating Diffusion")
+fig.colorbar(im1 ,ax=axis , fraction=0.025)
+
+import src.diffusion as D
+reload(D)
+x = np.linspace(0,1)
+plt.plot(D.noise1D(x))
+
+# Noise 2D
+
+
+
+
+
+
+# #+name: Init
+
+   def __init__(self , N :int , D :Callable  , domain=(0.,1.))->None:
+       self.h = (domain[1] - domain[0]) / N
+       self.N = N
+       self.D = D
+       self.x = np.linspace(domain[0] , domain[1] , N)
+       self._T =  -1/self.h * D((self.x[:-1] + self.x[1:]) * 0.5)
+       self.f = self.h* np.ones(N)
+
+
+
+# #+name: Solve
+
+   def solve(self):
+      self.c = spsolve(self._A.tocsr() , self.f)
+      return self.c
+
+
+
+# #+name: Boundary
+
+   def set_boundary(self , bc=(0.,0.)):
+      self.f[0] = bc[0]
+      self.f[-1] = bc[1]
+
+
+
 
 
 
 
 # Matrix Assembly
+# #+name: Assemble Matrix
 
-from scipy.sparse import spdiags
-import seaborn as sns
-def assemble_matrix(N ,x, h, D ):
-    diagp1 = np.zeros(N)
-    diagp1[2:] = np.ones(N-2) * -1/h * D(x[1:-1] + 0.5*h)
-    diagm1 = np.zeros(N)
-    diagm1[:-2] = np.ones(N-2) * -1/h * D(x[1:-1] - 0.5*h)
-    diag0 = np.ones(N)
-    diag0[1:-1] *= 1/h * (D(x[1:-1]-0.5*h) + D(x[1:-1] + 0.5*h))
-    A = spdiags([diagm1 , diag0 , diagp1] , np.array( [-1, 0, 1] ))
-    return A
-A = assemble_matrix(10 , np.linspace(0,1.,10), h , D_1D)
-#plt.spy(A)
+   def assemble_matrix(self)-> None:
+      diagp1 = np.zeros(self.N)
+      diagp1[2:] =  self._T[1:]
+      diagm1 = np.zeros(self.N)
+      diagm1[:-2] =  self._T[:-1]
+      diag0 = np.ones(self.N)
+      diag0[1:-1] = -1 * (self._T[1:] + self._T[:-1])
+      self._A = spdiags([diagm1 , diag0 , diagp1] , np.array( [-1, 0, 1] ))
+
 sns.heatmap(A.todense())
 plt.title("Sparsity Patter of A")
 
-
-
-# #+RESULTS:
-# [[file:images/A-sparsity.svg]]
-
-
-
-c = sp.sparse.linalg.spsolve(A.tocsr(),source)
-plt.plot(c)
-plt.title("Course Grid Solution")
-
 # Multiscale
 # In 1D
+# #+name: Microscale Transmissions
+
+   def set_multiscale_transmissions(self, resolution)->NDArray[np.float64]:
+      micro_basis = np.zeros((self.N -1)*resolution)
+      for i in range(self.N -1):
+         micro_fv = FVSolver(resolution , self.D , domain=(self.x[i] , self.x[i+1]))
+         micro_fv.set_boundary(bc=(0.,1.))
+         micro_fv.assemble_matrix()
+         phi = micro_fv.solve()
+
+         micro_basis[resolution * i:resolution*(i+1)] = phi
+         hm = micro_fv.h
+         self._T[i] = -hm * np.sum(((phi[1:] - phi[:-1])/hm)**2 * self.D(micro_fv.x[:-1]))
+      return micro_basis
+
+
 
 # \begin{align*}
 # T_{\pm } &= -\int_{Q} D(x) (\phi'_{\pm} (x))^2\, \mathrm{d}x
 # \end{align*}
 
-# calculate c integral
-
-np.sum((c[1:] - c[:-1])/h * -D(x[1:]))
-
-
-
-# #+RESULTS:
-
-
-from scipy.sparse.linalg import spsolve
-micro_basis = np.zeros(N*n)
-T = np.zeros(N)
-for i,x_m in enumerate(x):
-    xm = np.linspace(x_m , x_m + h , n)
-    hm = h/(n-1)
-    A_m = assemble_matrix(n, xm , hm )
-    fm = np.ones(n) * hm
-    fm[0] = 0
-    fm[-1] = 1
-    phi = spsolve(A_m.tocsr(),fm)
-    micro_basis[n * i:n*(i+1)] = phi
-    T[i] =   hm * np.sum(((phi[1:] - phi[:-1])/hm)**2 * D(xm[:-1]))
-plt.plot(x,T)
-plt.xlabel(r"$x$")
-plt.ylabel(r"$T(x)$")
-plt.title(r"Multiscale Transmission Coeficcients $T$")
-
-diagp1 = np.zeros(N)
-diagp1[2:] = np.ones(N-2) * -1* T[1:-1]
-diagm1 = np.zeros(N)
-diagm1[:-2] = np.ones(N-2) * -1*  T[:-2]
-diag0 = np.ones(N)
-diag0[1:-1] *=  (T[1:-1] + T[:-2])
-A_macro = spdiags([diagm1 , diag0 , diagp1] , np.array( [-1, 0, 1] ))
-sns.heatmap(A_macro.todense())
-
-
-
-# #+RESULTS:
-# [[file:A.png]]
-
-
-N_fine = n*N
-x_fine = np.linspace(0,1 , n*N)
-h_fine = 1/(N*n -1)
-A_fine = assemble_matrix(N_fine , x_fine , h_fine)
-f_fine = np.ones(N*n) * h_fine
-f_fine[0] = 0
-f_fine[-1] = 0
-c_fine = sp.sparse.linalg.spsolve(A_fine.tocsr(),f_fine)
-
-
-
-# #+RESULTS:
-# [[file:images/fine.svg]]
 
 
 c_macro = sp.sparse.linalg.spsolve(A_macro.tocsr(),source)
@@ -159,35 +176,6 @@ plt.ylabel(r"$c(x)$")
 plt.legend(["macro" , "multiscale", "multi_fine" , "reference"])
 
 # Cleanup
-# #+name: Assemble Matrix
-
-   def assemble_matrix(self)-> None:
-      diagp1 = np.zeros(self.N)
-      diagp1[2:] =  self._T[1:]
-      diagm1 = np.zeros(self.N)
-      diagm1[:-2] =  self._T[:-1]
-      diag0 = np.ones(self.N)
-      diag0[1:-1] = -1 * (self._T[1:] + self._T[:-1])
-      self._A = spdiags([diagm1 , diag0 , diagp1] , np.array( [-1, 0, 1] ))
-
-
-
-# #+name: Microscale Transmissions
-
-   def set_multiscale_transmissions(self, resolution)->NDArray[np.float64]:
-      micro_basis = np.zeros((self.N -1)*resolution)
-      for i in range(self.N -1):
-         micro_fv = FVSolver(resolution , self.D , domain=(self.x[i] , self.x[i+1]))
-         micro_fv.set_boundary(bc=(0.,1.))
-         micro_fv.assemble_matrix()
-         phi = micro_fv.solve()
-
-         micro_basis[resolution * i:resolution*(i+1)] = phi
-         hm = micro_fv.h
-         self._T[i] = -hm * np.sum(((phi[1:] - phi[:-1])/hm)**2 * self.D(micro_fv.x[:-1]))
-      return micro_basis
-
-
 
 # #+RESULTS:
 # : None
@@ -318,22 +306,6 @@ os.environ["NUMEXPR_NUM_THREADS"] = "16"   # Just in case
 import numpy as np
 import scipy
 
-epsilon =0.25
-D_1D = lambda x: 1 / (2+1.9 * np.cos(2 * np.pi* x / epsilon))
-D = lambda x,y: D_1D(x) * D_1D(y)
-
-alpha = 1.
-gamma = 0.001
-
-center = np.array([0.5,0.5])
-exp_kernel = lambda r: alpha * np.exp( - r / gamma)
-r = 0.2
-p = 2.0
-thicc = 0.02
-R = lambda x,y: np.maximum(0. , np.abs((np.abs(x -center[0])**p + np.abs(y - center[1])**p)**(1/p) - r) - thicc)
-#D = lambda x,y:   np.maximum(0.0005 , 1. -  exp_kernel(R(x,y)))
-D_lin = lambda x,y: x
-
 
 
 # #+RESULTS:
@@ -343,14 +315,6 @@ D_lin = lambda x,y: x
 import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
-N = 100
-M = 100
-x = np.linspace(0.,1., N)
-y= np.linspace(0.,1., M)
-grid = np.meshgrid(x,y)
-diffusion = D(grid[0] , grid[1])
-diffusion = np.reshape(diffusion , (N,M))
-sns.heatmap(diffusion)
 
 
 
@@ -436,14 +400,9 @@ ax.plot_surface(grid[0] ,grid[1],c , cmap="magma")
 
       return microscale_basis_x , microscale_basis_y
 
-
-
-# #+RESULTS: 2D Microscale Transmissions
-
-
 reload(src.fvsolver)
 from src.fvsolver import FVSolver2D
-fv2D = FVSolver2D(100,50,D)
+fv2D = FVSolver2D(100,100,D)
 mx,my = fv2D.set_multiscale_transmissions(100)
 fv2D.assemble_matrix()
 fv2D.set_boundary()
