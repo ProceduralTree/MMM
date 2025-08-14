@@ -98,6 +98,9 @@ sns.heatmap(noise.reshape(N,M))
 
 
 
+# #+RESULTS:
+# : None
+
 
 # #+name: Init
 
@@ -151,6 +154,7 @@ plt.title("Sparsity Patter of A")
 # #+name: Microscale Transmissions
 
    def set_multiscale_transmissions(self, resolution)->NDArray[np.float64]:
+      self.resolution = resolution
       micro_basis = np.zeros((self.N -1)*resolution)
       for i in range(self.N -1):
          micro_fv = FVSolver(resolution , self.D , domain=(self.x[i] , self.x[i+1]))
@@ -176,7 +180,7 @@ plt.title("Sparsity Patter of A")
    def reconstruct_multiscale(self)->NDArray[np.float64]:
         self.reconstruction = np.zeros_like(self.micro_basis)
         for i in range(len(self.c)-1):
-            n = len(self.micro_basis) // self.N + self.N
+            n = self.resolution
             t = self.micro_basis[n*i:n*(i+1)]
             self.reconstruction[n*i:n*(i+1)] = (1-t) * self.c[i] + t * self.c[i+1]
 
@@ -186,13 +190,20 @@ from src.fvsolver import FVSolver
 import src.diffusion as D
 reload(src.fvsolver)
 reload(D)
-fv = FVSolver(10 ,  D.oscillation)
+fv = FVSolver(30 ,  D.oscillation)
+fv_ref = FVSolver(1000 ,  D.oscillation)
 fv.set_boundary()
+fv_ref.set_boundary()
+fv_ref.assemble_matrix()
+c_fine = fv_ref.solve()
 mb = fv.set_multiscale_transmissions(100)
 fv.assemble_matrix()
 c_course = fv.solve()
 fv.reconstruct_multiscale()
-plt.plot(fv.reconstruction)
+plt.plot(fv.x , c_course)
+x_fine = np.linspace(0,1, len(fv.micro_basis))
+plt.plot(x_fine,fv.reconstruction)
+plt.plot(fv_ref.x,c_fine)
 
 
 

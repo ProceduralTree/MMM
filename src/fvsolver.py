@@ -16,11 +16,13 @@ from numpy.typing import NDArray
 
 class FVSolver:
    N : int
+   resolution : int
    h : np.float64
    x : NDArray[np.float64]
    D : Callable
    f : NDArray[np.float64]
    c : NDArray[np.float64]
+   micro_basis : NDArray[np.float64]
 
    _T : NDArray[np.float64]
 
@@ -53,6 +55,7 @@ class FVSolver:
 
 
    def set_multiscale_transmissions(self, resolution)->NDArray[np.float64]:
+      self.resolution = resolution
       micro_basis = np.zeros((self.N -1)*resolution)
       for i in range(self.N -1):
          micro_fv = FVSolver(resolution , self.D , domain=(self.x[i] , self.x[i+1]))
@@ -67,10 +70,11 @@ class FVSolver:
       return micro_basis
 
 
+
    def reconstruct_multiscale(self)->NDArray[np.float64]:
         self.reconstruction = np.zeros_like(self.micro_basis)
         for i in range(len(self.c)-1):
-            n = len(self.micro_basis) // self.N + self.N
+            n = self.resolution
             t = self.micro_basis[n*i:n*(i+1)]
             self.reconstruction[n*i:n*(i+1)] = (1-t) * self.c[i] + t * self.c[i+1]
 
