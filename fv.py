@@ -109,7 +109,7 @@ sns.heatmap(noise.reshape(N,M))
        self.N = N
        self.D = D
        self.x = np.linspace(domain[0] , domain[1] , N)
-       self._T =  -1/self.h * D((self.x[:-1] + self.x[1:]) * 0.5)
+       self._T =  -1/self.h * D((self.x[:-1] + self.x[1:])/2)
        self.f = self.h* np.ones(N)
 
 
@@ -133,7 +133,6 @@ sns.heatmap(noise.reshape(N,M))
 
 
 
-
 # Matrix Assembly
 # #+name: Assemble Matrix
 
@@ -146,8 +145,34 @@ sns.heatmap(noise.reshape(N,M))
       diag0[1:-1] = -1 * (self._T[1:] + self._T[:-1])
       self._A = spdiags([diagm1 , diag0 , diagp1] , np.array( [-1, 0, 1] ))
 
-sns.heatmap(A.todense())
+
+
+# #+RESULTS: Assemble Matrix
+
+
+reload(src.fvsolver)
+from src.fvsolver import FVSolver
+f10 = FVSolver(5,  D.oscillation)
+f10.assemble_matrix()
+x = np.linspace(0.,1.,5)
+A = assemble_matrix(5 ,x , 1/5 , D.oscillation)
+sns.heatmap(A.todense() - f10._A.todense())
 plt.title("Sparsity Patter of A")
+
+
+
+# #+RESULTS:
+# [[file:images/A-sparsity.png]]
+
+0.2 * 100
+
+
+
+# #+RESULTS:
+# : 20.0
+
+
+print(A.todense())
 
 # Multiscale
 # In 1D
@@ -156,8 +181,8 @@ plt.title("Sparsity Patter of A")
    def set_multiscale_transmissions(self, resolution)->NDArray[np.float64]:
       self.resolution = resolution
       micro_basis = np.zeros((self.N -1)*resolution)
-      for i in range(self.N -1):
-         micro_fv = FVSolver(resolution , self.D , domain=(self.x[i] , self.x[i+1]))
+      for i in range(1,self.N):
+         micro_fv = FVSolver(resolution , self.D , domain=(self.x[i-1] , self.x[i]))
          micro_fv.set_boundary(bc=(0.,1.))
          micro_fv.assemble_matrix()
          phi = micro_fv.solve()
@@ -190,8 +215,8 @@ from src.fvsolver import FVSolver
 import src.diffusion as D
 reload(src.fvsolver)
 reload(D)
-fv = FVSolver(30 ,  D.oscillation)
-fv_ref = FVSolver(1000 ,  D.oscillation)
+fv = FVSolver(10 ,  D.oscillation)
+fv_ref = FVSolver(100000 ,  D.oscillation)
 fv.set_boundary()
 fv_ref.set_boundary()
 fv_ref.assemble_matrix()
@@ -280,6 +305,7 @@ plt.plot(mb)
 fv.assemble_matrix()
 c_multi = fv.solve()
 plt.plot(c_multi)
+
 
 
 
@@ -381,12 +407,6 @@ os.environ["NUMEXPR_NUM_THREADS"] = "16"   # Just in case
 import numpy as np
 import scipy
 
-
-
-# #+RESULTS:
-# : None
-
-
 import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
@@ -449,8 +469,8 @@ ax.plot_surface(grid[0] ,grid[1],c , cmap="magma")
 # #+name:2D Microscale Transmissions
 
    def set_multiscale_transmissions(self, resolution):
-      microscale_basis_x = np.zeros((self._T_x.shape[0] , self._T_x.shape[1] , resolution))
-      microscale_basis_y = np.zeros((self._T_y.shape[0] , self._T_y.shape[1] , resolution))
+      self.microscale_basis_x = np.zeros((self._T_x.shape[0] , self._T_x.shape[1] , resolution))
+      self.microscale_basis_y = np.zeros((self._T_y.shape[0] , self._T_y.shape[1] , resolution))
       for i in range(self._T_x.shape[0]):
          for j in range(self._T_x.shape[1]):
             #Do mircroscale x
@@ -473,7 +493,7 @@ ax.plot_surface(grid[0] ,grid[1],c , cmap="magma")
             microscale_basis_y[i,j,:] = phi
             self._T_y[i,j] =   -fv_micro.h * self.h_x  * np.sum(((phi[1:] - phi[:-1])/fv_micro.h)**2 * D_micro(fv_micro.x[:-1]))
 
-      return microscale_basis_x , microscale_basis_y
+      return self.microscale_basis_x , self.microscale_basis_y
 
 reload(src.fvsolver)
 from src.fvsolver import FVSolver2D
@@ -483,3 +503,12 @@ fv2D.assemble_matrix()
 fv2D.set_boundary()
 c = fv2D.solve()
 sns.heatmap(c, cmap="magma")
+
+
+
+# #+RESULTS:
+# [[file:images/2d-multi-result.png]]
+
+# #+name: 2D Multiscale Reconstruction
+
+
