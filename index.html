@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2025-08-13 Mi 15:52 -->
+<!-- 2025-08-14 Do 12:57 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Fv</title>
@@ -899,42 +899,292 @@ pre {
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents" role="doc-toc">
 <ul>
-<li><a href="#org5a9951d">1. Standard Diffusion equation</a></li>
-<li><a href="#org71fc9c4">2. Finite Volume</a></li>
-<li><a href="#orge2d9d4c">3. Multiscale</a></li>
-<li><a href="#org75bf2c0">4. Cleanup</a></li>
-<li><a href="#org368e2f6">5. 2D</a>
+<li><a href="#org173a88b">1. Standard Diffusion equation</a>
 <ul>
-<li><a href="#org72b29c8">5.1. Numerical Flux in 2D</a></li>
+<li><a href="#org7d865f6">1.1. Derivation of the 1D Finite Volume Method</a></li>
+<li><a href="#org62f0f93">1.2. Example diffusion terms</a>
+<ul>
+<li><a href="#orga89bd4d">1.2.1. 1D</a></li>
+<li><a href="#orgef2b8ac">1.2.2. 2D Box Condition</a></li>
+<li><a href="#org8179c51">1.2.3. 2D Oscillation</a></li>
+<li><a href="#orgadddc7b">1.2.4. 1D Noise</a></li>
+<li><a href="#orgf194cb1">1.2.5. Noise 2D</a></li>
 </ul>
 </li>
-<li><a href="#orgc168b11">6. 2D Multiscale</a></li>
-<li><a href="#org9017556">7. Reference Solution</a></li>
+</ul>
+</li>
+<li><a href="#org73b2202">2. Finite Volume 1D</a>
+<ul>
+<li><a href="#orgb993933">2.1. Program Structure</a></li>
+</ul>
+</li>
+<li><a href="#org4e7a723">3. Multiscale</a></li>
+<li><a href="#org5763f64">4. Cleanup</a></li>
+<li><a href="#orgd8df3e8">5. 2D</a>
+<ul>
+<li><a href="#org9c8faaf">5.1. Numerical Flux in 2D</a></li>
+</ul>
+</li>
+<li><a href="#org726fc78">6. 2D Multiscale</a></li>
+<li><a href="#org255a6ec">7. Reference Solution</a></li>
 </ul>
 </div>
 </div>
-<div id="outline-container-org5a9951d" class="outline-2">
-<h2 id="org5a9951d"><span class="section-number-2">1.</span> Standard Diffusion equation</h2>
+<div class='org-src-wrapper'>
+<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_b7136f0ab384446e9508d4b0d9b4dbc4>&#10697;</button>
+<script type='text/javascript'>
+var copyBtnbtn_b7136f0ab384446e9508d4b0d9b4dbc4=document.querySelector('button[name=btn_b7136f0ab384446e9508d4b0d9b4dbc4]');
+copyBtnbtn_b7136f0ab384446e9508d4b0d9b4dbc4.addEventListener('click', function(event) {
+let res = copyTextToClipboard(`import numpy as np\n`);copyBtnbtn_b7136f0ab384446e9508d4b0d9b4dbc4.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_b7136f0ab384446e9508d4b0d9b4dbc4.innerHTML = '&#10697;'}, 3000);
+});
+</script>
+</div><div class="org-src-container">
+<pre class="src src-python"><code><span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">import</span> numpy <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">as</span> np
+</code></pre>
+</div></div>
+<div id="outline-container-org173a88b" class="outline-2">
+<h2 id="org173a88b"><span class="section-number-2">1.</span> Standard Diffusion equation</h2>
 <div class="outline-text-2" id="text-1">
 \begin{align*}
 \nabla \cdot (D(x) \nabla c) &= f(x) & \text{in}& \, \Omega \\
 c(x) &= 0 &  \text{on}& \, \partial \Omega
 \end{align*}
 </div>
-</div>
-<div id="outline-container-org71fc9c4" class="outline-2">
-<h2 id="org71fc9c4"><span class="section-number-2">2.</span> Finite Volume</h2>
-<div class="outline-text-2" id="text-2">
+<div id="outline-container-org7d865f6" class="outline-3">
+<h3 id="org7d865f6"><span class="section-number-3">1.1.</span> Derivation of the 1D Finite Volume Method</h3>
+<div class="outline-text-3" id="text-1-1">
 <p>
-Integral Form
+The Finite Volume method considers the differential equation in Integral form over disjunct (\(Q_i \cap Q_j = \emptyset , i\neq  j\)) reference cells \(Q_{i}\), \(\bigcup_{i=1}^N  Q_{i} = \Omega \) and calculates the integral over them, with an integral over the reference cell boundaries using Stokes integration.
+</p>
+\begin{align}
+\label{eq:fv-integral}
+\int_{Q_i} \nabla \cdot (D(x) \nabla c )  &= \int_{Q_i} f(x) \, \mathrm{d}x  & i&=1, \dots  , N\\
+\int_{\partial Q_i} D(x) \nabla c \cdot \vec{n} \, \mathrm{d}S \, &=   \int_{Q_i} f(x) \, \mathrm{d} x & i&=1, \dots  , N
+\end{align}
+<p>
+The Finite Volume Method then considers the solution piecewise constant on \(Q\). This creates discontinuities on the cell boundaries, where the values are not uniquely defined.
+The Finite Volume method therefore introduces a numerical flux in the Ansatz and solves the integral over the flux instead.
+since the assumed solution is constant we approximation the source term \(f(\vec{x})\)  with its value on the cell center \(x_i\) of \(Q_i\) and calculate the integrals directly.
+</p>
+\begin{align}
+\label{eq:fv-integral}
+\int_{\partial Q_i} g(c^+, c^-) \cdot \vec{n} \, \mathrm{d}S \, &=   \int_{Q_i} f(x) \, \mathrm{d} x & i&=1, \dots  , N\\
+ \int_{\partial Q_i} g(c^+, c^-) \cdot \vec{n} \, \mathrm{d}S \,&=   |Q_i| f(x_i)  & i&=1, \dots  , N
+\end{align}
+</div>
+</div>
+<div id="outline-container-org62f0f93" class="outline-3">
+<h3 id="org62f0f93"><span class="section-number-3">1.2.</span> Example diffusion terms</h3>
+<div class="outline-text-3" id="text-1-2">
+<p>
+We investigate of single and multiscale solvers with different Diffusion functions, that we introduce in the followin sections
+</p>
+</div>
+<div id="outline-container-orga89bd4d" class="outline-4">
+<h4 id="orga89bd4d"><span class="section-number-4">1.2.1.</span> 1D</h4>
+<div class="outline-text-4" id="text-1-2-1">
+<p>
+Since the Aim of multiscale Finite Volume, is to improve the results for highly fluctuating diffusivities, we test with the following oscillating function
 </p>
 \begin{align*}
-\int_{Q} \nabla \cdot (D(x) \nabla c )  &= \int_{Q} f(x) \, \mathrm{d}x \\
-\int_{\partial Q} D(x) \nabla c \cdot \vec{n} \mathrm{d}S \, &=   \int_{Q} f(x) \, \mathrm{d} x
+D(x) &= \frac{1}{2+ 1.9 \cos \left( \frac{2 \pi x}{\epsilon} \right)}
 \end{align*}
+<div class='org-src-wrapper'>
+<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_7b94b0bcfd154ce2a7d3aaa634b974af>&#10697;</button>
+<script type='text/javascript'>
+var copyBtnbtn_7b94b0bcfd154ce2a7d3aaa634b974af=document.querySelector('button[name=btn_7b94b0bcfd154ce2a7d3aaa634b974af]');
+copyBtnbtn_7b94b0bcfd154ce2a7d3aaa634b974af.addEventListener('click', function(event) {
+let res = copyTextToClipboard(`def oscillation(x, eps = 0.1):\n    return 1 / (2+1.9 * np.cos(2 * np.pi* x / eps))\n`);copyBtnbtn_7b94b0bcfd154ce2a7d3aaa634b974af.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_7b94b0bcfd154ce2a7d3aaa634b974af.innerHTML = '&#10697;'}, 3000);
+});
+</script>
+</div><div class="org-src-container">
+<pre class="src src-python"><code><span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">def</span> <span style="color: var(--function-clr-name); background-color: var(--function-bg-name);">oscillation</span>(x, eps = 0.1):
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">return</span> 1 / (2+1.9 * np.cos(2 * np.pi* x / eps))
+</code></pre>
+</div></div>
+
+
+<div id="orgdec44b6" class="figure">
+<p><img src="images/D.png" alt="D.png" />
+</p>
+<p><span class="figure-number">Figure 1: </span>Oscillating Diffusivity for 1D finite volume method</p>
+</div>
+</div>
+</div>
+<div id="outline-container-orgef2b8ac" class="outline-4">
+<h4 id="orgef2b8ac"><span class="section-number-4">1.2.2.</span> 2D Box Condition</h4>
+<div class="outline-text-4" id="text-1-2-2">
 <p>
-We assume constant c on \(Q\)
-\(q =D(x) \nabla c\) is not uniquely defined on \(\partial\Omega\) since we assuse c constant and therefore discontinous on \(\partial Q\). We therefore introduce a Numerical Flux \(q = g(c^+ , c^{-} )\)
+To test numerical stability of our methods we introduce a box constrain condition, that traps some concentration in the center.
+</p>
+<div class='org-src-wrapper'>
+<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_b4053a8f64cc47e9848877c4de76f089>&#10697;</button>
+<script type='text/javascript'>
+var copyBtnbtn_b4053a8f64cc47e9848877c4de76f089=document.querySelector('button[name=btn_b4053a8f64cc47e9848877c4de76f089]');
+copyBtnbtn_b4053a8f64cc47e9848877c4de76f089.addEventListener('click', function(event) {
+let res = copyTextToClipboard(`alpha = 1.\ngamma = 0.002\n\nexp_kernel = lambda r: alpha * np.exp( - r / gamma)\n\ndef R(x,y , p=2):\n    center = np.array([0.5,0.5])\n    r = 0.2\n    thicc = 0.03\n    return np.maximum(0. , np.abs((np.abs(x -center[0])**p + np.abs(y - center[1])**p)**(1/p) - r) - thicc)\n\ndef box(x,y , p=2):\n    return np.maximum(0.0005 , 1. -  exp_kernel(R(x,y , p=100)))\ndef circle(x,y , p=2):\n    return np.maximum(0.0005 , 1. -  exp_kernel(R(x,y , p=2)))\ndef rhombus(x,y , p=2):\n    return np.maximum(0.0005 , 1. -  exp_kernel(R(x,y , p=1)))\n`);copyBtnbtn_b4053a8f64cc47e9848877c4de76f089.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_b4053a8f64cc47e9848877c4de76f089.innerHTML = '&#10697;'}, 3000);
+});
+</script>
+</div><div class="org-src-container">
+<pre class="src src-python"><code><span style="color: var(--clr-variable); background-color: var(--bg-variable);">alpha</span> = 1.
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">gamma</span> = 0.002
+
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">exp_kernel</span> = <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">lambda</span> r: alpha * np.exp( - r / gamma)
+
+<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">def</span> <span style="color: var(--function-clr-name); background-color: var(--function-bg-name);">R</span>(x,y , p=2):
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">center</span> = np.array([0.5,0.5])
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">r</span> = 0.2
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">thicc</span> = 0.03
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">return</span> np.maximum(0. , np.<span style="color: var(--clr-builtin); background-color: var(--bg-builtin);">abs</span>((np.<span style="color: var(--clr-builtin); background-color: var(--bg-builtin);">abs</span>(x -center[0])**p + np.<span style="color: var(--clr-builtin); background-color: var(--bg-builtin);">abs</span>(y - center[1])**p)**(1/p) - r) - thicc)
+ 
+<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">def</span> <span style="color: var(--function-clr-name); background-color: var(--function-bg-name);">box</span>(x,y , p=2):
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">return</span> np.maximum(0.0005 , 1. -  exp_kernel(R(x,y , p=100)))
+<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">def</span> <span style="color: var(--function-clr-name); background-color: var(--function-bg-name);">circle</span>(x,y , p=2):
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">return</span> np.maximum(0.0005 , 1. -  exp_kernel(R(x,y , p=2)))
+<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">def</span> <span style="color: var(--function-clr-name); background-color: var(--function-bg-name);">rhombus</span>(x,y , p=2):
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">return</span> np.maximum(0.0005 , 1. -  exp_kernel(R(x,y , p=1)))
+</code></pre>
+</div></div>
+
+
+<div id="org9af040f" class="figure">
+<p><img src="images/box-constraints.png" alt="box-constraints.png" />
+</p>
+<p><span class="figure-number">Figure 2: </span>Constraints restricting flow from the center of the Domain</p>
+</div>
+</div>
+</div>
+<div id="outline-container-org8179c51" class="outline-4">
+<h4 id="org8179c51"><span class="section-number-4">1.2.3.</span> 2D Oscillation</h4>
+<div class="outline-text-4" id="text-1-2-3">
+<div class='org-src-wrapper'>
+<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_a7ab9c5106d14332bbdbc54a55e99e6b>&#10697;</button>
+<script type='text/javascript'>
+var copyBtnbtn_a7ab9c5106d14332bbdbc54a55e99e6b=document.querySelector('button[name=btn_a7ab9c5106d14332bbdbc54a55e99e6b]');
+copyBtnbtn_a7ab9c5106d14332bbdbc54a55e99e6b.addEventListener('click', function(event) {
+let res = copyTextToClipboard(`def osc2D_point(x,y , eps = 0.25):\n    return oscillation(x, eps=eps) * oscillation(y, eps=eps)\ndef osc2D_line(x,y , eps = 0.25):\n    return oscillation(x, eps=eps) + oscillation(y, eps=eps)\n\n`);copyBtnbtn_a7ab9c5106d14332bbdbc54a55e99e6b.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_a7ab9c5106d14332bbdbc54a55e99e6b.innerHTML = '&#10697;'}, 3000);
+});
+</script>
+</div><div class="org-src-container">
+<pre class="src src-python"><code><span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">def</span> <span style="color: var(--function-clr-name); background-color: var(--function-bg-name);">osc2D_point</span>(x,y , eps = 0.25):
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">return</span> oscillation(x, eps=eps) * oscillation(y, eps=eps)
+<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">def</span> <span style="color: var(--function-clr-name); background-color: var(--function-bg-name);">osc2D_line</span>(x,y , eps = 0.25):
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">return</span> oscillation(x, eps=eps) + oscillation(y, eps=eps)
+
+</code></pre>
+</div></div>
+<div class='org-src-wrapper'>
+<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_1fdbd9ff4e254af59c8a38284e81e370>&#10697;</button>
+<script type='text/javascript'>
+var copyBtnbtn_1fdbd9ff4e254af59c8a38284e81e370=document.querySelector('button[name=btn_1fdbd9ff4e254af59c8a38284e81e370]');
+copyBtnbtn_1fdbd9ff4e254af59c8a38284e81e370.addEventListener('click', function(event) {
+let res = copyTextToClipboard(`import src.diffusion as D\nreload(D)\n\n\nN = 1000\nM = 1000\nx = np.linspace(0.,1., N)\ny= np.linspace(0.,1., M)\ngrid = np.meshgrid(x,y)\ndiffusion_b = D.osc2D_point(grid[0] , grid[1])\ndiffusion_b = diffusion_b.reshape((N,M))\ndiffusion_c = D.osc2D_line(grid[0] , grid[1])\ndiffusion_c = diffusion_c.reshape((N,M))\n\nfig,axis= plt.subplots(1,2)\nim1 = axis[0].imshow(diffusion_b , cmap=\"magma\" , extent=[0,1,0,1])\naxis[0].set_title(r\"0D Obstacles\")\nim2 = axis[1].imshow(diffusion_c , cmap=\"magma\" , extent=[0,1,0,1])\naxis[1].set_title(r\"1D Obstacles\")\n\n#fig.colorbar()\nfig.suptitle(r\"Osscillating Diffusion\")\nfig.colorbar(im1 ,ax=axis , fraction=0.025)\n`);copyBtnbtn_1fdbd9ff4e254af59c8a38284e81e370.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_1fdbd9ff4e254af59c8a38284e81e370.innerHTML = '&#10697;'}, 3000);
+});
+</script>
+</div><div class="org-src-container">
+<pre class="src src-python" id="org5e99962"><code><span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">import</span> src.diffusion <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">as</span> D
+<span style="color: var(--clr-builtin); background-color: var(--bg-builtin);">reload</span>(D)
+
+
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">N</span> = 1000
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">M</span> = 1000
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">x</span> = np.linspace(0.,1., N)
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">y</span>= np.linspace(0.,1., M)
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">grid</span> = np.meshgrid(x,y)
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">diffusion_b</span> = D.osc2D_point(grid[0] , grid[1])
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">diffusion_b</span> = diffusion_b.reshape((N,M))
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">diffusion_c</span> = D.osc2D_line(grid[0] , grid[1])
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">diffusion_c</span> = diffusion_c.reshape((N,M))
+
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">fig</span>,<span style="color: var(--clr-variable); background-color: var(--bg-variable);">axis</span>= plt.subplots(1,2)
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">im1</span> = axis[0].imshow(diffusion_b , cmap=<span style="color: var(--clr-string); background-color: var(--bg-string);">"magma"</span> , extent=[0,1,0,1])
+axis[0].set_title(r<span style="color: var(--clr-string); background-color: var(--bg-string);">"0D Obstacles"</span>)
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">im2</span> = axis[1].imshow(diffusion_c , cmap=<span style="color: var(--clr-string); background-color: var(--bg-string);">"magma"</span> , extent=[0,1,0,1])
+axis[1].set_title(r<span style="color: var(--clr-string); background-color: var(--bg-string);">"1D Obstacles"</span>)
+
+<span style="color: var(--clr-comment-delimiter); background-color: var(--bg-comment-delimiter);">#</span><span style="color: var(--clr-comment); background-color: var(--bg-comment);">fig.colorbar()</span>
+fig.suptitle(r<span style="color: var(--clr-string); background-color: var(--bg-string);">"Osscillating Diffusion"</span>)
+fig.colorbar(im1 ,ax=axis , fraction=0.025)
+</code></pre>
+</div></div>
+
+
+<div id="org6cbb6a3" class="figure">
+<p><img src="images/oscillation-2d.png" alt="oscillation-2d.png" />
+</p>
+</div>
+</div>
+</div>
+<div id="outline-container-orgadddc7b" class="outline-4">
+<h4 id="orgadddc7b"><span class="section-number-4">1.2.4.</span> 1D Noise</h4>
+<div class="outline-text-4" id="text-1-2-4">
+<div class='org-src-wrapper'>
+<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_3a5d82f02ccb4886b7c9cc52ad68210d>&#10697;</button>
+<script type='text/javascript'>
+var copyBtnbtn_3a5d82f02ccb4886b7c9cc52ad68210d=document.querySelector('button[name=btn_3a5d82f02ccb4886b7c9cc52ad68210d]');
+copyBtnbtn_3a5d82f02ccb4886b7c9cc52ad68210d.addEventListener('click', function(event) {
+let res = copyTextToClipboard(`def noise1D(x,scale=10.  , frequencies=5):\n    s = lambda x ,f , a , o: a* np.sin(f*2*np.pi*(x + o))\n    coeffs = np.random.rand(frequencies,3)\n    res = np.zeros(len(x))\n    for i in range(frequencies):\n        res += s(x, scale *coeffs[i,0] ,coeffs[i,1] , coeffs[i,2] )\n    res = res / (2*np.sum(coeffs[:,1])) + 0.5\n    return res\n`);copyBtnbtn_3a5d82f02ccb4886b7c9cc52ad68210d.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_3a5d82f02ccb4886b7c9cc52ad68210d.innerHTML = '&#10697;'}, 3000);
+});
+</script>
+</div><div class="org-src-container">
+<pre class="src src-python"><code><span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">def</span> <span style="color: var(--function-clr-name); background-color: var(--function-bg-name);">noise1D</span>(x,scale=10.  , frequencies=5):
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">s</span> = <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">lambda</span> x ,f , a , o: a* np.sin(f*2*np.pi*(x + o))
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">coeffs</span> = np.random.rand(frequencies,3)
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">res</span> = np.zeros(<span style="color: var(--clr-builtin); background-color: var(--bg-builtin);">len</span>(x))
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">for</span> i <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">in</span> <span style="color: var(--clr-builtin); background-color: var(--bg-builtin);">range</span>(frequencies):
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">res</span> += s(x, scale *coeffs[i,0] ,coeffs[i,1] , coeffs[i,2] )
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">res</span> = res / (2*np.<span style="color: var(--clr-builtin); background-color: var(--bg-builtin);">sum</span>(coeffs[:,1])) + 0.5
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">return</span> res
+</code></pre>
+</div></div>
+
+
+<div class='org-src-wrapper'>
+<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_88d42e37644346d79d9e47bcea54d339>&#10697;</button>
+<script type='text/javascript'>
+var copyBtnbtn_88d42e37644346d79d9e47bcea54d339=document.querySelector('button[name=btn_88d42e37644346d79d9e47bcea54d339]');
+copyBtnbtn_88d42e37644346d79d9e47bcea54d339.addEventListener('click', function(event) {
+let res = copyTextToClipboard(`import src.diffusion as D\nreload(D)\nx = np.linspace(0,1)\nplt.plot(D.noise1D(x))\n`);copyBtnbtn_88d42e37644346d79d9e47bcea54d339.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_88d42e37644346d79d9e47bcea54d339.innerHTML = '&#10697;'}, 3000);
+});
+</script>
+</div><div class="org-src-container">
+<pre class="src src-python"><code><span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">import</span> src.diffusion <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">as</span> D
+<span style="color: var(--clr-builtin); background-color: var(--bg-builtin);">reload</span>(D)
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">x</span> = np.linspace(0,1)
+plt.plot(D.noise1D(x))
+</code></pre>
+</div></div>
+
+
+<div id="org93eb3ae" class="figure">
+<p><img src="images/noise.png" alt="noise.png" />
+</p>
+</div>
+</div>
+</div>
+<div id="outline-container-orgf194cb1" class="outline-4">
+<h4 id="orgf194cb1"><span class="section-number-4">1.2.5.</span> Noise 2D</h4>
+<div class="outline-text-4" id="text-1-2-5">
+<div class='org-src-wrapper'>
+<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_1895ac5badfb45dbb3fbb6a0257a3c63>&#10697;</button>
+<script type='text/javascript'>
+var copyBtnbtn_1895ac5badfb45dbb3fbb6a0257a3c63=document.querySelector('button[name=btn_1895ac5badfb45dbb3fbb6a0257a3c63]');
+copyBtnbtn_1895ac5badfb45dbb3fbb6a0257a3c63.addEventListener('click', function(event) {
+let res = copyTextToClipboard(`\n`);copyBtnbtn_1895ac5badfb45dbb3fbb6a0257a3c63.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_1895ac5badfb45dbb3fbb6a0257a3c63.innerHTML = '&#10697;'}, 3000);
+});
+</script>
+</div><div class="org-src-container">
+<pre class="src src-python"><code>
+</code></pre>
+</div></div>
+
+
+<div id="org599c3ab" class="figure">
+<p><img src="images/noise-2D.png" alt="noise-2D.png" />
+</p>
+</div>
+
+<p>
 for example upwind
 </p>
 
@@ -949,235 +1199,199 @@ T_{\pm } &= - D(x^{\frac{1}{2}+}) \frac{1}{h}
 
 
 <p>
-With \(D(x) = \frac{1}{2+ 1.9 \cos \left( \frac{2 \pi x}{\epsilon} \right)}\)
 Linear System
 </p>
 \begin{align*}
 \int_{\partial Q_{i}} D(x_{i}) \nabla c \cdot \vec{n}  \, \mathrm{d}S &= |Q| \overline{f}(x_{i}) \\
 \sum_{j \in \left\{ -1,1 \right\} } j *  g(c_{i+j+1} , c_{i+j})  &=   h \overline{f}(x_{i})
 \end{align*}
-
+</div>
+</div>
+</div>
+</div>
+<div id="outline-container-org73b2202" class="outline-2">
+<h2 id="org73b2202"><span class="section-number-2">2.</span> Finite Volume 1D</h2>
+<div class="outline-text-2" id="text-2">
+</div>
+<div id="outline-container-orgb993933" class="outline-3">
+<h3 id="orgb993933"><span class="section-number-3">2.1.</span> Program Structure</h3>
+<div class="outline-text-3" id="text-2-1">
+<p>
+For convenience in Explanation and Execution, we bundle all required information for solving a 1D system into a python class, which is structured as follows
+</p>
 <div class='org-src-wrapper'>
-<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_11c8eea62d84449baae128abe57c3429>&#10697;</button>
+<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_00a0d4d8ebd2475282634c44f9c31a67>&#10697;</button>
 <script type='text/javascript'>
-var copyBtnbtn_11c8eea62d84449baae128abe57c3429=document.querySelector('button[name=btn_11c8eea62d84449baae128abe57c3429]');
-copyBtnbtn_11c8eea62d84449baae128abe57c3429.addEventListener('click', function(event) {
-let res = copyTextToClipboard(`import numpy as np\nimport scipy as sp\nimport matplotlib.pyplot as plt\nepsilon = 0.1 #* np.pi\nN = 10\nn = 100\nh = 1/(N-1)\nD = lambda x: 1 / (2+1.9 * np.cos(2 * np.pi* x / epsilon))\nx = np.linspace(0,1 ,N)\nx_highres = np.linspace(0,1 , 100000)\nc = np.zeros(N)\nsource = np.ones(N) * h\n# Boundary\nsource[0] = 0\nsource[-1] = 0\nplt.plot(x , D(x))\nplt.plot(x_highres , D(x_highres))\nplt.legend([r\"$D$ Sampled on the course grid\" , r\"$D$\"])\nplt.title(\"Diffusion Coefficient\")\n`);copyBtnbtn_11c8eea62d84449baae128abe57c3429.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_11c8eea62d84449baae128abe57c3429.innerHTML = '&#10697;'}, 3000);
+var copyBtnbtn_00a0d4d8ebd2475282634c44f9c31a67=document.querySelector('button[name=btn_00a0d4d8ebd2475282634c44f9c31a67]');
+copyBtnbtn_00a0d4d8ebd2475282634c44f9c31a67.addEventListener('click', function(event) {
+let res = copyTextToClipboard(`class FVSolver:\n   N : int\n   h : np.float64\n   x : NDArray[np.float64]\n   D : Callable\n   f : NDArray[np.float64]\n   c : NDArray[np.float64]\n\n   _T : NDArray[np.float64]\n\n<<Init>>\n\n<<Assemble Matrix>>\n\n<<Boundary>>\n\n<<Solve>>\n\n<<Microscale Transmissions>>\n`);copyBtnbtn_00a0d4d8ebd2475282634c44f9c31a67.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_00a0d4d8ebd2475282634c44f9c31a67.innerHTML = '&#10697;'}, 3000);
 });
 </script>
 </div><div class="org-src-container">
-<pre class="src src-python"><code><span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">import</span> numpy <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">as</span> np
-<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">import</span> scipy <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">as</span> sp
-<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">import</span> matplotlib.pyplot <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">as</span> plt
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">epsilon</span> = 0.1 <span style="color: var(--clr-comment-delimiter); background-color: var(--bg-comment-delimiter);">#</span><span style="color: var(--clr-comment); background-color: var(--bg-comment);">* np.pi</span>
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">N</span> = 10
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">n</span> = 100
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">h</span> = 1/(N-1)
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">D</span> = <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">lambda</span> x: 1 / (2+1.9 * np.cos(2 * np.pi* x / epsilon))
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">x</span> = np.linspace(0,1 ,N)
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">x_highres</span> = np.linspace(0,1 , 100000)
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">c</span> = np.zeros(N)
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">source</span> = np.ones(N) * h
-<span style="color: var(--clr-comment-delimiter); background-color: var(--bg-comment-delimiter);"># </span><span style="color: var(--clr-comment); background-color: var(--bg-comment);">Boundary</span>
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">source</span>[0] = 0
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">source</span>[-1] = 0
-plt.plot(x , D(x))
-plt.plot(x_highres , D(x_highres))
-plt.legend([r<span style="color: var(--clr-string); background-color: var(--bg-string);">"$D$ Sampled on the course grid"</span> , r<span style="color: var(--clr-string); background-color: var(--bg-string);">"$D$"</span>])
-plt.title(<span style="color: var(--clr-string); background-color: var(--bg-string);">"Diffusion Coefficient"</span>)
+<pre class="src src-python"><code><span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">class</span> <span style="color: #78DCE8;">FVSolver</span>:
+<span style="color: #4a9d48074b31;"> </span>  N : <span style="color: var(--clr-builtin); background-color: var(--bg-builtin);">int</span>
+<span style="color: #4a9d48074b31;"> </span>  h : np.float64
+<span style="color: #4a9d48074b31;"> </span>  x : NDArray[np.float64]
+<span style="color: #4a9d48074b31;"> </span>  D : Callable
+<span style="color: #4a9d48074b31;"> </span>  f : NDArray[np.float64]
+<span style="color: #4a9d48074b31;"> </span>  c : NDArray[np.float64]
+ 
+<span style="color: #4a9d48074b31;"> </span>  _T : NDArray[np.float64]
+ 
+&lt;&lt;Init&gt;&gt;
+
+&lt;&lt;Assemble Matrix&gt;&gt;
+
+&lt;&lt;Boundary&gt;&gt;
+
+&lt;&lt;Solve&gt;&gt;
+
+&lt;&lt;Microscale Transmissions&gt;&gt;
 </code></pre>
 </div></div>
 
 
-<div id="org9cd1d62" class="figure">
-<p><img src="images/D.svg" alt="D.svg" class="org-svg" />
-</p>
-</div>
+<div class='org-src-wrapper'>
+<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_6734e7bea72e495a8fa4c59c9856cd60>&#10697;</button>
+<script type='text/javascript'>
+var copyBtnbtn_6734e7bea72e495a8fa4c59c9856cd60=document.querySelector('button[name=btn_6734e7bea72e495a8fa4c59c9856cd60]');
+copyBtnbtn_6734e7bea72e495a8fa4c59c9856cd60.addEventListener('click', function(event) {
+let res = copyTextToClipboard(`   def __init__(self , N :int , D :Callable  , domain=(0.,1.))->None:\n       self.h = (domain[1] - domain[0]) / N\n       self.N = N\n       self.D = D\n       self.x = np.linspace(domain[0] , domain[1] , N)\n       self._T =  -1/self.h * D((self.x[:-1] + self.x[1:]) * 0.5)\n       self.f = self.h* np.ones(N)\n\n`);copyBtnbtn_6734e7bea72e495a8fa4c59c9856cd60.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_6734e7bea72e495a8fa4c59c9856cd60.innerHTML = '&#10697;'}, 3000);
+});
+</script>
+</div><div class="org-src-container">
+<pre class="src src-python" id="org8f5f1cb"><code><span style="color: #4a9d48074b31;"> </span>  <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">def</span> <span style="color: var(--function-clr-name); background-color: var(--function-bg-name);">__init__</span>(<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span> , N :<span style="color: var(--clr-builtin); background-color: var(--bg-builtin);">int</span> , D :Callable  , domain=(0.,1.))-&gt;<span style="color: var(--clr-constant); background-color: var(--bg-constant);">None</span>:
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>  <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.<span style="color: var(--clr-variable); background-color: var(--bg-variable);">h</span> = (domain[1] - domain[0]) / N
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>  <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.<span style="color: var(--clr-variable); background-color: var(--bg-variable);">N</span> = N
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>  <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.<span style="color: var(--clr-variable); background-color: var(--bg-variable);">D</span> = D
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>  <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.<span style="color: var(--clr-variable); background-color: var(--bg-variable);">x</span> = np.linspace(domain[0] , domain[1] , N)
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>  <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.<span style="color: var(--clr-variable); background-color: var(--bg-variable);">_T</span> =  -1/<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.h * D((<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.x[:-1] + <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.x[1:]) * 0.5)
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>  <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.<span style="color: var(--clr-variable); background-color: var(--bg-variable);">f</span> = <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.h* np.ones(N)
+
+</code></pre>
+</div></div>
+
+<div class='org-src-wrapper'>
+<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_c499147828a74ae0a05ae71ebc78bf8c>&#10697;</button>
+<script type='text/javascript'>
+var copyBtnbtn_c499147828a74ae0a05ae71ebc78bf8c=document.querySelector('button[name=btn_c499147828a74ae0a05ae71ebc78bf8c]');
+copyBtnbtn_c499147828a74ae0a05ae71ebc78bf8c.addEventListener('click', function(event) {
+let res = copyTextToClipboard(`   def solve(self):\n      self.c = spsolve(self._A.tocsr() , self.f)\n      return self.c\n\n`);copyBtnbtn_c499147828a74ae0a05ae71ebc78bf8c.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_c499147828a74ae0a05ae71ebc78bf8c.innerHTML = '&#10697;'}, 3000);
+});
+</script>
+</div><div class="org-src-container">
+<pre class="src src-python" id="orgdc787f2"><code><span style="color: #4a9d48074b31;"> </span>  <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">def</span> <span style="color: var(--function-clr-name); background-color: var(--function-bg-name);">solve</span>(<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>):
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span> <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.<span style="color: var(--clr-variable); background-color: var(--bg-variable);">c</span> = spsolve(<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>._A.tocsr() , <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.f)
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span> <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">return</span> <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.c
+
+</code></pre>
+</div></div>
+
+<div class='org-src-wrapper'>
+<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_06458e9c7aea414086d4c942786b0977>&#10697;</button>
+<script type='text/javascript'>
+var copyBtnbtn_06458e9c7aea414086d4c942786b0977=document.querySelector('button[name=btn_06458e9c7aea414086d4c942786b0977]');
+copyBtnbtn_06458e9c7aea414086d4c942786b0977.addEventListener('click', function(event) {
+let res = copyTextToClipboard(`   def set_boundary(self , bc=(0.,0.)):\n      self.f[0] = bc[0]\n      self.f[-1] = bc[1]\n\n`);copyBtnbtn_06458e9c7aea414086d4c942786b0977.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_06458e9c7aea414086d4c942786b0977.innerHTML = '&#10697;'}, 3000);
+});
+</script>
+</div><div class="org-src-container">
+<pre class="src src-python" id="org3ca75c2"><code><span style="color: #4a9d48074b31;"> </span>  <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">def</span> <span style="color: var(--function-clr-name); background-color: var(--function-bg-name);">set_boundary</span>(<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span> , bc=(0.,0.)):
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span> <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.<span style="color: var(--clr-variable); background-color: var(--bg-variable);">f</span>[0] = bc[0]
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span> <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.<span style="color: var(--clr-variable); background-color: var(--bg-variable);">f</span>[-1] = bc[1]
+
+</code></pre>
+</div></div>
+
+
+
 
 
 <p>
 Matrix Assembly
 </p>
 <div class='org-src-wrapper'>
-<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_548f25a9381e43278933bc1c99974613>&#10697;</button>
+<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_1cf2dc4bb5bb42d49e8684caa72fae16>&#10697;</button>
 <script type='text/javascript'>
-var copyBtnbtn_548f25a9381e43278933bc1c99974613=document.querySelector('button[name=btn_548f25a9381e43278933bc1c99974613]');
-copyBtnbtn_548f25a9381e43278933bc1c99974613.addEventListener('click', function(event) {
-let res = copyTextToClipboard(`from scipy.sparse import spdiags\nimport seaborn as sns\ndef assemble_matrix(N ,x, h, D ):\n    diagp1 = np.zeros(N)\n    diagp1[2:] = np.ones(N-2) * -1/h * D(x[1:-1] + 0.5*h)\n    diagm1 = np.zeros(N)\n    diagm1[:-2] = np.ones(N-2) * -1/h * D(x[1:-1] - 0.5*h)\n    diag0 = np.ones(N)\n    diag0[1:-1] *= 1/h * (D(x[1:-1]-0.5*h) + D(x[1:-1] + 0.5*h))\n    A = spdiags([diagm1 , diag0 , diagp1] , np.array( [-1, 0, 1] ))\n    return A\nA = assemble_matrix(10 , np.linspace(0,1.,10), h , D_1D)\n#plt.spy(A)\nsns.heatmap(A.todense())\nplt.title(\"Sparsity Patter of A\")\n`);copyBtnbtn_548f25a9381e43278933bc1c99974613.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_548f25a9381e43278933bc1c99974613.innerHTML = '&#10697;'}, 3000);
+var copyBtnbtn_1cf2dc4bb5bb42d49e8684caa72fae16=document.querySelector('button[name=btn_1cf2dc4bb5bb42d49e8684caa72fae16]');
+copyBtnbtn_1cf2dc4bb5bb42d49e8684caa72fae16.addEventListener('click', function(event) {
+let res = copyTextToClipboard(`   def assemble_matrix(self)-> None:\n      diagp1 = np.zeros(self.N)\n      diagp1[2:] =  self._T[1:]\n      diagm1 = np.zeros(self.N)\n      diagm1[:-2] =  self._T[:-1]\n      diag0 = np.ones(self.N)\n      diag0[1:-1] = -1 * (self._T[1:] + self._T[:-1])\n      self._A = spdiags([diagm1 , diag0 , diagp1] , np.array( [-1, 0, 1] ))\n`);copyBtnbtn_1cf2dc4bb5bb42d49e8684caa72fae16.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_1cf2dc4bb5bb42d49e8684caa72fae16.innerHTML = '&#10697;'}, 3000);
 });
 </script>
 </div><div class="org-src-container">
-<pre class="src src-python"><code><span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">from</span> scipy.sparse <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">import</span> spdiags
-<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">import</span> seaborn <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">as</span> sns
-<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">def</span> <span style="color: var(--function-clr-name); background-color: var(--function-bg-name);">assemble_matrix</span>(N ,x, h, D ):
-<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diagp1</span> = np.zeros(N)
-<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diagp1</span>[2:] = np.ones(N-2) * -1/h * D(x[1:-1] + 0.5*h)
-<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diagm1</span> = np.zeros(N)
-<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diagm1</span>[:-2] = np.ones(N-2) * -1/h * D(x[1:-1] - 0.5*h)
-<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diag0</span> = np.ones(N)
-<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diag0</span>[1:-1] *= 1/h * (D(x[1:-1]-0.5*h) + D(x[1:-1] + 0.5*h))
-<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">A</span> = spdiags([diagm1 , diag0 , diagp1] , np.array( [-1, 0, 1] ))
-<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">return</span> A
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">A</span> = assemble_matrix(10 , np.linspace(0,1.,10), h , D_1D)
-<span style="color: var(--clr-comment-delimiter); background-color: var(--bg-comment-delimiter);">#</span><span style="color: var(--clr-comment); background-color: var(--bg-comment);">plt.spy(A)</span>
-sns.heatmap(A.todense())
+<pre class="src src-python" id="orgf53f265"><code><span style="color: #4a9d48074b31;"> </span>  <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">def</span> <span style="color: var(--function-clr-name); background-color: var(--function-bg-name);">assemble_matrix</span>(<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>)-&gt; <span style="color: var(--clr-constant); background-color: var(--bg-constant);">None</span>:
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span> <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diagp1</span> = np.zeros(<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.N)
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span> <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diagp1</span>[2:] =  <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>._T[1:]
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span> <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diagm1</span> = np.zeros(<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.N)
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span> <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diagm1</span>[:-2] =  <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>._T[:-1]
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span> <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diag0</span> = np.ones(<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.N)
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span> <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diag0</span>[1:-1] = -1 * (<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>._T[1:] + <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>._T[:-1])
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span> <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.<span style="color: var(--clr-variable); background-color: var(--bg-variable);">_A</span> = spdiags([diagm1 , diag0 , diagp1] , np.array( [-1, 0, 1] ))
+</code></pre>
+</div></div>
+<div class='org-src-wrapper'>
+<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_ff2003a2b27c4a9d9961b9062799cf71>&#10697;</button>
+<script type='text/javascript'>
+var copyBtnbtn_ff2003a2b27c4a9d9961b9062799cf71=document.querySelector('button[name=btn_ff2003a2b27c4a9d9961b9062799cf71]');
+copyBtnbtn_ff2003a2b27c4a9d9961b9062799cf71.addEventListener('click', function(event) {
+let res = copyTextToClipboard(`sns.heatmap(A.todense())\nplt.title(\"Sparsity Patter of A\")\n`);copyBtnbtn_ff2003a2b27c4a9d9961b9062799cf71.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_ff2003a2b27c4a9d9961b9062799cf71.innerHTML = '&#10697;'}, 3000);
+});
+</script>
+</div><div class="org-src-container">
+<pre class="src src-python"><code>sns.heatmap(A.todense())
 plt.title(<span style="color: var(--clr-string); background-color: var(--bg-string);">"Sparsity Patter of A"</span>)
 </code></pre>
 </div></div>
 
 
-<div id="org6416360" class="figure">
+<div id="org6373c95" class="figure">
 <p><img src="images/A-sparsity.svg" alt="A-sparsity.svg" class="org-svg" />
 </p>
 </div>
-
-
-<div class='org-src-wrapper'>
-<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_b739cd73fc7c4a299b9abca85a3b0917>&#10697;</button>
-<script type='text/javascript'>
-var copyBtnbtn_b739cd73fc7c4a299b9abca85a3b0917=document.querySelector('button[name=btn_b739cd73fc7c4a299b9abca85a3b0917]');
-copyBtnbtn_b739cd73fc7c4a299b9abca85a3b0917.addEventListener('click', function(event) {
-let res = copyTextToClipboard(`c = sp.sparse.linalg.spsolve(A.tocsr(),source)\nplt.plot(c)\nplt.title(\"Course Grid Solution\")\n`);copyBtnbtn_b739cd73fc7c4a299b9abca85a3b0917.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_b739cd73fc7c4a299b9abca85a3b0917.innerHTML = '&#10697;'}, 3000);
-});
-</script>
-</div><div class="org-src-container">
-<pre class="src src-python"><code><span style="color: var(--clr-variable); background-color: var(--bg-variable);">c</span> = sp.sparse.linalg.spsolve(A.tocsr(),source)
-plt.plot(c)
-plt.title(<span style="color: var(--clr-string); background-color: var(--bg-string);">"Course Grid Solution"</span>)
-</code></pre>
-</div></div>
-
-
-<div id="org635d06b" class="figure">
-<p><img src="images/plot.svg" alt="plot.svg" class="org-svg" />
-</p>
 </div>
 </div>
 </div>
-<div id="outline-container-orge2d9d4c" class="outline-2">
-<h2 id="orge2d9d4c"><span class="section-number-2">3.</span> Multiscale</h2>
+<div id="outline-container-org4e7a723" class="outline-2">
+<h2 id="org4e7a723"><span class="section-number-2">3.</span> Multiscale</h2>
 <div class="outline-text-2" id="text-3">
 <p>
 In 1D
 </p>
+<div class='org-src-wrapper'>
+<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_c7a6b2a83b994dbc98ceb1f5d20c3ffa>&#10697;</button>
+<script type='text/javascript'>
+var copyBtnbtn_c7a6b2a83b994dbc98ceb1f5d20c3ffa=document.querySelector('button[name=btn_c7a6b2a83b994dbc98ceb1f5d20c3ffa]');
+copyBtnbtn_c7a6b2a83b994dbc98ceb1f5d20c3ffa.addEventListener('click', function(event) {
+let res = copyTextToClipboard(`   def set_multiscale_transmissions(self, resolution)->NDArray[np.float64]:\n      micro_basis = np.zeros((self.N -1)*resolution)\n      for i in range(self.N -1):\n         micro_fv = FVSolver(resolution , self.D , domain=(self.x[i] , self.x[i+1]))\n         micro_fv.set_boundary(bc=(0.,1.))\n         micro_fv.assemble_matrix()\n         phi = micro_fv.solve()\n\n         micro_basis[resolution * i:resolution*(i+1)] = phi\n         hm = micro_fv.h\n         self._T[i] = -hm * np.sum(((phi[1:] - phi[:-1])/hm)**2 * self.D(micro_fv.x[:-1]))\n      return micro_basis\n`);copyBtnbtn_c7a6b2a83b994dbc98ceb1f5d20c3ffa.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_c7a6b2a83b994dbc98ceb1f5d20c3ffa.innerHTML = '&#10697;'}, 3000);
+});
+</script>
+</div><div class="org-src-container">
+<pre class="src src-python" id="org6eb8d0f"><code><span style="color: #4a9d48074b31;"> </span>  <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">def</span> <span style="color: var(--function-clr-name); background-color: var(--function-bg-name);">set_multiscale_transmissions</span>(<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>, resolution)-&gt;NDArray[np.float64]:
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span> <span style="color: var(--clr-variable); background-color: var(--bg-variable);">micro_basis</span> = np.zeros((<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.N -1)*resolution)
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span> <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">for</span> i <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">in</span> <span style="color: var(--clr-builtin); background-color: var(--bg-builtin);">range</span>(<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.N -1):
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span><span style="color: var(--clr-variable); background-color: var(--bg-variable);">micro_fv</span> = FVSolver(resolution , <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.D , domain=(<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.x[i] , <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.x[i+1]))
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>micro_fv.set_boundary(bc=(0.,1.))
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>micro_fv.assemble_matrix()
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span><span style="color: var(--clr-variable); background-color: var(--bg-variable);">phi</span> = micro_fv.solve()
+         
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span><span style="color: var(--clr-variable); background-color: var(--bg-variable);">micro_basis</span>[resolution * i:resolution*(i+1)] = phi
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span><span style="color: var(--clr-variable); background-color: var(--bg-variable);">hm</span> = micro_fv.h
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span><span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.<span style="color: var(--clr-variable); background-color: var(--bg-variable);">_T</span>[i] = -hm * np.<span style="color: var(--clr-builtin); background-color: var(--bg-builtin);">sum</span>(((phi[1:] - phi[:-1])/hm)**2 * <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.D(micro_fv.x[:-1]))
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span> <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">return</span> micro_basis
+</code></pre>
+</div></div>
 
 \begin{align*}
 T_{\pm } &= -\int_{Q} D(x) (\phi'_{\pm} (x))^2\, \mathrm{d}x
 \end{align*}
 
-<p>
-calculate c integral
-</p>
-<div class='org-src-wrapper'>
-<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_c9de8770017f490ab71807ae080e4705>&#10697;</button>
-<script type='text/javascript'>
-var copyBtnbtn_c9de8770017f490ab71807ae080e4705=document.querySelector('button[name=btn_c9de8770017f490ab71807ae080e4705]');
-copyBtnbtn_c9de8770017f490ab71807ae080e4705.addEventListener('click', function(event) {
-let res = copyTextToClipboard(`np.sum((c[1:] - c[:-1])/h * -D(x[1:]))\n`);copyBtnbtn_c9de8770017f490ab71807ae080e4705.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_c9de8770017f490ab71807ae080e4705.innerHTML = '&#10697;'}, 3000);
-});
-</script>
-</div><div class="org-src-container">
-<pre class="src src-python"><code>np.<span style="color: var(--clr-builtin); background-color: var(--bg-builtin);">sum</span>((c[1:] - c[:-1])/h * -D(x[1:]))
-</code></pre>
-</div></div>
-
-<pre class="example">
--1.7465436574208233
-</pre>
 
 <div class='org-src-wrapper'>
-<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_2607fe1af6c84c51b672537801e10f9f>&#10697;</button>
+<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_84c79cb8571e4cc1baba514ca4e53817>&#10697;</button>
 <script type='text/javascript'>
-var copyBtnbtn_2607fe1af6c84c51b672537801e10f9f=document.querySelector('button[name=btn_2607fe1af6c84c51b672537801e10f9f]');
-copyBtnbtn_2607fe1af6c84c51b672537801e10f9f.addEventListener('click', function(event) {
-let res = copyTextToClipboard(`from scipy.sparse.linalg import spsolve\nmicro_basis = np.zeros(N*n)\nT = np.zeros(N)\nfor i,x_m in enumerate(x):\n    xm = np.linspace(x_m , x_m + h , n)\n    hm = h/(n-1)\n    A_m = assemble_matrix(n, xm , hm )\n    fm = np.ones(n) * hm\n    fm[0] = 0\n    fm[-1] = 1\n    phi = spsolve(A_m.tocsr(),fm)\n    micro_basis[n * i:n*(i+1)] = phi\n    T[i] =   hm * np.sum(((phi[1:] - phi[:-1])/hm)**2 * D(xm[:-1]))\nplt.plot(x,T)\nplt.xlabel(r\"$x$\")\nplt.ylabel(r\"$T(x)$\")\nplt.title(r\"Multiscale Transmission Coeficcients $T$\")\n`);copyBtnbtn_2607fe1af6c84c51b672537801e10f9f.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_2607fe1af6c84c51b672537801e10f9f.innerHTML = '&#10697;'}, 3000);
-});
-</script>
-</div><div class="org-src-container">
-<pre class="src src-python"><code><span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">from</span> scipy.sparse.linalg <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">import</span> spsolve
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">micro_basis</span> = np.zeros(N*n)
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">T</span> = np.zeros(N)
-<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">for</span> i,x_m <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">in</span> <span style="color: var(--clr-builtin); background-color: var(--bg-builtin);">enumerate</span>(x):
-<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">xm</span> = np.linspace(x_m , x_m + h , n)
-<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">hm</span> = h/(n-1)
-<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">A_m</span> = assemble_matrix(n, xm , hm )
-<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">fm</span> = np.ones(n) * hm
-<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">fm</span>[0] = 0
-<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">fm</span>[-1] = 1
-<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">phi</span> = spsolve(A_m.tocsr(),fm)
-<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">micro_basis</span>[n * i:n*(i+1)] = phi
-<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">T</span>[i] =   hm * np.<span style="color: var(--clr-builtin); background-color: var(--bg-builtin);">sum</span>(((phi[1:] - phi[:-1])/hm)**2 * D(xm[:-1]))
-plt.plot(x,T)
-plt.xlabel(r<span style="color: var(--clr-string); background-color: var(--bg-string);">"$x$"</span>)
-plt.ylabel(r<span style="color: var(--clr-string); background-color: var(--bg-string);">"$T(x)$"</span>)
-plt.title(r<span style="color: var(--clr-string); background-color: var(--bg-string);">"Multiscale Transmission Coeficcients $T$"</span>)
-</code></pre>
-</div></div>
-
-
-<div id="orgc2e2c8d" class="figure">
-<p><img src="images/T.svg" alt="T.svg" class="org-svg" />
-</p>
-</div>
-
-<div class='org-src-wrapper'>
-<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_2e946825a0784123b30dc23d9775cdf4>&#10697;</button>
-<script type='text/javascript'>
-var copyBtnbtn_2e946825a0784123b30dc23d9775cdf4=document.querySelector('button[name=btn_2e946825a0784123b30dc23d9775cdf4]');
-copyBtnbtn_2e946825a0784123b30dc23d9775cdf4.addEventListener('click', function(event) {
-let res = copyTextToClipboard(`diagp1 = np.zeros(N)\ndiagp1[2:] = np.ones(N-2) * -1* T[1:-1]\ndiagm1 = np.zeros(N)\ndiagm1[:-2] = np.ones(N-2) * -1*  T[:-2]\ndiag0 = np.ones(N)\ndiag0[1:-1] *=  (T[1:-1] + T[:-2])\nA_macro = spdiags([diagm1 , diag0 , diagp1] , np.array( [-1, 0, 1] ))\nsns.heatmap(A_macro.todense())\n`);copyBtnbtn_2e946825a0784123b30dc23d9775cdf4.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_2e946825a0784123b30dc23d9775cdf4.innerHTML = '&#10697;'}, 3000);
-});
-</script>
-</div><div class="org-src-container">
-<pre class="src src-python"><code><span style="color: var(--clr-variable); background-color: var(--bg-variable);">diagp1</span> = np.zeros(N)
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">diagp1</span>[2:] = np.ones(N-2) * -1* T[1:-1]
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">diagm1</span> = np.zeros(N)
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">diagm1</span>[:-2] = np.ones(N-2) * -1*  T[:-2]
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">diag0</span> = np.ones(N)
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">diag0</span>[1:-1] *=  (T[1:-1] + T[:-2])
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">A_macro</span> = spdiags([diagm1 , diag0 , diagp1] , np.array( [-1, 0, 1] ))
-sns.heatmap(A_macro.todense())
-</code></pre>
-</div></div>
-
-
-<div id="orgc072bf4" class="figure">
-<p><img src="A.png" alt="A.png" />
-</p>
-</div>
-
-<div class='org-src-wrapper'>
-<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_e1d7a02848d6465092a0f41c644bc1be>&#10697;</button>
-<script type='text/javascript'>
-var copyBtnbtn_e1d7a02848d6465092a0f41c644bc1be=document.querySelector('button[name=btn_e1d7a02848d6465092a0f41c644bc1be]');
-copyBtnbtn_e1d7a02848d6465092a0f41c644bc1be.addEventListener('click', function(event) {
-let res = copyTextToClipboard(`N_fine = n*N\nx_fine = np.linspace(0,1 , n*N)\nh_fine = 1/(N*n -1)\nA_fine = assemble_matrix(N_fine , x_fine , h_fine)\nf_fine = np.ones(N*n) * h_fine\nf_fine[0] = 0\nf_fine[-1] = 0\nc_fine = sp.sparse.linalg.spsolve(A_fine.tocsr(),f_fine)\n`);copyBtnbtn_e1d7a02848d6465092a0f41c644bc1be.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_e1d7a02848d6465092a0f41c644bc1be.innerHTML = '&#10697;'}, 3000);
-});
-</script>
-</div><div class="org-src-container">
-<pre class="src src-python"><code><span style="color: var(--clr-variable); background-color: var(--bg-variable);">N_fine</span> = n*N
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">x_fine</span> = np.linspace(0,1 , n*N)
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">h_fine</span> = 1/(N*n -1)
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">A_fine</span> = assemble_matrix(N_fine , x_fine , h_fine)
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">f_fine</span> = np.ones(N*n) * h_fine
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">f_fine</span>[0] = 0
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">f_fine</span>[-1] = 0
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">c_fine</span> = sp.sparse.linalg.spsolve(A_fine.tocsr(),f_fine)
-</code></pre>
-</div></div>
-
-
-<div id="org17232de" class="figure">
-<p><img src="images/fine.svg" alt="fine.svg" class="org-svg" />
-</p>
-</div>
-
-<div class='org-src-wrapper'>
-<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_497f5392f1184c05b7fe4c6eedae378a>&#10697;</button>
-<script type='text/javascript'>
-var copyBtnbtn_497f5392f1184c05b7fe4c6eedae378a=document.querySelector('button[name=btn_497f5392f1184c05b7fe4c6eedae378a]');
-copyBtnbtn_497f5392f1184c05b7fe4c6eedae378a.addEventListener('click', function(event) {
-let res = copyTextToClipboard(`c_macro = sp.sparse.linalg.spsolve(A_macro.tocsr(),source)\nc_multi = np.zeros((N-1)* n)\nx = np.linspace(0,1,N)\nx_multi = np.linspace(0,1 , n*(N-1))\nfor i in range(len(c_macro)-1):\n    t = micro_basis[n*i:n*(i+1)]\n    c_multi[n*i:n*(i+1)] = (1-t) * c_macro[i] + t * c_macro[i+1]\nplt.plot(x,c)\nplt.plot(x,c_macro)\nplt.plot(x_multi,c_multi)\nplt.plot(x_fine , c_fine)\nplt.title(\"Comparison Of Different Solvers\")\nplt.xlabel(r\"$x$\")\nplt.ylabel(r\"$c(x)$\")\nplt.legend([\"macro\" , \"multiscale\", \"multi_fine\" , \"reference\"])\n`);copyBtnbtn_497f5392f1184c05b7fe4c6eedae378a.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_497f5392f1184c05b7fe4c6eedae378a.innerHTML = '&#10697;'}, 3000);
+var copyBtnbtn_84c79cb8571e4cc1baba514ca4e53817=document.querySelector('button[name=btn_84c79cb8571e4cc1baba514ca4e53817]');
+copyBtnbtn_84c79cb8571e4cc1baba514ca4e53817.addEventListener('click', function(event) {
+let res = copyTextToClipboard(`c_macro = sp.sparse.linalg.spsolve(A_macro.tocsr(),source)\nc_multi = np.zeros((N-1)* n)\nx = np.linspace(0,1,N)\nx_multi = np.linspace(0,1 , n*(N-1))\nfor i in range(len(c_macro)-1):\n    t = micro_basis[n*i:n*(i+1)]\n    c_multi[n*i:n*(i+1)] = (1-t) * c_macro[i] + t * c_macro[i+1]\nplt.plot(x,c)\nplt.plot(x,c_macro)\nplt.plot(x_multi,c_multi)\nplt.plot(x_fine , c_fine)\nplt.title(\"Comparison Of Different Solvers\")\nplt.xlabel(r\"$x$\")\nplt.ylabel(r\"$c(x)$\")\nplt.legend([\"macro\" , \"multiscale\", \"multi_fine\" , \"reference\"])\n`);copyBtnbtn_84c79cb8571e4cc1baba514ca4e53817.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_84c79cb8571e4cc1baba514ca4e53817.innerHTML = '&#10697;'}, 3000);
 });
 </script>
 </div><div class="org-src-container">
@@ -1186,8 +1400,8 @@ let res = copyTextToClipboard(`c_macro = sp.sparse.linalg.spsolve(A_macro.tocsr(
 <span style="color: var(--clr-variable); background-color: var(--bg-variable);">x</span> = np.linspace(0,1,N)
 <span style="color: var(--clr-variable); background-color: var(--bg-variable);">x_multi</span> = np.linspace(0,1 , n*(N-1))
 <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">for</span> i <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">in</span> <span style="color: var(--clr-builtin); background-color: var(--bg-builtin);">range</span>(<span style="color: var(--clr-builtin); background-color: var(--bg-builtin);">len</span>(c_macro)-1):
-<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">t</span> = micro_basis[n*i:n*(i+1)]
-<span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">c_multi</span>[n*i:n*(i+1)] = (1-t) * c_macro[i] + t * c_macro[i+1]
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">t</span> = micro_basis[n*i:n*(i+1)]
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">c_multi</span>[n*i:n*(i+1)] = (1-t) * c_macro[i] + t * c_macro[i+1]
 plt.plot(x,c)
 plt.plot(x,c_macro)
 plt.plot(x_multi,c_multi)
@@ -1200,120 +1414,25 @@ plt.legend([<span style="color: var(--clr-string); background-color: var(--bg-st
 </div></div>
 
 
-<div id="orgf660134" class="figure">
+<div id="orgee6829d" class="figure">
 <p><img src="images/multiscaleplot.svg" alt="multiscaleplot.svg" class="org-svg" />
 </p>
 </div>
 </div>
 </div>
-<div id="outline-container-org75bf2c0" class="outline-2">
-<h2 id="org75bf2c0"><span class="section-number-2">4.</span> Cleanup</h2>
+<div id="outline-container-org5763f64" class="outline-2">
+<h2 id="org5763f64"><span class="section-number-2">4.</span> Cleanup</h2>
 <div class="outline-text-2" id="text-4">
-<div class='org-src-wrapper'>
-<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_3bd04921ffb84d019a5a4dab060b8bf5>&#10697;</button>
-<script type='text/javascript'>
-var copyBtnbtn_3bd04921ffb84d019a5a4dab060b8bf5=document.querySelector('button[name=btn_3bd04921ffb84d019a5a4dab060b8bf5]');
-copyBtnbtn_3bd04921ffb84d019a5a4dab060b8bf5.addEventListener('click', function(event) {
-let res = copyTextToClipboard(`   def assemble_matrix(self)-> None:\n      diagp1 = np.zeros(self.N)\n      diagp1[2:] =  self._T[1:]\n      diagm1 = np.zeros(self.N)\n      diagm1[:-2] =  self._T[:-1]\n      diag0 = np.ones(self.N)\n      diag0[1:-1] = -1 * (self._T[1:] + self._T[:-1])\n      self._A = spdiags([diagm1 , diag0 , diagp1] , np.array( [-1, 0, 1] ))\n`);copyBtnbtn_3bd04921ffb84d019a5a4dab060b8bf5.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_3bd04921ffb84d019a5a4dab060b8bf5.innerHTML = '&#10697;'}, 3000);
-});
-</script>
-</div><div class="org-src-container">
-<pre class="src src-python" id="org194a0c0"><code><span style="color: #372338b83972;"> </span>  <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">def</span> <span style="color: var(--function-clr-name); background-color: var(--function-bg-name);">assemble_matrix</span>(<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>)-&gt; <span style="color: var(--clr-constant); background-color: var(--bg-constant);">None</span>:
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span> <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diagp1</span> = np.zeros(<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.N)
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span> <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diagp1</span>[2:] =  <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>._T[1:]
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span> <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diagm1</span> = np.zeros(<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.N)
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span> <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diagm1</span>[:-2] =  <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>._T[:-1]
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span> <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diag0</span> = np.ones(<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.N)
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span> <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diag0</span>[1:-1] = -1 * (<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>._T[1:] + <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>._T[:-1])
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span> <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.<span style="color: var(--clr-variable); background-color: var(--bg-variable);">_A</span> = spdiags([diagm1 , diag0 , diagp1] , np.array( [-1, 0, 1] ))
-</code></pre>
-</div></div>
-
-<div class='org-src-wrapper'>
-<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_9ebfcad699df4db2a994935547c9ed91>&#10697;</button>
-<script type='text/javascript'>
-var copyBtnbtn_9ebfcad699df4db2a994935547c9ed91=document.querySelector('button[name=btn_9ebfcad699df4db2a994935547c9ed91]');
-copyBtnbtn_9ebfcad699df4db2a994935547c9ed91.addEventListener('click', function(event) {
-let res = copyTextToClipboard(`   def set_multiscale_transmissions(self, resolution)->NDArray[np.float64]:\n      micro_basis = np.zeros((self.N -1)*resolution)\n      for i in range(self.N -1):\n         micro_fv = FVSolver(resolution , self.D , domain=(self.x[i] , self.x[i+1]))\n         micro_fv.set_boundary(bc=(0.,1.))\n         micro_fv.assemble_matrix()\n         phi = micro_fv.solve()\n\n         micro_basis[resolution * i:resolution*(i+1)] = phi\n         hm = micro_fv.h\n         self._T[i] = -hm * np.sum(((phi[1:] - phi[:-1])/hm)**2 * self.D(micro_fv.x[:-1]))\n      return micro_basis\n`);copyBtnbtn_9ebfcad699df4db2a994935547c9ed91.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_9ebfcad699df4db2a994935547c9ed91.innerHTML = '&#10697;'}, 3000);
-});
-</script>
-</div><div class="org-src-container">
-<pre class="src src-python" id="orge8aef06"><code><span style="color: #372338b83972;"> </span>  <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">def</span> <span style="color: var(--function-clr-name); background-color: var(--function-bg-name);">set_multiscale_transmissions</span>(<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>, resolution)-&gt;NDArray[np.float64]:
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span> <span style="color: var(--clr-variable); background-color: var(--bg-variable);">micro_basis</span> = np.zeros((<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.N -1)*resolution)
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span> <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">for</span> i <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">in</span> <span style="color: var(--clr-builtin); background-color: var(--bg-builtin);">range</span>(<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.N -1):
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span><span style="color: var(--clr-variable); background-color: var(--bg-variable);">micro_fv</span> = FVSolver(resolution , <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.D , domain=(<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.x[i] , <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.x[i+1]))
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>micro_fv.set_boundary(bc=(0.,1.))
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>micro_fv.assemble_matrix()
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span><span style="color: var(--clr-variable); background-color: var(--bg-variable);">phi</span> = micro_fv.solve()
-         
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span><span style="color: var(--clr-variable); background-color: var(--bg-variable);">micro_basis</span>[resolution * i:resolution*(i+1)] = phi
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span><span style="color: var(--clr-variable); background-color: var(--bg-variable);">hm</span> = micro_fv.h
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span><span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.<span style="color: var(--clr-variable); background-color: var(--bg-variable);">_T</span>[i] = -hm * np.<span style="color: var(--clr-builtin); background-color: var(--bg-builtin);">sum</span>(((phi[1:] - phi[:-1])/hm)**2 * <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.D(micro_fv.x[:-1]))
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span> <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">return</span> micro_basis
-</code></pre>
-</div></div>
-
-
-
-<div class='org-src-wrapper'>
-<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_4c8a1c331a95490da376f5afbaa498fe>&#10697;</button>
-<script type='text/javascript'>
-var copyBtnbtn_4c8a1c331a95490da376f5afbaa498fe=document.querySelector('button[name=btn_4c8a1c331a95490da376f5afbaa498fe]');
-copyBtnbtn_4c8a1c331a95490da376f5afbaa498fe.addEventListener('click', function(event) {
-let res = copyTextToClipboard(`from typing import Callable\nimport numpy as np\nfrom scipy.sparse import spdiags\nfrom scipy.sparse.linalg import spsolve\nfrom numpy.typing import NDArray\n\nclass FVSolver:\n   N : int\n   h : np.float64\n   x : NDArray[np.float64]\n   D : Callable\n   f : NDArray[np.float64]\n   c : NDArray[np.float64]\n\n   _T : NDArray[np.float64]\n\n   def __init__(self , N :int , D :Callable  , domain=(0.,1.))->None:\n       self.h = (domain[1] - domain[0]) / N\n       self.N = N\n       self.D = D\n       self.x = np.linspace(domain[0] , domain[1] , N)\n       self._T =  -1/self.h * D((self.x[:-1] + self.x[1:]) * 0.5)\n       self.f = self.h* np.ones(N)\n\n<<Assemble Matrix>>\n\n\n   def set_boundary(self , bc=(0.,0.)):\n      self.f[0] = bc[0]\n      self.f[-1] = bc[1]\n\n\n   def solve(self):\n      self.c = spsolve(self._A.tocsr() , self.f)\n      return self.c\n\n<<Microscale Transmissions>>\n`);copyBtnbtn_4c8a1c331a95490da376f5afbaa498fe.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_4c8a1c331a95490da376f5afbaa498fe.innerHTML = '&#10697;'}, 3000);
-});
-</script>
-</div><div class="org-src-container">
-<pre class="src src-python"><code><span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">from</span> typing <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">import</span> Callable
-<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">import</span> numpy <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">as</span> np
-<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">from</span> scipy.sparse <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">import</span> spdiags
-<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">from</span> scipy.sparse.linalg <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">import</span> spsolve
-<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">from</span> numpy.typing <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">import</span> NDArray
-
-<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">class</span> <span style="color: #f0c674;">FVSolver</span>:
-<span style="color: #372338b83972;"> </span>  N : <span style="color: var(--clr-builtin); background-color: var(--bg-builtin);">int</span>
-<span style="color: #372338b83972;"> </span>  h : np.float64
-<span style="color: #372338b83972;"> </span>  x : NDArray[np.float64]
-<span style="color: #372338b83972;"> </span>  D : Callable
-<span style="color: #372338b83972;"> </span>  f : NDArray[np.float64]
-<span style="color: #372338b83972;"> </span>  c : NDArray[np.float64]
- 
-<span style="color: #372338b83972;"> </span>  _T : NDArray[np.float64]
- 
-<span style="color: #372338b83972;"> </span>  <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">def</span> <span style="color: var(--function-clr-name); background-color: var(--function-bg-name);">__init__</span>(<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span> , N :<span style="color: var(--clr-builtin); background-color: var(--bg-builtin);">int</span> , D :Callable  , domain=(0.,1.))-&gt;<span style="color: var(--clr-constant); background-color: var(--bg-constant);">None</span>:
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>  <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.<span style="color: var(--clr-variable); background-color: var(--bg-variable);">h</span> = (domain[1] - domain[0]) / N
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>  <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.<span style="color: var(--clr-variable); background-color: var(--bg-variable);">N</span> = N
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>  <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.<span style="color: var(--clr-variable); background-color: var(--bg-variable);">D</span> = D
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>  <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.<span style="color: var(--clr-variable); background-color: var(--bg-variable);">x</span> = np.linspace(domain[0] , domain[1] , N)
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>  <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.<span style="color: var(--clr-variable); background-color: var(--bg-variable);">_T</span> =  -1/<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.h * D((<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.x[:-1] + <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.x[1:]) * 0.5)
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>  <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.<span style="color: var(--clr-variable); background-color: var(--bg-variable);">f</span> = <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.h* np.ones(N)
-     
-&lt;&lt;Assemble Matrix&gt;&gt;
- 
- 
-<span style="color: #372338b83972;"> </span>  <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">def</span> <span style="color: var(--function-clr-name); background-color: var(--function-bg-name);">set_boundary</span>(<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span> , bc=(0.,0.)):
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span> <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.<span style="color: var(--clr-variable); background-color: var(--bg-variable);">f</span>[0] = bc[0]
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span> <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.<span style="color: var(--clr-variable); background-color: var(--bg-variable);">f</span>[-1] = bc[1]
-     
-     
-<span style="color: #372338b83972;"> </span>  <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">def</span> <span style="color: var(--function-clr-name); background-color: var(--function-bg-name);">solve</span>(<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>):
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span> <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.<span style="color: var(--clr-variable); background-color: var(--bg-variable);">c</span> = spsolve(<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>._A.tocsr() , <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.f)
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span> <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">return</span> <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.c
-     
-&lt;&lt;Microscale Transmissions&gt;&gt;
-</code></pre>
-</div></div>
-
 <pre class="example">
 None
 </pre>
 
 <div class='org-src-wrapper'>
-<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_a2a4b5fc9acf4513958afa4cf73e7bf2>&#10697;</button>
+<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_8df584b868d74e19b4e71c41886542e8>&#10697;</button>
 <script type='text/javascript'>
-var copyBtnbtn_a2a4b5fc9acf4513958afa4cf73e7bf2=document.querySelector('button[name=btn_a2a4b5fc9acf4513958afa4cf73e7bf2]');
-copyBtnbtn_a2a4b5fc9acf4513958afa4cf73e7bf2.addEventListener('click', function(event) {
-let res = copyTextToClipboard(`from importlib import reload\nimport src.fvsolver\nfrom src.fvsolver import FVSolver\nreload(src.fvsolver)\nepsilon = 0.1\nD = lambda x: 1 / (2+1.9 * np.cos(2 * np.pi* x / epsilon))\nfv = FVSolver(10 ,  D)\nfv.assemble_matrix()\nfv.set_boundary()\nc_course = fv.solve()\nplt.plot(c_course)\n`);copyBtnbtn_a2a4b5fc9acf4513958afa4cf73e7bf2.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_a2a4b5fc9acf4513958afa4cf73e7bf2.innerHTML = '&#10697;'}, 3000);
+var copyBtnbtn_8df584b868d74e19b4e71c41886542e8=document.querySelector('button[name=btn_8df584b868d74e19b4e71c41886542e8]');
+copyBtnbtn_8df584b868d74e19b4e71c41886542e8.addEventListener('click', function(event) {
+let res = copyTextToClipboard(`from importlib import reload\nimport src.fvsolver\nfrom src.fvsolver import FVSolver\nreload(src.fvsolver)\nepsilon = 0.1\nD = lambda x: 1 / (2+1.9 * np.cos(2 * np.pi* x / epsilon))\nfv = FVSolver(10 ,  D)\nfv.assemble_matrix()\nfv.set_boundary()\nc_course = fv.solve()\nplt.plot(c_course)\n`);copyBtnbtn_8df584b868d74e19b4e71c41886542e8.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_8df584b868d74e19b4e71c41886542e8.innerHTML = '&#10697;'}, 3000);
 });
 </script>
 </div><div class="org-src-container">
@@ -1331,18 +1450,12 @@ plt.plot(c_course)
 </code></pre>
 </div></div>
 
-
-<div id="orgde8aea1" class="figure">
-<p><img src="images/course1D.png" alt="course1D.png" />
-</p>
-</div>
-
 <div class='org-src-wrapper'>
-<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_83c6f171d6924c8ab803a37c4926855f>&#10697;</button>
+<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_e30088d69ab745f8ac1138b737dc32d9>&#10697;</button>
 <script type='text/javascript'>
-var copyBtnbtn_83c6f171d6924c8ab803a37c4926855f=document.querySelector('button[name=btn_83c6f171d6924c8ab803a37c4926855f]');
-copyBtnbtn_83c6f171d6924c8ab803a37c4926855f.addEventListener('click', function(event) {
-let res = copyTextToClipboard(`mb = fv.set_multiscale_transmissions(100)\nplt.plot(mb)\n`);copyBtnbtn_83c6f171d6924c8ab803a37c4926855f.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_83c6f171d6924c8ab803a37c4926855f.innerHTML = '&#10697;'}, 3000);
+var copyBtnbtn_e30088d69ab745f8ac1138b737dc32d9=document.querySelector('button[name=btn_e30088d69ab745f8ac1138b737dc32d9]');
+copyBtnbtn_e30088d69ab745f8ac1138b737dc32d9.addEventListener('click', function(event) {
+let res = copyTextToClipboard(`mb = fv.set_multiscale_transmissions(100)\nplt.plot(mb)\n`);copyBtnbtn_e30088d69ab745f8ac1138b737dc32d9.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_e30088d69ab745f8ac1138b737dc32d9.innerHTML = '&#10697;'}, 3000);
 });
 </script>
 </div><div class="org-src-container">
@@ -1352,17 +1465,17 @@ plt.plot(mb)
 </div></div>
 
 
-<div id="org0e854c1" class="figure">
+<div id="org6104c35" class="figure">
 <p><img src="images/msbasis.png" alt="msbasis.png" />
 </p>
 </div>
 
 <div class='org-src-wrapper'>
-<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_5122679d21654fd8afbabb682e2fb4fc>&#10697;</button>
+<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_ffe935e7781144b792d9b4070becfc4c>&#10697;</button>
 <script type='text/javascript'>
-var copyBtnbtn_5122679d21654fd8afbabb682e2fb4fc=document.querySelector('button[name=btn_5122679d21654fd8afbabb682e2fb4fc]');
-copyBtnbtn_5122679d21654fd8afbabb682e2fb4fc.addEventListener('click', function(event) {
-let res = copyTextToClipboard(`fv.assemble_matrix()\nc_multi = fv.solve()\nplt.plot(c_multi)\n`);copyBtnbtn_5122679d21654fd8afbabb682e2fb4fc.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_5122679d21654fd8afbabb682e2fb4fc.innerHTML = '&#10697;'}, 3000);
+var copyBtnbtn_ffe935e7781144b792d9b4070becfc4c=document.querySelector('button[name=btn_ffe935e7781144b792d9b4070becfc4c]');
+copyBtnbtn_ffe935e7781144b792d9b4070becfc4c.addEventListener('click', function(event) {
+let res = copyTextToClipboard(`fv.assemble_matrix()\nc_multi = fv.solve()\nplt.plot(c_multi)\n`);copyBtnbtn_ffe935e7781144b792d9b4070becfc4c.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_ffe935e7781144b792d9b4070becfc4c.innerHTML = '&#10697;'}, 3000);
 });
 </script>
 </div><div class="org-src-container">
@@ -1373,125 +1486,121 @@ plt.plot(c_multi)
 </div></div>
 
 
-<div id="org175bc0d" class="figure">
+<div id="org1466a0d" class="figure">
 <p><img src="images/multi1D.png" alt="multi1D.png" />
 </p>
 </div>
 </div>
 </div>
-<div id="outline-container-org368e2f6" class="outline-2">
-<h2 id="org368e2f6"><span class="section-number-2">5.</span> 2D</h2>
+<div id="outline-container-orgd8df3e8" class="outline-2">
+<h2 id="orgd8df3e8"><span class="section-number-2">5.</span> 2D</h2>
 <div class="outline-text-2" id="text-5">
 <div class='org-src-wrapper'>
-<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_063603ef7d444869a6e426ea4c2502ee>&#10697;</button>
+<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_6c42cf326eb642aaac67423d005cb397>&#10697;</button>
 <script type='text/javascript'>
-var copyBtnbtn_063603ef7d444869a6e426ea4c2502ee=document.querySelector('button[name=btn_063603ef7d444869a6e426ea4c2502ee]');
-copyBtnbtn_063603ef7d444869a6e426ea4c2502ee.addEventListener('click', function(event) {
-let res = copyTextToClipboard(`import scipy as sp\nimport numpy as np\nclass FVSolver2D:\n   N : int\n   M : int\n   h_x : np.float64\n   h_y : np.float64\n   x : NDArray[np.float64]\n   y : NDArray[np.float64]\n   D : Callable\n   f : NDArray[np.float64]\n   c : NDArray[np.float64]\n\n   _T_x : NDArray[np.float64]\n   _T_y : NDArray[np.float64]\n\n<<Init 2D>>\n\n<<Assemble 2D Matrix>>\n\n   def set_boundary(self , bc=(0.,0. , 0. , 0.)):\n      self.f[ 0,1:-1]= bc[0]\n      self.f[-1,1:-1]= bc[1]\n      self.f[1:-1, 0]= bc[2]\n      self.f[1:-1,-1]= bc[3]\n\n\n   def solve(self):\n      self.c = spsolve(self._A.tocsr() , self.f.ravel()).reshape((self.N,self.M))\n      return self.c\n\n<<2D Microscale Transmissions>>\n`);copyBtnbtn_063603ef7d444869a6e426ea4c2502ee.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_063603ef7d444869a6e426ea4c2502ee.innerHTML = '&#10697;'}, 3000);
+var copyBtnbtn_6c42cf326eb642aaac67423d005cb397=document.querySelector('button[name=btn_6c42cf326eb642aaac67423d005cb397]');
+copyBtnbtn_6c42cf326eb642aaac67423d005cb397.addEventListener('click', function(event) {
+let res = copyTextToClipboard(`import scipy as sp\nimport numpy as np\nclass FVSolver2D:\n   N : int\n   M : int\n   h_x : np.float64\n   h_y : np.float64\n   x : NDArray[np.float64]\n   y : NDArray[np.float64]\n   D : Callable\n   f : NDArray[np.float64]\n   c : NDArray[np.float64]\n\n   _T_x : NDArray[np.float64]\n   _T_y : NDArray[np.float64]\n\n<<Init 2D>>\n\n<<Assemble 2D Matrix>>\n\n   def set_boundary(self , bc=(0.,0. , 0. , 0.)):\n      self.f[ 0,1:-1]= bc[0]\n      self.f[-1,1:-1]= bc[1]\n      self.f[1:-1, 0]= bc[2]\n      self.f[1:-1,-1]= bc[3]\n\n\n   def solve(self):\n      self.c = spsolve(self._A.tocsr() , self.f.ravel()).reshape((self.N,self.M))\n      return self.c\n\n<<2D Microscale Transmissions>>\n`);copyBtnbtn_6c42cf326eb642aaac67423d005cb397.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_6c42cf326eb642aaac67423d005cb397.innerHTML = '&#10697;'}, 3000);
 });
 </script>
 </div><div class="org-src-container">
 <pre class="src src-python"><code><span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">import</span> scipy <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">as</span> sp
 <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">import</span> numpy <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">as</span> np
-<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">class</span> <span style="color: #f0c674;">FVSolver2D</span>:
-<span style="color: #372338b83972;"> </span>  N : <span style="color: var(--clr-builtin); background-color: var(--bg-builtin);">int</span>
-<span style="color: #372338b83972;"> </span>  M : <span style="color: var(--clr-builtin); background-color: var(--bg-builtin);">int</span>
-<span style="color: #372338b83972;"> </span>  h_x : np.float64
-<span style="color: #372338b83972;"> </span>  h_y : np.float64
-<span style="color: #372338b83972;"> </span>  x : NDArray[np.float64]
-<span style="color: #372338b83972;"> </span>  y : NDArray[np.float64]
-<span style="color: #372338b83972;"> </span>  D : Callable
-<span style="color: #372338b83972;"> </span>  f : NDArray[np.float64]
-<span style="color: #372338b83972;"> </span>  c : NDArray[np.float64]
+<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">class</span> <span style="color: #78DCE8;">FVSolver2D</span>:
+<span style="color: #4a9d48074b31;"> </span>  N : <span style="color: var(--clr-builtin); background-color: var(--bg-builtin);">int</span>
+<span style="color: #4a9d48074b31;"> </span>  M : <span style="color: var(--clr-builtin); background-color: var(--bg-builtin);">int</span>
+<span style="color: #4a9d48074b31;"> </span>  h_x : np.float64
+<span style="color: #4a9d48074b31;"> </span>  h_y : np.float64
+<span style="color: #4a9d48074b31;"> </span>  x : NDArray[np.float64]
+<span style="color: #4a9d48074b31;"> </span>  y : NDArray[np.float64]
+<span style="color: #4a9d48074b31;"> </span>  D : Callable
+<span style="color: #4a9d48074b31;"> </span>  f : NDArray[np.float64]
+<span style="color: #4a9d48074b31;"> </span>  c : NDArray[np.float64]
  
-<span style="color: #372338b83972;"> </span>  _T_x : NDArray[np.float64]
-<span style="color: #372338b83972;"> </span>  _T_y : NDArray[np.float64]
+<span style="color: #4a9d48074b31;"> </span>  _T_x : NDArray[np.float64]
+<span style="color: #4a9d48074b31;"> </span>  _T_y : NDArray[np.float64]
  
 &lt;&lt;Init 2D&gt;&gt;
 
 &lt;&lt;Assemble 2D Matrix&gt;&gt;
  
-<span style="color: #372338b83972;"> </span>  <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">def</span> <span style="color: var(--function-clr-name); background-color: var(--function-bg-name);">set_boundary</span>(<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span> , bc=(0.,0. , 0. , 0.)):
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span> <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.<span style="color: var(--clr-variable); background-color: var(--bg-variable);">f</span>[ 0,1:-1]= bc[0]
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span> <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.<span style="color: var(--clr-variable); background-color: var(--bg-variable);">f</span>[-1,1:-1]= bc[1]
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span> <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.<span style="color: var(--clr-variable); background-color: var(--bg-variable);">f</span>[1:-1, 0]= bc[2]
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span> <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.<span style="color: var(--clr-variable); background-color: var(--bg-variable);">f</span>[1:-1,-1]= bc[3]
+<span style="color: #4a9d48074b31;"> </span>  <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">def</span> <span style="color: var(--function-clr-name); background-color: var(--function-bg-name);">set_boundary</span>(<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span> , bc=(0.,0. , 0. , 0.)):
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span> <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.<span style="color: var(--clr-variable); background-color: var(--bg-variable);">f</span>[ 0,1:-1]= bc[0]
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span> <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.<span style="color: var(--clr-variable); background-color: var(--bg-variable);">f</span>[-1,1:-1]= bc[1]
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span> <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.<span style="color: var(--clr-variable); background-color: var(--bg-variable);">f</span>[1:-1, 0]= bc[2]
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span> <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.<span style="color: var(--clr-variable); background-color: var(--bg-variable);">f</span>[1:-1,-1]= bc[3]
      
      
-<span style="color: #372338b83972;"> </span>  <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">def</span> <span style="color: var(--function-clr-name); background-color: var(--function-bg-name);">solve</span>(<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>):
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span> <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.<span style="color: var(--clr-variable); background-color: var(--bg-variable);">c</span> = spsolve(<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>._A.tocsr() , <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.f.ravel()).reshape((<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.N,<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.M))
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span> <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">return</span> <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.c
+<span style="color: #4a9d48074b31;"> </span>  <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">def</span> <span style="color: var(--function-clr-name); background-color: var(--function-bg-name);">solve</span>(<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>):
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span> <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.<span style="color: var(--clr-variable); background-color: var(--bg-variable);">c</span> = spsolve(<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>._A.tocsr() , <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.f.ravel()).reshape((<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.N,<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.M))
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span> <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">return</span> <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.c
      
 &lt;&lt;2D Microscale Transmissions&gt;&gt;
 </code></pre>
 </div></div>
 
-<pre class="example">
-None
-</pre>
-
 <div class='org-src-wrapper'>
-<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_10a79962a6ee494b907481b6de76ba0a>&#10697;</button>
+<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_92944b2e67d343b4a78482ee1a04ebe3>&#10697;</button>
 <script type='text/javascript'>
-var copyBtnbtn_10a79962a6ee494b907481b6de76ba0a=document.querySelector('button[name=btn_10a79962a6ee494b907481b6de76ba0a]');
-copyBtnbtn_10a79962a6ee494b907481b6de76ba0a.addEventListener('click', function(event) {
-let res = copyTextToClipboard(`   def __init__(self ,\n                N:int,\n                M:int ,\n                D :Callable  ,\n                domain=np.array([[0.,0.] , [1.,1.]]),\n                )->None:\n      self.h_x = (domain[1,0] - domain[0,0]) / N\n      self.h_y = (domain[1,1] - domain[0,1]) / M\n      self.x = np.linspace(domain[0,0] , domain[1,0] , N)\n      self.y = np.linspace(domain[0,1] , domain[1,1] , M)\n      x_h = self.x[:-1] + 0.5 * self.h_x\n      y_h = self.y[:-1] + 0.5 * self.h_y\n      halfgrid_x = np.meshgrid(x_h,self.y,indexing=\"ij\")\n      halfgrid_y = np.meshgrid(self.x,y_h , indexing=\"ij\")\n      self._T_x = -self.h_y/self.h_x * D(halfgrid_x[0] , halfgrid_x[1])\n      self._T_y = -self.h_x/self.h_y * D(halfgrid_y[0] , halfgrid_y[1])\n      self.N = N\n      self.M = M\n      self.D = D\n      self.f = self.h_x * self.h_y* np.ones((N, M))\n\n`);copyBtnbtn_10a79962a6ee494b907481b6de76ba0a.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_10a79962a6ee494b907481b6de76ba0a.innerHTML = '&#10697;'}, 3000);
+var copyBtnbtn_92944b2e67d343b4a78482ee1a04ebe3=document.querySelector('button[name=btn_92944b2e67d343b4a78482ee1a04ebe3]');
+copyBtnbtn_92944b2e67d343b4a78482ee1a04ebe3.addEventListener('click', function(event) {
+let res = copyTextToClipboard(`   def __init__(self ,\n                N:int,\n                M:int ,\n                D :Callable  ,\n                domain=np.array([[0.,0.] , [1.,1.]]),\n                )->None:\n      self.h_x = (domain[1,0] - domain[0,0]) / N\n      self.h_y = (domain[1,1] - domain[0,1]) / M\n      self.x = np.linspace(domain[0,0] , domain[1,0] , N)\n      self.y = np.linspace(domain[0,1] , domain[1,1] , M)\n      x_h = self.x[:-1] + 0.5 * self.h_x\n      y_h = self.y[:-1] + 0.5 * self.h_y\n      halfgrid_x = np.meshgrid(x_h,self.y,indexing=\"ij\")\n      halfgrid_y = np.meshgrid(self.x,y_h , indexing=\"ij\")\n      self._T_x = -self.h_y/self.h_x * D(halfgrid_x[0] , halfgrid_x[1])\n      self._T_y = -self.h_x/self.h_y * D(halfgrid_y[0] , halfgrid_y[1])\n      self.N = N\n      self.M = M\n      self.D = D\n      self.f = self.h_x * self.h_y* np.ones((N, M))\n\n`);copyBtnbtn_92944b2e67d343b4a78482ee1a04ebe3.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_92944b2e67d343b4a78482ee1a04ebe3.innerHTML = '&#10697;'}, 3000);
 });
 </script>
 </div><div class="org-src-container">
-<pre class="src src-python" id="orgddf496c"><code><span style="color: #372338b83972;"> </span>  <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">def</span> <span style="color: var(--function-clr-name); background-color: var(--function-bg-name);">__init__</span>(<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span> ,
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>   N:<span style="color: var(--clr-builtin); background-color: var(--bg-builtin);">int</span>,
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>   M:<span style="color: var(--clr-builtin); background-color: var(--bg-builtin);">int</span> ,
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>   D :Callable  ,
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>   domain=np.array([[0.,0.] , [1.,1.]]),
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>   )-&gt;<span style="color: var(--clr-constant); background-color: var(--bg-constant);">None</span>:
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span> <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.<span style="color: var(--clr-variable); background-color: var(--bg-variable);">h_x</span> = (domain[1,0] - domain[0,0]) / N
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span> <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.<span style="color: var(--clr-variable); background-color: var(--bg-variable);">h_y</span> = (domain[1,1] - domain[0,1]) / M
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span> <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.<span style="color: var(--clr-variable); background-color: var(--bg-variable);">x</span> = np.linspace(domain[0,0] , domain[1,0] , N)
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span> <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.<span style="color: var(--clr-variable); background-color: var(--bg-variable);">y</span> = np.linspace(domain[0,1] , domain[1,1] , M)
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span> <span style="color: var(--clr-variable); background-color: var(--bg-variable);">x_h</span> = <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.x[:-1] + 0.5 * <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.h_x
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span> <span style="color: var(--clr-variable); background-color: var(--bg-variable);">y_h</span> = <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.y[:-1] + 0.5 * <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.h_y
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span> <span style="color: var(--clr-variable); background-color: var(--bg-variable);">halfgrid_x</span> = np.meshgrid(x_h,<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.y,indexing=<span style="color: var(--clr-string); background-color: var(--bg-string);">"ij"</span>)
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span> <span style="color: var(--clr-variable); background-color: var(--bg-variable);">halfgrid_y</span> = np.meshgrid(<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.x,y_h , indexing=<span style="color: var(--clr-string); background-color: var(--bg-string);">"ij"</span>)
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span> <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.<span style="color: var(--clr-variable); background-color: var(--bg-variable);">_T_x</span> = -<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.h_y/<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.h_x * D(halfgrid_x[0] , halfgrid_x[1])
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span> <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.<span style="color: var(--clr-variable); background-color: var(--bg-variable);">_T_y</span> = -<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.h_x/<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.h_y * D(halfgrid_y[0] , halfgrid_y[1])
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span> <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.<span style="color: var(--clr-variable); background-color: var(--bg-variable);">N</span> = N
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span> <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.<span style="color: var(--clr-variable); background-color: var(--bg-variable);">M</span> = M
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span> <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.<span style="color: var(--clr-variable); background-color: var(--bg-variable);">D</span> = D
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span> <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.<span style="color: var(--clr-variable); background-color: var(--bg-variable);">f</span> = <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.h_x * <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.h_y* np.ones((N, M))
+<pre class="src src-python" id="org90ccd1e"><code><span style="color: #4a9d48074b31;"> </span>  <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">def</span> <span style="color: var(--function-clr-name); background-color: var(--function-bg-name);">__init__</span>(<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span> ,
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>   N:<span style="color: var(--clr-builtin); background-color: var(--bg-builtin);">int</span>,
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>   M:<span style="color: var(--clr-builtin); background-color: var(--bg-builtin);">int</span> ,
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>   D :Callable  ,
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>   domain=np.array([[0.,0.] , [1.,1.]]),
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>   )-&gt;<span style="color: var(--clr-constant); background-color: var(--bg-constant);">None</span>:
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span> <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.<span style="color: var(--clr-variable); background-color: var(--bg-variable);">h_x</span> = (domain[1,0] - domain[0,0]) / N
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span> <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.<span style="color: var(--clr-variable); background-color: var(--bg-variable);">h_y</span> = (domain[1,1] - domain[0,1]) / M
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span> <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.<span style="color: var(--clr-variable); background-color: var(--bg-variable);">x</span> = np.linspace(domain[0,0] , domain[1,0] , N)
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span> <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.<span style="color: var(--clr-variable); background-color: var(--bg-variable);">y</span> = np.linspace(domain[0,1] , domain[1,1] , M)
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span> <span style="color: var(--clr-variable); background-color: var(--bg-variable);">x_h</span> = <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.x[:-1] + 0.5 * <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.h_x
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span> <span style="color: var(--clr-variable); background-color: var(--bg-variable);">y_h</span> = <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.y[:-1] + 0.5 * <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.h_y
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span> <span style="color: var(--clr-variable); background-color: var(--bg-variable);">halfgrid_x</span> = np.meshgrid(x_h,<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.y,indexing=<span style="color: var(--clr-string); background-color: var(--bg-string);">"ij"</span>)
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span> <span style="color: var(--clr-variable); background-color: var(--bg-variable);">halfgrid_y</span> = np.meshgrid(<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.x,y_h , indexing=<span style="color: var(--clr-string); background-color: var(--bg-string);">"ij"</span>)
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span> <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.<span style="color: var(--clr-variable); background-color: var(--bg-variable);">_T_x</span> = -<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.h_y/<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.h_x * D(halfgrid_x[0] , halfgrid_x[1])
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span> <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.<span style="color: var(--clr-variable); background-color: var(--bg-variable);">_T_y</span> = -<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.h_x/<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.h_y * D(halfgrid_y[0] , halfgrid_y[1])
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span> <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.<span style="color: var(--clr-variable); background-color: var(--bg-variable);">N</span> = N
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span> <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.<span style="color: var(--clr-variable); background-color: var(--bg-variable);">M</span> = M
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span> <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.<span style="color: var(--clr-variable); background-color: var(--bg-variable);">D</span> = D
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span> <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.<span style="color: var(--clr-variable); background-color: var(--bg-variable);">f</span> = <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.h_x * <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.h_y* np.ones((N, M))
 
 </code></pre>
 </div></div>
 
 <div class='org-src-wrapper'>
-<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_f0b8499862cb4050860748f6b16b1cb7>&#10697;</button>
+<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_0f8fb2a96939483b9cb6c81bbd5030e8>&#10697;</button>
 <script type='text/javascript'>
-var copyBtnbtn_f0b8499862cb4050860748f6b16b1cb7=document.querySelector('button[name=btn_f0b8499862cb4050860748f6b16b1cb7]');
-copyBtnbtn_f0b8499862cb4050860748f6b16b1cb7.addEventListener('click', function(event) {
-let res = copyTextToClipboard(`   def assemble_matrix(self)->None:\n       main_diag = np.ones((  self.N,self.M))\n       diag_north = np.zeros((self.N,self.M))\n       diag_south = np.zeros((self.N,self.M))\n       diag_east = np.zeros(( self.N,self.M))\n       diag_west = np.zeros(( self.N,self.M))\n       main_diag[1:-1,1:-1] =  -1* (self._T_x[:-1,1:-1] + self._T_x[1:,1:-1] + self._T_y[1:-1,:-1] + self._T_y[1:-1,1:])\n       main_diag = np.ravel(main_diag)\n\n       diag_north[1:-1,1:-1] =  self._T_y[1:-1,:-1]\n       diag_south[1:-1,1:-1] =  self._T_y[1:-1,1:]\n       diag_east[1:-1,1:-1] =   self._T_x[1:,1:-1]\n       diag_west[1:-1,1:-1] =   self._T_x[:-1,1:-1]\n       diag_north = diag_north.ravel()\n       diag_south = diag_south.ravel()\n       diag_west = diag_west.ravel()\n       diag_east = diag_east.ravel()\n\n       A = sp.sparse.spdiags([main_diag , diag_north , diag_south ,  diag_west , diag_east] , [0 , -self.N  , self.N , 1 , -1] , self.N*self.M , self.M*self.N)\n       self._A = A.T\n\n`);copyBtnbtn_f0b8499862cb4050860748f6b16b1cb7.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_f0b8499862cb4050860748f6b16b1cb7.innerHTML = '&#10697;'}, 3000);
+var copyBtnbtn_0f8fb2a96939483b9cb6c81bbd5030e8=document.querySelector('button[name=btn_0f8fb2a96939483b9cb6c81bbd5030e8]');
+copyBtnbtn_0f8fb2a96939483b9cb6c81bbd5030e8.addEventListener('click', function(event) {
+let res = copyTextToClipboard(`   def assemble_matrix(self)->None:\n       main_diag = np.ones((  self.N,self.M))\n       diag_north = np.zeros((self.N,self.M))\n       diag_south = np.zeros((self.N,self.M))\n       diag_east = np.zeros(( self.N,self.M))\n       diag_west = np.zeros(( self.N,self.M))\n       main_diag[1:-1,1:-1] =  -1* (self._T_x[:-1,1:-1] + self._T_x[1:,1:-1] + self._T_y[1:-1,:-1] + self._T_y[1:-1,1:])\n       main_diag = np.ravel(main_diag)\n\n       diag_north[1:-1,1:-1] =  self._T_y[1:-1,:-1]\n       diag_south[1:-1,1:-1] =  self._T_y[1:-1,1:]\n       diag_east[1:-1,1:-1] =   self._T_x[1:,1:-1]\n       diag_west[1:-1,1:-1] =   self._T_x[:-1,1:-1]\n       diag_north = diag_north.ravel()\n       diag_south = diag_south.ravel()\n       diag_west = diag_west.ravel()\n       diag_east = diag_east.ravel()\n\n       A = sp.sparse.spdiags([main_diag , diag_north , diag_south ,  diag_west , diag_east] , [0 , -self.N  , self.N , 1 , -1] , self.N*self.M , self.M*self.N)\n       self._A = A.T\n\n`);copyBtnbtn_0f8fb2a96939483b9cb6c81bbd5030e8.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_0f8fb2a96939483b9cb6c81bbd5030e8.innerHTML = '&#10697;'}, 3000);
 });
 </script>
 </div><div class="org-src-container">
-<pre class="src src-python" id="org410fbbc"><code><span style="color: #372338b83972;"> </span>  <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">def</span> <span style="color: var(--function-clr-name); background-color: var(--function-bg-name);">assemble_matrix</span>(<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>)-&gt;<span style="color: var(--clr-constant); background-color: var(--bg-constant);">None</span>:
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>  <span style="color: var(--clr-variable); background-color: var(--bg-variable);">main_diag</span> = np.ones((  <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.N,<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.M))
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>  <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diag_north</span> = np.zeros((<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.N,<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.M))
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>  <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diag_south</span> = np.zeros((<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.N,<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.M))
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>  <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diag_east</span> = np.zeros(( <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.N,<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.M))
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>  <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diag_west</span> = np.zeros(( <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.N,<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.M))
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>  <span style="color: var(--clr-variable); background-color: var(--bg-variable);">main_diag</span>[1:-1,1:-1] =  -1* (<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>._T_x[:-1,1:-1] + <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>._T_x[1:,1:-1] + <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>._T_y[1:-1,:-1] + <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>._T_y[1:-1,1:])
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>  <span style="color: var(--clr-variable); background-color: var(--bg-variable);">main_diag</span> = np.ravel(main_diag)
+<pre class="src src-python" id="orgff9328e"><code><span style="color: #4a9d48074b31;"> </span>  <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">def</span> <span style="color: var(--function-clr-name); background-color: var(--function-bg-name);">assemble_matrix</span>(<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>)-&gt;<span style="color: var(--clr-constant); background-color: var(--bg-constant);">None</span>:
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>  <span style="color: var(--clr-variable); background-color: var(--bg-variable);">main_diag</span> = np.ones((  <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.N,<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.M))
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>  <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diag_north</span> = np.zeros((<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.N,<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.M))
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>  <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diag_south</span> = np.zeros((<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.N,<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.M))
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>  <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diag_east</span> = np.zeros(( <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.N,<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.M))
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>  <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diag_west</span> = np.zeros(( <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.N,<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.M))
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>  <span style="color: var(--clr-variable); background-color: var(--bg-variable);">main_diag</span>[1:-1,1:-1] =  -1* (<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>._T_x[:-1,1:-1] + <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>._T_x[1:,1:-1] + <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>._T_y[1:-1,:-1] + <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>._T_y[1:-1,1:])
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>  <span style="color: var(--clr-variable); background-color: var(--bg-variable);">main_diag</span> = np.ravel(main_diag)
      
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>  <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diag_north</span>[1:-1,1:-1] =  <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>._T_y[1:-1,:-1]
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>  <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diag_south</span>[1:-1,1:-1] =  <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>._T_y[1:-1,1:]
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>  <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diag_east</span>[1:-1,1:-1] =   <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>._T_x[1:,1:-1]
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>  <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diag_west</span>[1:-1,1:-1] =   <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>._T_x[:-1,1:-1]
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>  <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diag_north</span> = diag_north.ravel()
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>  <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diag_south</span> = diag_south.ravel()
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>  <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diag_west</span> = diag_west.ravel()
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>  <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diag_east</span> = diag_east.ravel()
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>  <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diag_north</span>[1:-1,1:-1] =  <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>._T_y[1:-1,:-1]
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>  <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diag_south</span>[1:-1,1:-1] =  <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>._T_y[1:-1,1:]
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>  <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diag_east</span>[1:-1,1:-1] =   <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>._T_x[1:,1:-1]
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>  <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diag_west</span>[1:-1,1:-1] =   <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>._T_x[:-1,1:-1]
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>  <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diag_north</span> = diag_north.ravel()
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>  <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diag_south</span> = diag_south.ravel()
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>  <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diag_west</span> = diag_west.ravel()
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>  <span style="color: var(--clr-variable); background-color: var(--bg-variable);">diag_east</span> = diag_east.ravel()
      
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>  <span style="color: var(--clr-variable); background-color: var(--bg-variable);">A</span> = sp.sparse.spdiags([main_diag , diag_north , diag_south ,  diag_west , diag_east] , [0 , -<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.N  , <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.N , 1 , -1] , <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.N*<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.M , <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.M*<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.N)
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>  <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.<span style="color: var(--clr-variable); background-color: var(--bg-variable);">_A</span> = A.T
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>  <span style="color: var(--clr-variable); background-color: var(--bg-variable);">A</span> = sp.sparse.spdiags([main_diag , diag_north , diag_south ,  diag_west , diag_east] , [0 , -<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.N  , <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.N , 1 , -1] , <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.N*<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.M , <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.M*<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.N)
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>  <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.<span style="color: var(--clr-variable); background-color: var(--bg-variable);">_A</span> = A.T
 
 </code></pre>
 </div></div>
@@ -1500,8 +1609,8 @@ let res = copyTextToClipboard(`   def assemble_matrix(self)->None:\n       main_
 on a \(N \times M\) grid
 </p>
 </div>
-<div id="outline-container-org72b29c8" class="outline-3">
-<h3 id="org72b29c8"><span class="section-number-3">5.1.</span> Numerical Flux in 2D</h3>
+<div id="outline-container-org9c8faaf" class="outline-3">
+<h3 id="org9c8faaf"><span class="section-number-3">5.1.</span> Numerical Flux in 2D</h3>
 <div class="outline-text-3" id="text-5-1">
 \begin{align*}
 g_{x}(c_{i+1,j} , c_{ij}) &= - \Delta_y D(x_{i+ \frac{1}{2},j }) \frac{c_{i+1,j} - c_{ij}}{\Delta_x}\\
@@ -1547,11 +1656,11 @@ plug in Flux Approach with \(\Delta_x = \Delta_y = h\)
 \end{align*}
 
 <div class='org-src-wrapper'>
-<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_c332db81549e4363b8412b12cf0587c1>&#10697;</button>
+<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_647755795677495da779bfd3f77a4e46>&#10697;</button>
 <script type='text/javascript'>
-var copyBtnbtn_c332db81549e4363b8412b12cf0587c1=document.querySelector('button[name=btn_c332db81549e4363b8412b12cf0587c1]');
-copyBtnbtn_c332db81549e4363b8412b12cf0587c1.addEventListener('click', function(event) {
-let res = copyTextToClipboard(`import os\n\n# Set this before importing NumPy/SciPy\nos.environ[\"OMP_NUM_THREADS\"] = \"16\"       # For MKL/OpenMP\nos.environ[\"OPENBLAS_NUM_THREADS\"] = \"16\"  # For OpenBLAS\nos.environ[\"MKL_NUM_THREADS\"] = \"16\"       # For Intel MKL\nos.environ[\"NUMEXPR_NUM_THREADS\"] = \"16\"   # Just in case\n\nimport numpy as np\nimport scipy\n\nepsilon =0.25\nD_1D = lambda x: 1 / (2+1.9 * np.cos(2 * np.pi* x / epsilon))\nD = lambda x,y: D_1D(x) * D_1D(y)\n\nalpha = 1.\ngamma = 0.001\n\ncenter = np.array([0.5,0.5])\nexp_kernel = lambda r: alpha * np.exp( - r / gamma)\nr = 0.2\np = 2.0\nthicc = 0.02\nR = lambda x,y: np.maximum(0. , np.abs((np.abs(x -center[0])**p + np.abs(y - center[1])**p)**(1/p) - r) - thicc)\nD = lambda x,y:   np.maximum(0.0005 , 1. -  exp_kernel(R(x,y)))\nD_lin = lambda x,y: x\n`);copyBtnbtn_c332db81549e4363b8412b12cf0587c1.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_c332db81549e4363b8412b12cf0587c1.innerHTML = '&#10697;'}, 3000);
+var copyBtnbtn_647755795677495da779bfd3f77a4e46=document.querySelector('button[name=btn_647755795677495da779bfd3f77a4e46]');
+copyBtnbtn_647755795677495da779bfd3f77a4e46.addEventListener('click', function(event) {
+let res = copyTextToClipboard(`import os\n\n# Set this before importing NumPy/SciPy\nos.environ[\"OMP_NUM_THREADS\"] = \"16\"       # For MKL/OpenMP\nos.environ[\"OPENBLAS_NUM_THREADS\"] = \"16\"  # For OpenBLAS\nos.environ[\"MKL_NUM_THREADS\"] = \"16\"       # For Intel MKL\nos.environ[\"NUMEXPR_NUM_THREADS\"] = \"16\"   # Just in case\n\nimport numpy as np\nimport scipy\n\n`);copyBtnbtn_647755795677495da779bfd3f77a4e46.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_647755795677495da779bfd3f77a4e46.innerHTML = '&#10697;'}, 3000);
 });
 </script>
 </div><div class="org-src-container">
@@ -1566,21 +1675,6 @@ os.<span style="color: var(--clr-variable); background-color: var(--bg-variable)
 <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">import</span> numpy <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">as</span> np
 <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">import</span> scipy
 
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">epsilon</span> =0.25
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">D_1D</span> = <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">lambda</span> x: 1 / (2+1.9 * np.cos(2 * np.pi* x / epsilon))
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">D</span> = <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">lambda</span> x,y: D_1D(x) * D_1D(y)
-
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">alpha</span> = 1.
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">gamma</span> = 0.001
-
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">center</span> = np.array([0.5,0.5])
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">exp_kernel</span> = <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">lambda</span> r: alpha * np.exp( - r / gamma)
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">r</span> = 0.2
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">p</span> = 2.0
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">thicc</span> = 0.02
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">R</span> = <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">lambda</span> x,y: np.maximum(0. , np.<span style="color: var(--clr-builtin); background-color: var(--bg-builtin);">abs</span>((np.<span style="color: var(--clr-builtin); background-color: var(--bg-builtin);">abs</span>(x -center[0])**p + np.<span style="color: var(--clr-builtin); background-color: var(--bg-builtin);">abs</span>(y - center[1])**p)**(1/p) - r) - thicc)
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">D</span> = <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">lambda</span> x,y:   np.maximum(0.0005 , 1. -  exp_kernel(R(x,y)))
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">D_lin</span> = <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">lambda</span> x,y: x
 </code></pre>
 </div></div>
 
@@ -1589,41 +1683,33 @@ None
 </pre>
 
 <div class='org-src-wrapper'>
-<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_452e652245e94457bfec26e321e1d1b1>&#10697;</button>
+<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_08743b9cb4974d6e929bee0726ec49e3>&#10697;</button>
 <script type='text/javascript'>
-var copyBtnbtn_452e652245e94457bfec26e321e1d1b1=document.querySelector('button[name=btn_452e652245e94457bfec26e321e1d1b1]');
-copyBtnbtn_452e652245e94457bfec26e321e1d1b1.addEventListener('click', function(event) {
-let res = copyTextToClipboard(`import seaborn as sns\nimport matplotlib.pyplot as plt\nimport numpy as np\nN = 1000\nM = 1000\nx = np.linspace(0.,1., N)\ny= np.linspace(0.,1., M)\ngrid = np.meshgrid(x,y)\ndiffusion = D(grid[0] , grid[1])\ndiffusion = np.reshape(diffusion , (N,M))\nsns.heatmap(diffusion)\n`);copyBtnbtn_452e652245e94457bfec26e321e1d1b1.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_452e652245e94457bfec26e321e1d1b1.innerHTML = '&#10697;'}, 3000);
+var copyBtnbtn_08743b9cb4974d6e929bee0726ec49e3=document.querySelector('button[name=btn_08743b9cb4974d6e929bee0726ec49e3]');
+copyBtnbtn_08743b9cb4974d6e929bee0726ec49e3.addEventListener('click', function(event) {
+let res = copyTextToClipboard(`import seaborn as sns\nimport matplotlib.pyplot as plt\nimport numpy as np\n`);copyBtnbtn_08743b9cb4974d6e929bee0726ec49e3.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_08743b9cb4974d6e929bee0726ec49e3.innerHTML = '&#10697;'}, 3000);
 });
 </script>
 </div><div class="org-src-container">
 <pre class="src src-python"><code><span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">import</span> seaborn <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">as</span> sns
 <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">import</span> matplotlib.pyplot <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">as</span> plt
 <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">import</span> numpy <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">as</span> np
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">N</span> = 1000
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">M</span> = 1000
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">x</span> = np.linspace(0.,1., N)
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">y</span>= np.linspace(0.,1., M)
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">grid</span> = np.meshgrid(x,y)
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">diffusion</span> = D(grid[0] , grid[1])
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">diffusion</span> = np.reshape(diffusion , (N,M))
-sns.heatmap(diffusion)
 </code></pre>
 </div></div>
 
 
-<div id="org276b756" class="figure">
+<div id="orgae81c33" class="figure">
 <p><img src="images/2D_Diffusion.png" alt="2D_Diffusion.png" />
 </p>
 </div>
 
 
 <div class='org-src-wrapper'>
-<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_6084aaf4f34c4ea887888e741f005cc8>&#10697;</button>
+<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_4d99b2fa67c2434c8fc35684e3b73247>&#10697;</button>
 <script type='text/javascript'>
-var copyBtnbtn_6084aaf4f34c4ea887888e741f005cc8=document.querySelector('button[name=btn_6084aaf4f34c4ea887888e741f005cc8]');
-copyBtnbtn_6084aaf4f34c4ea887888e741f005cc8.addEventListener('click', function(event) {
-let res = copyTextToClipboard(`reload(src.fvsolver)\nfrom src.fvsolver import FVSolver2D\nsmol_fv = FVSolver2D(10,10,D)\nsmol_fv.assemble_matrix()\nplt.imshow(smol_fv._A.todense())\n#plt.spy(A.T, markersize=1)\n`);copyBtnbtn_6084aaf4f34c4ea887888e741f005cc8.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_6084aaf4f34c4ea887888e741f005cc8.innerHTML = '&#10697;'}, 3000);
+var copyBtnbtn_4d99b2fa67c2434c8fc35684e3b73247=document.querySelector('button[name=btn_4d99b2fa67c2434c8fc35684e3b73247]');
+copyBtnbtn_4d99b2fa67c2434c8fc35684e3b73247.addEventListener('click', function(event) {
+let res = copyTextToClipboard(`reload(src.fvsolver)\nfrom src.fvsolver import FVSolver2D\nsmol_fv = FVSolver2D(10,10,D)\nsmol_fv.assemble_matrix()\nplt.imshow(smol_fv._A.todense())\n#plt.spy(A.T, markersize=1)\n`);copyBtnbtn_4d99b2fa67c2434c8fc35684e3b73247.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_4d99b2fa67c2434c8fc35684e3b73247.innerHTML = '&#10697;'}, 3000);
 });
 </script>
 </div><div class="org-src-container">
@@ -1637,17 +1723,17 @@ plt.imshow(smol_fv._A.todense())
 </div></div>
 
 
-<div id="org58d24ef" class="figure">
+<div id="org62d8e1d" class="figure">
 <p><img src="images/spy.svg" alt="spy.svg" class="org-svg" />
 </p>
 </div>
 
 <div class='org-src-wrapper'>
-<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_be519461046345ffbe68ab3891f96b02>&#10697;</button>
+<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_22fcc33719a440fd931d96ae1be1ef23>&#10697;</button>
 <script type='text/javascript'>
-var copyBtnbtn_be519461046345ffbe68ab3891f96b02=document.querySelector('button[name=btn_be519461046345ffbe68ab3891f96b02]');
-copyBtnbtn_be519461046345ffbe68ab3891f96b02.addEventListener('click', function(event) {
-let res = copyTextToClipboard(`fv2D = FVSolver2D(N,M,D)\nsns.heatmap(fv2D._T_y, cmap=\"magma\")\n`);copyBtnbtn_be519461046345ffbe68ab3891f96b02.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_be519461046345ffbe68ab3891f96b02.innerHTML = '&#10697;'}, 3000);
+var copyBtnbtn_22fcc33719a440fd931d96ae1be1ef23=document.querySelector('button[name=btn_22fcc33719a440fd931d96ae1be1ef23]');
+copyBtnbtn_22fcc33719a440fd931d96ae1be1ef23.addEventListener('click', function(event) {
+let res = copyTextToClipboard(`fv2D = FVSolver2D(N,M,D)\nsns.heatmap(fv2D._T_y, cmap=\"magma\")\n`);copyBtnbtn_22fcc33719a440fd931d96ae1be1ef23.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_22fcc33719a440fd931d96ae1be1ef23.innerHTML = '&#10697;'}, 3000);
 });
 </script>
 </div><div class="org-src-container">
@@ -1657,17 +1743,17 @@ sns.heatmap(fv2D._T_y, cmap=<span style="color: var(--clr-string); background-co
 </div></div>
 
 
-<div id="org03b0a19" class="figure">
+<div id="org822be80" class="figure">
 <p><img src="images/_T_x.png" alt="_T_x.png" />
 </p>
 </div>
 
 <div class='org-src-wrapper'>
-<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_816dce0c445a4526a3fab993e17f2866>&#10697;</button>
+<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_523297d81c7f449d9c6dd99456926786>&#10697;</button>
 <script type='text/javascript'>
-var copyBtnbtn_816dce0c445a4526a3fab993e17f2866=document.querySelector('button[name=btn_816dce0c445a4526a3fab993e17f2866]');
-copyBtnbtn_816dce0c445a4526a3fab993e17f2866.addEventListener('click', function(event) {
-let res = copyTextToClipboard(`fv2D = FVSolver2D(N,M,D)\nfv2D.assemble_matrix()\nfv2D.set_boundary()\nc = fv2D.solve()\nsns.heatmap(c, cmap=\"magma\")\n`);copyBtnbtn_816dce0c445a4526a3fab993e17f2866.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_816dce0c445a4526a3fab993e17f2866.innerHTML = '&#10697;'}, 3000);
+var copyBtnbtn_523297d81c7f449d9c6dd99456926786=document.querySelector('button[name=btn_523297d81c7f449d9c6dd99456926786]');
+copyBtnbtn_523297d81c7f449d9c6dd99456926786.addEventListener('click', function(event) {
+let res = copyTextToClipboard(`fv2D = FVSolver2D(N,M,D)\nfv2D.assemble_matrix()\nfv2D.set_boundary()\nc = fv2D.solve()\nsns.heatmap(c, cmap=\"magma\")\n`);copyBtnbtn_523297d81c7f449d9c6dd99456926786.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_523297d81c7f449d9c6dd99456926786.innerHTML = '&#10697;'}, 3000);
 });
 </script>
 </div><div class="org-src-container">
@@ -1680,17 +1766,17 @@ sns.heatmap(c, cmap=<span style="color: var(--clr-string); background-color: var
 </div></div>
 
 
-<div id="org764da2e" class="figure">
+<div id="org7752ecd" class="figure">
 <p><img src="images/2d-result.png" alt="2d-result.png" />
 </p>
 </div>
 
 <div class='org-src-wrapper'>
-<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_6ca5c0a9a7114cda884447a231b5c9ae>&#10697;</button>
+<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_06c34601a6b84f91b09c25b47666083b>&#10697;</button>
 <script type='text/javascript'>
-var copyBtnbtn_6ca5c0a9a7114cda884447a231b5c9ae=document.querySelector('button[name=btn_6ca5c0a9a7114cda884447a231b5c9ae]');
-copyBtnbtn_6ca5c0a9a7114cda884447a231b5c9ae.addEventListener('click', function(event) {
-let res = copyTextToClipboard(`error =np.linalg.norm(A@c_vec - f)\nprint(error)\n`);copyBtnbtn_6ca5c0a9a7114cda884447a231b5c9ae.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_6ca5c0a9a7114cda884447a231b5c9ae.innerHTML = '&#10697;'}, 3000);
+var copyBtnbtn_06c34601a6b84f91b09c25b47666083b=document.querySelector('button[name=btn_06c34601a6b84f91b09c25b47666083b]');
+copyBtnbtn_06c34601a6b84f91b09c25b47666083b.addEventListener('click', function(event) {
+let res = copyTextToClipboard(`error =np.linalg.norm(A@c_vec - f)\nprint(error)\n`);copyBtnbtn_06c34601a6b84f91b09c25b47666083b.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_06c34601a6b84f91b09c25b47666083b.innerHTML = '&#10697;'}, 3000);
 });
 </script>
 </div><div class="org-src-container">
@@ -1699,12 +1785,16 @@ let res = copyTextToClipboard(`error =np.linalg.norm(A@c_vec - f)\nprint(error)\
 </code></pre>
 </div></div>
 
+<pre class="example">
+1.025105313314805e-12
+</pre>
+
 <div class='org-src-wrapper'>
-<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_2f93a3e672c247d8ad2cb95c17ae8256>&#10697;</button>
+<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_ac8ec76f191048708a95ac3407e87ae2>&#10697;</button>
 <script type='text/javascript'>
-var copyBtnbtn_2f93a3e672c247d8ad2cb95c17ae8256=document.querySelector('button[name=btn_2f93a3e672c247d8ad2cb95c17ae8256]');
-copyBtnbtn_2f93a3e672c247d8ad2cb95c17ae8256.addEventListener('click', function(event) {
-let res = copyTextToClipboard(`fig = plt.figure()\nax = fig.add_subplot(111, projection='3d')\nax.plot_surface(grid[0] ,grid[1],c , cmap=\"magma\")\n`);copyBtnbtn_2f93a3e672c247d8ad2cb95c17ae8256.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_2f93a3e672c247d8ad2cb95c17ae8256.innerHTML = '&#10697;'}, 3000);
+var copyBtnbtn_ac8ec76f191048708a95ac3407e87ae2=document.querySelector('button[name=btn_ac8ec76f191048708a95ac3407e87ae2]');
+copyBtnbtn_ac8ec76f191048708a95ac3407e87ae2.addEventListener('click', function(event) {
+let res = copyTextToClipboard(`fig = plt.figure()\nax = fig.add_subplot(111, projection='3d')\nax.plot_surface(grid[0] ,grid[1],c , cmap=\"magma\")\n`);copyBtnbtn_ac8ec76f191048708a95ac3407e87ae2.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_ac8ec76f191048708a95ac3407e87ae2.innerHTML = '&#10697;'}, 3000);
 });
 </script>
 </div><div class="org-src-container">
@@ -1715,68 +1805,68 @@ ax.plot_surface(grid[0] ,grid[1],c , cmap=<span style="color: var(--clr-string);
 </div></div>
 
 
-<div id="org961478c" class="figure">
+<div id="orgf6778b1" class="figure">
 <p><img src="images/2d-surf.png" alt="2d-surf.png" />
 </p>
 </div>
 </div>
 </div>
 </div>
-<div id="outline-container-orgc168b11" class="outline-2">
-<h2 id="orgc168b11"><span class="section-number-2">6.</span> 2D Multiscale</h2>
+<div id="outline-container-org726fc78" class="outline-2">
+<h2 id="org726fc78"><span class="section-number-2">6.</span> 2D Multiscale</h2>
 <div class="outline-text-2" id="text-6">
 <div class='org-src-wrapper'>
-<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_d689e18eea8a43b9884c93f275e16f54>&#10697;</button>
+<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_5eab32f7ce0346a6ba215264a4c44c98>&#10697;</button>
 <script type='text/javascript'>
-var copyBtnbtn_d689e18eea8a43b9884c93f275e16f54=document.querySelector('button[name=btn_d689e18eea8a43b9884c93f275e16f54]');
-copyBtnbtn_d689e18eea8a43b9884c93f275e16f54.addEventListener('click', function(event) {
-let res = copyTextToClipboard(`   def set_multiscale_transmissions(self, resolution):\n      microscale_basis_x = np.zeros((self._T_x.shape[0] , self._T_x.shape[1] , resolution))\n      microscale_basis_y = np.zeros((self._T_y.shape[0] , self._T_y.shape[1] , resolution))\n      for i in range(self._T_x.shape[0]):\n         for j in range(self._T_x.shape[1]):\n            #Do mircroscale x\n            D_micro = lambda x: self.D(x, self.y[j])\n            fv_micro = FVSolver(resolution , D_micro, domain=(self.x[i] , self.x[i+1]))\n            fv_micro.assemble_matrix()\n            fv_micro.set_boundary(bc=(0.,1.))\n            phi =fv_micro.solve()\n            microscale_basis_x[i,j,:] = phi\n            self._T_x[i,j] =   -fv_micro.h * self.h_y* np.sum(((phi[1:] - phi[:-1])/fv_micro.h)**2 * D_micro(fv_micro.x[:-1]))\n\n      for i in range(self._T_y.shape[0]):\n         for j in range(self._T_y.shape[1]):\n            # Do microscale y\n            D_micro = lambda y: self.D(self.x[i], y)\n            fv_micro = FVSolver(resolution , D_micro, domain=(self.y[j] , self.y[j+1]))\n            fv_micro.assemble_matrix()\n            fv_micro.set_boundary(bc=(0.,1.))\n            phi =fv_micro.solve()\n            microscale_basis_y[i,j,:] = phi\n            self._T_y[i,j] =   -fv_micro.h * self.h_x  * np.sum(((phi[1:] - phi[:-1])/fv_micro.h)**2 * D_micro(fv_micro.x[:-1]))\n\n      return microscale_basis_x , microscale_basis_y\n\n`);copyBtnbtn_d689e18eea8a43b9884c93f275e16f54.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_d689e18eea8a43b9884c93f275e16f54.innerHTML = '&#10697;'}, 3000);
+var copyBtnbtn_5eab32f7ce0346a6ba215264a4c44c98=document.querySelector('button[name=btn_5eab32f7ce0346a6ba215264a4c44c98]');
+copyBtnbtn_5eab32f7ce0346a6ba215264a4c44c98.addEventListener('click', function(event) {
+let res = copyTextToClipboard(`   def set_multiscale_transmissions(self, resolution):\n      microscale_basis_x = np.zeros((self._T_x.shape[0] , self._T_x.shape[1] , resolution))\n      microscale_basis_y = np.zeros((self._T_y.shape[0] , self._T_y.shape[1] , resolution))\n      for i in range(self._T_x.shape[0]):\n         for j in range(self._T_x.shape[1]):\n            #Do mircroscale x\n            D_micro = lambda x: self.D(x, self.y[j])\n            fv_micro = FVSolver(resolution , D_micro, domain=(self.x[i] , self.x[i+1]))\n            fv_micro.assemble_matrix()\n            fv_micro.set_boundary(bc=(0.,1.))\n            phi =fv_micro.solve()\n            microscale_basis_x[i,j,:] = phi\n            self._T_x[i,j] =   -fv_micro.h * self.h_y* np.sum(((phi[1:] - phi[:-1])/fv_micro.h)**2 * D_micro(fv_micro.x[:-1]))\n\n      for i in range(self._T_y.shape[0]):\n         for j in range(self._T_y.shape[1]):\n            # Do microscale y\n            D_micro = lambda y: self.D(self.x[i], y)\n            fv_micro = FVSolver(resolution , D_micro, domain=(self.y[j] , self.y[j+1]))\n            fv_micro.assemble_matrix()\n            fv_micro.set_boundary(bc=(0.,1.))\n            phi =fv_micro.solve()\n            microscale_basis_y[i,j,:] = phi\n            self._T_y[i,j] =   -fv_micro.h * self.h_x  * np.sum(((phi[1:] - phi[:-1])/fv_micro.h)**2 * D_micro(fv_micro.x[:-1]))\n\n      return microscale_basis_x , microscale_basis_y\n\n`);copyBtnbtn_5eab32f7ce0346a6ba215264a4c44c98.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_5eab32f7ce0346a6ba215264a4c44c98.innerHTML = '&#10697;'}, 3000);
 });
 </script>
 </div><div class="org-src-container">
-<pre class="src src-python" id="org9e30da0"><code><span style="color: #372338b83972;"> </span>  <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">def</span> <span style="color: var(--function-clr-name); background-color: var(--function-bg-name);">set_multiscale_transmissions</span>(<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>, resolution):
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span> <span style="color: var(--clr-variable); background-color: var(--bg-variable);">microscale_basis_x</span> = np.zeros((<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>._T_x.shape[0] , <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>._T_x.shape[1] , resolution))
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span> <span style="color: var(--clr-variable); background-color: var(--bg-variable);">microscale_basis_y</span> = np.zeros((<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>._T_y.shape[0] , <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>._T_y.shape[1] , resolution))
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span> <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">for</span> i <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">in</span> <span style="color: var(--clr-builtin); background-color: var(--bg-builtin);">range</span>(<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>._T_x.shape[0]):
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span><span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">for</span> j <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">in</span> <span style="color: var(--clr-builtin); background-color: var(--bg-builtin);">range</span>(<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>._T_x.shape[1]):
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-comment-delimiter); background-color: var(--bg-comment-delimiter);">#</span><span style="color: var(--clr-comment); background-color: var(--bg-comment);">Do mircroscale x</span>
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">D_micro</span> = <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">lambda</span> x: <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.D(x, <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.y[j])
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">fv_micro</span> = FVSolver(resolution , D_micro, domain=(<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.x[i] , <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.x[i+1]))
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>   fv_micro.assemble_matrix()
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>   fv_micro.set_boundary(bc=(0.,1.))
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">phi</span> =fv_micro.solve()
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">microscale_basis_x</span>[i,j,:] = phi
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.<span style="color: var(--clr-variable); background-color: var(--bg-variable);">_T_x</span>[<span style="color: var(--clr-variable); background-color: var(--bg-variable);">i</span>,<span style="color: var(--clr-variable); background-color: var(--bg-variable);">j</span>] =   -fv_micro.h * <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.h_y* np.<span style="color: var(--clr-builtin); background-color: var(--bg-builtin);">sum</span>(((phi[1:] - phi[:-1])/fv_micro.h)**2 * D_micro(fv_micro.x[:-1]))
+<pre class="src src-python" id="org12f68cb"><code><span style="color: #4a9d48074b31;"> </span>  <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">def</span> <span style="color: var(--function-clr-name); background-color: var(--function-bg-name);">set_multiscale_transmissions</span>(<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>, resolution):
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span> <span style="color: var(--clr-variable); background-color: var(--bg-variable);">microscale_basis_x</span> = np.zeros((<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>._T_x.shape[0] , <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>._T_x.shape[1] , resolution))
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span> <span style="color: var(--clr-variable); background-color: var(--bg-variable);">microscale_basis_y</span> = np.zeros((<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>._T_y.shape[0] , <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>._T_y.shape[1] , resolution))
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span> <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">for</span> i <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">in</span> <span style="color: var(--clr-builtin); background-color: var(--bg-builtin);">range</span>(<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>._T_x.shape[0]):
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span><span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">for</span> j <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">in</span> <span style="color: var(--clr-builtin); background-color: var(--bg-builtin);">range</span>(<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>._T_x.shape[1]):
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>   <span style="color: var(--clr-comment-delimiter); background-color: var(--bg-comment-delimiter);">#</span><span style="color: var(--clr-comment); background-color: var(--bg-comment);">Do mircroscale x</span>
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">D_micro</span> = <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">lambda</span> x: <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.D(x, <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.y[j])
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">fv_micro</span> = FVSolver(resolution , D_micro, domain=(<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.x[i] , <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.x[i+1]))
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>   fv_micro.assemble_matrix()
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>   fv_micro.set_boundary(bc=(0.,1.))
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">phi</span> =fv_micro.solve()
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">microscale_basis_x</span>[i,j,:] = phi
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>   <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.<span style="color: var(--clr-variable); background-color: var(--bg-variable);">_T_x</span>[<span style="color: var(--clr-variable); background-color: var(--bg-variable);">i</span>,<span style="color: var(--clr-variable); background-color: var(--bg-variable);">j</span>] =   -fv_micro.h * <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.h_y* np.<span style="color: var(--clr-builtin); background-color: var(--bg-builtin);">sum</span>(((phi[1:] - phi[:-1])/fv_micro.h)**2 * D_micro(fv_micro.x[:-1]))
          
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span> <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">for</span> i <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">in</span> <span style="color: var(--clr-builtin); background-color: var(--bg-builtin);">range</span>(<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>._T_y.shape[0]):
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span><span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">for</span> j <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">in</span> <span style="color: var(--clr-builtin); background-color: var(--bg-builtin);">range</span>(<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>._T_y.shape[1]):
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-comment-delimiter); background-color: var(--bg-comment-delimiter);"># </span><span style="color: var(--clr-comment); background-color: var(--bg-comment);">Do microscale y</span>
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">D_micro</span> = <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">lambda</span> y: <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.D(<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.x[i], y)
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">fv_micro</span> = FVSolver(resolution , D_micro, domain=(<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.y[j] , <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.y[j+1]))
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>   fv_micro.assemble_matrix()
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>   fv_micro.set_boundary(bc=(0.,1.))
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">phi</span> =fv_micro.solve()
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">microscale_basis_y</span>[i,j,:] = phi
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span>   <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.<span style="color: var(--clr-variable); background-color: var(--bg-variable);">_T_y</span>[<span style="color: var(--clr-variable); background-color: var(--bg-variable);">i</span>,<span style="color: var(--clr-variable); background-color: var(--bg-variable);">j</span>] =   -fv_micro.h * <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.h_x  * np.<span style="color: var(--clr-builtin); background-color: var(--bg-builtin);">sum</span>(((phi[1:] - phi[:-1])/fv_micro.h)**2 * D_micro(fv_micro.x[:-1]))
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span> <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">for</span> i <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">in</span> <span style="color: var(--clr-builtin); background-color: var(--bg-builtin);">range</span>(<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>._T_y.shape[0]):
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span><span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">for</span> j <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">in</span> <span style="color: var(--clr-builtin); background-color: var(--bg-builtin);">range</span>(<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>._T_y.shape[1]):
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>   <span style="color: var(--clr-comment-delimiter); background-color: var(--bg-comment-delimiter);"># </span><span style="color: var(--clr-comment); background-color: var(--bg-comment);">Do microscale y</span>
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">D_micro</span> = <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">lambda</span> y: <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.D(<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.x[i], y)
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">fv_micro</span> = FVSolver(resolution , D_micro, domain=(<span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.y[j] , <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.y[j+1]))
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>   fv_micro.assemble_matrix()
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>   fv_micro.set_boundary(bc=(0.,1.))
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">phi</span> =fv_micro.solve()
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>   <span style="color: var(--clr-variable); background-color: var(--bg-variable);">microscale_basis_y</span>[i,j,:] = phi
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span>   <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.<span style="color: var(--clr-variable); background-color: var(--bg-variable);">_T_y</span>[<span style="color: var(--clr-variable); background-color: var(--bg-variable);">i</span>,<span style="color: var(--clr-variable); background-color: var(--bg-variable);">j</span>] =   -fv_micro.h * <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">self</span>.h_x  * np.<span style="color: var(--clr-builtin); background-color: var(--bg-builtin);">sum</span>(((phi[1:] - phi[:-1])/fv_micro.h)**2 * D_micro(fv_micro.x[:-1]))
          
-<span style="color: #372338b83972;"> </span>   <span style="color: #372338b83972;"> </span> <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">return</span> microscale_basis_x , microscale_basis_y
+<span style="color: #4a9d48074b31;"> </span>   <span style="color: #4a9d48074b31;"> </span> <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">return</span> microscale_basis_x , microscale_basis_y
 
 </code></pre>
 </div></div>
 
 <div class='org-src-wrapper'>
-<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_88fcf8ef58704a5a805c14234492360c>&#10697;</button>
+<div class='org-src-bar'><span class='srcLangLabel'>PYTHON</span><button class='copyBtn' name=btn_09e57976553b4755b3f14368e5b3f6d3>&#10697;</button>
 <script type='text/javascript'>
-var copyBtnbtn_88fcf8ef58704a5a805c14234492360c=document.querySelector('button[name=btn_88fcf8ef58704a5a805c14234492360c]');
-copyBtnbtn_88fcf8ef58704a5a805c14234492360c.addEventListener('click', function(event) {
-let res = copyTextToClipboard(`reload(src.fvsolver)\nfrom src.fvsolver import FVSolver2D\nfv2D = FVSolver2D(100,100,D)\nmx,my = fv2D.set_multiscale_transmissions(1000)\nfv2D.assemble_matrix()\nfv2D.set_boundary()\nc = fv2D.solve()\nsns.heatmap(c, cmap=\"magma\")\n`);copyBtnbtn_88fcf8ef58704a5a805c14234492360c.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_88fcf8ef58704a5a805c14234492360c.innerHTML = '&#10697;'}, 3000);
+var copyBtnbtn_09e57976553b4755b3f14368e5b3f6d3=document.querySelector('button[name=btn_09e57976553b4755b3f14368e5b3f6d3]');
+copyBtnbtn_09e57976553b4755b3f14368e5b3f6d3.addEventListener('click', function(event) {
+let res = copyTextToClipboard(`reload(src.fvsolver)\nfrom src.fvsolver import FVSolver2D\nfv2D = FVSolver2D(100,100,D)\nmx,my = fv2D.set_multiscale_transmissions(100)\nfv2D.assemble_matrix()\nfv2D.set_boundary()\nc = fv2D.solve()\nsns.heatmap(c, cmap=\"magma\")\n`);copyBtnbtn_09e57976553b4755b3f14368e5b3f6d3.innerHTML = res ? '&#10003;' : 'error';setTimeout(() => { copyBtnbtn_09e57976553b4755b3f14368e5b3f6d3.innerHTML = '&#10697;'}, 3000);
 });
 </script>
 </div><div class="org-src-container">
 <pre class="src src-python"><code><span style="color: var(--clr-builtin); background-color: var(--bg-builtin);">reload</span>(src.fvsolver)
 <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">from</span> src.fvsolver <span style="color: var(--clr-keyword); background-color: var(--bg-keyword);">import</span> FVSolver2D
 <span style="color: var(--clr-variable); background-color: var(--bg-variable);">fv2D</span> = FVSolver2D(100,100,D)
-<span style="color: var(--clr-variable); background-color: var(--bg-variable);">mx</span>,<span style="color: var(--clr-variable); background-color: var(--bg-variable);">my</span> = fv2D.set_multiscale_transmissions(1000)
+<span style="color: var(--clr-variable); background-color: var(--bg-variable);">mx</span>,<span style="color: var(--clr-variable); background-color: var(--bg-variable);">my</span> = fv2D.set_multiscale_transmissions(100)
 fv2D.assemble_matrix()
 fv2D.set_boundary()
 <span style="color: var(--clr-variable); background-color: var(--bg-variable);">c</span> = fv2D.solve()
@@ -1785,14 +1875,14 @@ sns.heatmap(c, cmap=<span style="color: var(--clr-string); background-color: var
 </div></div>
 
 
-<div id="org3a859fb" class="figure">
+<div id="org397b1c7" class="figure">
 <p><img src="images/2d-multi-result.png" alt="2d-multi-result.png" />
 </p>
 </div>
 </div>
 </div>
-<div id="outline-container-org9017556" class="outline-2">
-<h2 id="org9017556"><span class="section-number-2">7.</span> Reference Solution</h2>
+<div id="outline-container-org255a6ec" class="outline-2">
+<h2 id="org255a6ec"><span class="section-number-2">7.</span> Reference Solution</h2>
 <div class="outline-text-2" id="text-7">
 <p>
 Solution of the 2D Laplace equation:
