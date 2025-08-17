@@ -1,16 +1,17 @@
+
+
+# #+RESULTS:
+# : None
+
+
 import numpy as np
 
-# 1D
-# Since the Aim of multiscale Finite Volume, is to improve the results for highly fluctuating diffusivities, we test with the following oscillating function
-# \begin{align*}
-# D(x) &= \frac{1}{2+ 1.9 \cos \left( \frac{2 \pi x}{\epsilon} \right)}
-# \end{align*}
+# Code
 
 def oscillation(x, eps = 0.1):
     return 1 / (2+1.9 * np.cos(2 * np.pi* x / eps))
 
-# 2D Box Condition
-# To test numerical stability of our methods we introduce a box constrain condition, that traps some concentration in the center.
+# Code
 
 alpha = 1.
 gamma = 0.002
@@ -30,36 +31,39 @@ def circle(x,y , p=2):
 def rhombus(x,y , p=2):
     return np.maximum(0.0005 , 1. -  exp_kernel(R(x,y , p=1)))
 
-# 2D Oscillation
+# Code
 
 def osc2D_point(x,y , eps = 0.25):
     return oscillation(x, eps=eps) * oscillation(y, eps=eps)
 def osc2D_line(x,y , eps = 0.25):
     return oscillation(x, eps=eps) + oscillation(y, eps=eps)
 
-# 1D Noise
+# Code
 
 def noise1D(x,scale=10.  , frequencies=5):
     s = lambda x ,f , a , o: a* np.sin(f*2*np.pi*(x + o))
-    coeffs = np.random.rand(frequencies,3)
+    rng = np.random.default_rng(69)
+    coeffs = rng.random((frequencies,3))
     res = np.zeros(len(x))
     for i in range(frequencies):
         res += s(x, scale *coeffs[i,0] ,coeffs[i,1] , coeffs[i,2] )
     res = res / (2*np.sum(coeffs[:,1])) + 0.5
     return res
 
-# Noise 2D
+# Code
 
-def noise2D(x,y , scale=1. , frequencies=50):
+def noise2D(x,y , scale=8. , frequencies=20):
     s = lambda x ,f , a , o: a* np.sin(f*2*np.pi*(x + o))
-    coeffs = np.random.rand(frequencies,6)
-    res = np.zeros(len(x))
+    rng = np.random.default_rng(6)
+    coeffs = rng.random((frequencies,6))
+    res = np.zeros_like(x)
     for i in range(frequencies):
-        theta = np.pi *coeffs[i,5]
+        gamma = 1.1**(i+scale)
+        theta = np.pi * coeffs[i,5]
         x_prime = x * np.cos(theta) - y * np.sin(theta)
         y_prime = x * np.cos(theta) - y * np.sin(theta)
-        res += 0.5*(s(x_prime, scale *coeffs[i,0] ,coeffs[i,1] , coeffs[i,2] ) + s(y_prime, scale *coeffs[i,1] ,coeffs[i,3] , coeffs[i,4] ))
+        res += 1/gamma * (s(x_prime, gamma ,coeffs[i,1] ,coeffs[i,2] ) + s(y_prime, gamma ,coeffs[i,2] , coeffs[i,4] ))
 
-    res = res / (2*np.sum(coeffs[:,1])) + 0.5
+    res = res*10 + 20
     return res
     return

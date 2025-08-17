@@ -1,9 +1,19 @@
 #+title: Multiscale Finite Volume Method
-#+author: Karl Louis Glänzer \\ Jonathan Ulmer
+#+author: Karl Louis Glänzer / Jonathan Ulmer
 #+startup: latexpreview
+#+startup: beamer
 #+latex_compiler: lualatex
+#+latex_class: beamer
+#+LaTeX_CLASS_options: [presentation,small]
 #+property: header-args:python :session :tangle fv.py :comments org :exports both :eval never-export
+#+OPTIONS: H:2 toc:t num:t
+#+BEAMER_THEME: Madrid
+#+COLUMNS: %45ITEM %10BEAMER_ENV(Env) %10BEAMER_ACT(Act) %4BEAMER_COL(Col)
+#+BEAMER_FRAME_OPTIONS: allowframebreaks
+#+LATEX_HEADER: \setkeys{Gin}{width=0.7\textwidth}
 
+
+* Preamble :noexport:
 #+begin_src python :tangle src/fvsolver.py :noweb no-export :exports none
 from typing import Callable
 import numpy as np
@@ -12,6 +22,9 @@ from scipy.sparse.linalg import spsolve
 from numpy.typing import NDArray
 #+end_src
 
+#+RESULTS:
+: None
+
 
 #+begin_src python  :exports none
 import matplotlib.pyplot as plt
@@ -19,47 +32,126 @@ import seaborn as sns
 import numpy as np
 #+end_src
 
+#+RESULTS:
+: None
+
 #+begin_src python :tangle src/diffusion.py
 import numpy as np
 #+end_src
 
 
 * Standard Diffusion equation
-\begin{align*}
+** Numeral Problem
+#+begin_abstract
+in our work, we solve the diffusion equation \eqref{eq:diffusion} with zero Dirichlet boundary and constant flux \(f(x) = 1\). In order to investigate the effects of the multiscale method on the solution, we introduce a varied sample of diffusivity terms
+\begin{align}
+\label{eq:diffusion}
 \nabla \cdot (D(x) \nabla c) &= f(x) & \text{in}& \, \Omega \\
 c(x) &= 0 &  \text{on}& \, \partial \Omega
-\end{align*}
+\end{align}
+Our work provides a way to approximate a solution \(c\) to the PDE \eqref{eq:diffusion} with the Finite Volume method, and a multiscale adaptation.
+#+end_abstract
 ** Derivation of the 1D Finite Volume Method
 The Finite Volume method considers the differential equation in Integral form over disjunct (\(Q_i \cap Q_j = \emptyset , i\neq  j\)) reference cells \(Q_{i}\), \(\bigcup_{i=1}^N  Q_{i} = \Omega \) and calculates the integral over them, with an integral over the reference cell boundaries using Stokes integration.
+
+
 \begin{align}
 \label{eq:fv-integral}
 \int_{Q_i} \nabla \cdot (D(x) \nabla c )  &= \int_{Q_i} f(x) \, \mathrm{d}x  & i&=1, \dots  , N\\
 \int_{\partial Q_i} D(x) \nabla c \cdot \vec{n} \, \mathrm{d}S \, &=   \int_{Q_i} f(x) \, \mathrm{d} x & i&=1, \dots  , N
 \end{align}
+
+
 The Finite Volume Method then considers the solution piecewise constant on \(Q\). This creates discontinuities on the cell boundaries, where the values are not uniquely defined.
 The Finite Volume method therefore introduces a numerical flux in the Ansatz and solves the integral over the flux instead.
-since the assumed solution is constant we approximation the source term \(f(\vec{x})\)  with its value on the cell center \(x_i\) of \(Q_i\) and calculate the integrals directly.
+Since the assumed solution is constant we approximate the source term \(f(\vec{x})\)  with its value on the cell center \(x_i\) of \(Q_i\) and calculate the integrals directly.
+
 \begin{align}
-\label{eq:fv-integral}
 \int_{\partial Q_i} g(c^+, c^-) \cdot \vec{n} \, \mathrm{d}S \, &=   \int_{Q_i} f(x) \, \mathrm{d} x & i&=1, \dots  , N\\
+\label{eq:fv-discrete}
  \int_{\partial Q_i} g(c^+, c^-) \cdot \vec{n} \, \mathrm{d}S \,&=   |Q_i| f(x_i)  & i&=1, \dots  , N
 \end{align}
 
+** Numerical flux approximation
+*** 1D Flux
+We employ the  flux approximation introduced in the MMM Lecture Since we only investigated diffusion terms with an analytical representation, we are able to calculate this value directly.
+\begin{align}
+\label{eq:flux-1d}
+g(c^+ , c^-) = - D(x^{\frac{1}{2} +}) \frac{c^+ - c^-}{h}
+\end{align}
+Furthermore, we introduce transmissitivities \(T_{\pm }\) between both cells.
+\begin{align*}
+g(c^+ , c^-) &= T_{\pm } * \left( c^+ - c^- \right) \\
+T_{\pm } &= - D(x^{\frac{1}{2}+}) \frac{1}{h}
+\end{align*}
+*** 2D Flux
+We define the flux term in 2 Dimensions very similar to those in one dimension.
+\begin{align}
+\label{eq:flux-2d}
+g_{x}(c_{i+1,j} , c_{ij}) &= - \Delta_y D(x_{i+ \frac{1}{2},j }) \frac{c_{i+1,j} - c_{ij}}{\Delta_x}\\
+g_y(c_{i,j+1} , c_{ij}) &= - \Delta_x D(x_{i,j+ \frac{1}{2}}) \frac{c_{i,j+1} - c_{ij}}{\Delta_y}
+\end{align}
+and in the same manner we introduce 2D transmissions \(T^x_{i+1j} , T^y_{ij+1}\)
+\begin{align*}
+g_x(c_{i+1j} , c_{ij}) &=   T^x_{i+1j} \left( c_{i+1j} - c_{ij}  \right)\\
+g_y(c_{ij+1} , c_{ij}) &=   T^y_{ij+1} \left( c_{i+1j} - c_{ij}  \right)
+\end{align*}
+** Linearization
 
-** Example diffusion terms
-We investigate of single and multiscale solvers with different Diffusion functions, that we introduce in the followin sections
+We implemented our finite Volume solver on a rectangular grid. therefore the normals on the boundaries are constant, and the flux integral (\ref{eq:fv-discrete}) simplifies to a sum
+\begin{align*}
+\sum_{ n \in \partial Q}   \vec{g}(c_{i+j+1} , c_{i+j}) \cdot \vec{n}  &=   |Q_i|  \overline{f}(x_{i})
+\end{align*}
 *** 1D
+- In one dimension there are only two outward normals \(n \in \{-1,1\}\),
+- we use the 1D flux \eqref{eq:flux-1d}
+
+*** 2D
+- In two dimensions there are four outward cell normals
+\begin{align*}
+n_{\mathrm{north}}  &=
+\begin{pmatrix}
+0 \\ 1
+\end{pmatrix}
+&
+n_{\mathrm{south}}  &=
+\begin{pmatrix}
+0 \\ -1
+\end{pmatrix}
+\\
+n_{\mathrm{east}}  &=
+\begin{pmatrix}
+1 \\ 0
+\end{pmatrix}
+&
+n_{\mathrm{west}}  &=
+\begin{pmatrix}
+-1 \\ 0
+\end{pmatrix}
+\end{align*}
+- we use the 2D flux \eqref{eq:flux-2d}
+
+* Example diffusion terms
+
+** Diffusion
+We investigate of single and multiscale solvers with different Diffusion functions, that we introduce in the followin sections
+
+** 1D
+
 Since the Aim of multiscale Finite Volume, is to improve the results for highly fluctuating diffusivities, we test with the following oscillating function
 \begin{align*}
 D(x) &= \frac{1}{2+ 1.9 \cos \left( \frac{2 \pi x}{\epsilon} \right)}
 \end{align*}
+
+*** Code
 #+begin_src python :tangle src/diffusion.py :eval never
 def oscillation(x, eps = 0.1):
     return 1 / (2+1.9 * np.cos(2 * np.pi* x / eps))
 #+end_src
 
+*** Diffusivity
 #+name: 1D Diffusion
-#+begin_src python  :session :results output file graphics  :file images/D.png :exports results
+#+begin_src python  :session :results output file graphics  :file images/D.svg :exports results
 import numpy as np
 import matplotlib.pyplot as plt
 import src.diffusion as D
@@ -72,12 +164,15 @@ plt.legend([r"$D$ Sampled on a course grid" , r"$D$"] , loc="upper right")
 plt.title("1D Diffusion Coefficient")
 #+end_src
 
+
 #+caption: Oscillating Diffusivity for 1D finite volume method
 #+RESULTS: 1D Diffusion
-[[file:images/D.png]]
+[[file:images/D.svg]]
 
-*** 2D Box Condition
+
+** 2D Box Condition
 To test numerical stability of our methods we introduce a box constrain condition, that traps some concentration in the center.
+*** Code
 #+begin_src python :tangle src/diffusion.py :eval never
 alpha = 1.
 gamma = 0.002
@@ -98,8 +193,9 @@ def rhombus(x,y , p=2):
     return np.maximum(0.0005 , 1. -  exp_kernel(R(x,y , p=1)))
 #+end_src
 
+*** Diffusivity
 #+name: 2D Box Constraints
-#+begin_src python :results graphics file output :file images/box-constraints.png :exports results
+#+begin_src python :results graphics file output :file images/box-constraints.svg :exports results
 import src.diffusion as D
 reload(D)
 
@@ -130,8 +226,9 @@ fig.colorbar(im1 ,ax=axis , fraction=0.025)
 
 #+caption: Constraints restricting flow from the center of the Domain
 #+RESULTS: 2D Box Constraints
-[[file:images/box-constraints.png]]
-*** 2D Oscillation
+[[file:images/box-constraints.svg]]
+** 2D Oscillation
+*** Code
 #+begin_src python :tangle src/diffusion.py
 def osc2D_point(x,y , eps = 0.25):
     return oscillation(x, eps=eps) * oscillation(y, eps=eps)
@@ -139,8 +236,10 @@ def osc2D_line(x,y , eps = 0.25):
     return oscillation(x, eps=eps) + oscillation(y, eps=eps)
 
 #+end_src
+
+*** Diffusion
 #+name: 2D Ocillation
-#+begin_src python :results graphics file output :file images/oscillation-2d.png
+#+begin_src python :results graphics file output :file images/oscillation-2d.svg :exports results
 import src.diffusion as D
 reload(D)
 
@@ -167,13 +266,16 @@ fig.colorbar(im1 ,ax=axis , fraction=0.025)
 #+end_src
 
 #+RESULTS: 2D Ocillation
-[[file:images/oscillation-2d.png]]
+[[file:images/oscillation-2d.svg]]
 
-*** 1D Noise
+** 1D Noise
+
+*** Code
 #+begin_src python :tangle src/diffusion.py
 def noise1D(x,scale=10.  , frequencies=5):
     s = lambda x ,f , a , o: a* np.sin(f*2*np.pi*(x + o))
-    coeffs = np.random.rand(frequencies,3)
+    rng = np.random.default_rng(69)
+    coeffs = rng.random((frequencies,3))
     res = np.zeros(len(x))
     for i in range(frequencies):
         res += s(x, scale *coeffs[i,0] ,coeffs[i,1] , coeffs[i,2] )
@@ -181,8 +283,11 @@ def noise1D(x,scale=10.  , frequencies=5):
     return res
 #+end_src
 
+#+RESULTS:
+: None
 
-#+begin_src python :results file graphics output :file images/noise.png
+*** Diffusion
+#+begin_src python :exports results :results file graphics output :file images/noise.svg
 import src.diffusion as D
 reload(D)
 x = np.linspace(0,1)
@@ -190,64 +295,51 @@ plt.plot(D.noise1D(x))
 #+end_src
 
 #+RESULTS:
-[[file:images/noise.png]]
+[[file:images/noise.svg]]
 
-
-*** Noise 2D
-#+begin_src python :tangle src/diffusion.py
-def noise2D(x,y , scale=1. , frequencies=50):
+** Noise 2D
+*** Code
+#+begin_src python :tangle src/diffusion.py :eval never
+def noise2D(x,y , scale=8. , frequencies=20):
     s = lambda x ,f , a , o: a* np.sin(f*2*np.pi*(x + o))
-    coeffs = np.random.rand(frequencies,6)
-    res = np.zeros(len(x))
+    rng = np.random.default_rng(6)
+    coeffs = rng.random((frequencies,6))
+    res = np.zeros_like(x)
     for i in range(frequencies):
-        theta = np.pi *coeffs[i,5]
+        gamma = 1.1**(i+scale)
+        theta = np.pi * coeffs[i,5]
         x_prime = x * np.cos(theta) - y * np.sin(theta)
         y_prime = x * np.cos(theta) - y * np.sin(theta)
-        res += 0.5*(s(x_prime, scale *coeffs[i,0] ,coeffs[i,1] , coeffs[i,2] ) + s(y_prime, scale *coeffs[i,1] ,coeffs[i,3] , coeffs[i,4] ))
+        res += 1/gamma * (s(x_prime, gamma ,coeffs[i,1] ,coeffs[i,2] ) + s(y_prime, gamma ,coeffs[i,2] , coeffs[i,4] ))
 
-    res = res / (2*np.sum(coeffs[:,1])) + 0.5
+    res = res*10 + 20
     return res
     return
 #+end_src
 
-#+RESULTS:
-: None
-
-#+begin_src python :results file graphics output :file images/noise-2D.png
+*** Difusion
+#+name: 2D Noise
+#+begin_src python :results file graphics output :file images/noise-2D.png :exports results
 import src.diffusion as D
 reload(D)
-N = 1000
-M = 1000
+N = 100
+M = 100
 x = np.linspace(0.,1., N)
 y= np.linspace(0.,1., M)
 grid = np.meshgrid(x,y)
-noise = D.noise2D(grid[0].ravel() , grid[1].ravel(), scale=5 , frequencies=50)
+noise = D.noise2D(grid[0].ravel() , grid[1].ravel(), scale=10, frequencies=20)
 sns.heatmap(noise.reshape(N,M))
 #+end_src
 
-#+RESULTS:
+#+RESULTS: 2D Noise
 [[file:images/noise-2D.png]]
 
-for example upwind
 
-\begin{align*}
-g(c^+ , c^-) = - D(x^{\frac{1}{2} +}) \frac{c^+ - c^-}{h}
-\end{align*}
-
-\begin{align*}
-g(c^+ , c^-) &= T_{\pm } * \left( c^+ - c^- \right) \\
-T_{\pm } &= - D(x^{\frac{1}{2}+}) \frac{1}{h}
-\end{align*}
-
-
-Linear System
-\begin{align*}
-\int_{\partial Q_{i}} D(x_{i}) \nabla c \cdot \vec{n}  \, \mathrm{d}S &= |Q| \overline{f}(x_{i}) \\
-\sum_{j \in \left\{ -1,1 \right\} } j *  g(c_{i+j+1} , c_{i+j})  &=   h \overline{f}(x_{i})
-\end{align*}
 * Finite Volume 1D
 ** Program Structure
 For convenience in Explanation and Execution, we bundle all required information for solving a 1D system into a python class, which is structured as follows
+
+*** Class Structure
 #+begin_src python :tangle src/fvsolver.py :noweb no-export
 class FVSolver:
    N : int
@@ -258,38 +350,31 @@ class FVSolver:
    f : NDArray[np.float64]
    c : NDArray[np.float64]
    micro_basis : NDArray[np.float64]
-
    _T : NDArray[np.float64]
 
 <<Init>>
-
 <<Assemble Matrix>>
-
 <<Boundary>>
-
 <<Solve>>
-
 <<Microscale Transmissions>>
-
 <<Reconstruct Microscale Solution>>
 #+end_src
 
-#+RESULTS:
-: None
 
-
+*** Initialization
 #+name: Init
 #+begin_src python :eval never
    def __init__(self , N :int , D :Callable  , domain=(0.,1.))->None:
-       self.h = (domain[1] - domain[0]) / N
+       self.h = (domain[1] - domain[0]) / (N-1)
        self.N = N
        self.D = D
        self.x = np.linspace(domain[0] , domain[1] , N)
-       self._T =  -1/self.h * D((self.x[:-1] + self.x[1:])/2)
+       self._T =  -1/self.h * D((self.x[:-1] + self.x[1:])*0.5)
        self.f = self.h* np.ones(N)
 
 #+end_src
 
+*** Solving
 #+name: Solve
 #+begin_src python :eval never
    def solve(self):
@@ -297,7 +382,7 @@ class FVSolver:
       return self.c
 
 #+end_src
-
+*** Boundary
 #+name: Boundary
 #+begin_src python :eval never
    def set_boundary(self , bc=(0.,0.)):
@@ -308,8 +393,8 @@ class FVSolver:
 
 
 
-
-Matrix Assembly
+*** Assembly of the linear system
+*** Matrix Assembly
 #+name: Assemble Matrix
 #+begin_src python :eval never
    def assemble_matrix(self)-> None:
@@ -322,55 +407,42 @@ Matrix Assembly
       self._A = spdiags([diagm1 , diag0 , diagp1] , np.array( [-1, 0, 1] ))
 #+end_src
 
-#+RESULTS: Assemble Matrix
-
-#+begin_src python :session :results output graphics file :file images/A-sparsity.png
-reload(src.fvsolver)
+*** Sparsity Pattern of the linear system
+#+name: A Sparsity
+#+begin_src python :session :results output graphics file :file images/A-sparsity.svg :exports results
+from importlib import reload
+import src.fvsolver
 from src.fvsolver import FVSolver
-f10 = FVSolver(5,  D.oscillation)
+reload(src.fvsolver)
+f10 = FVSolver(50,  D.oscillation)
 f10.assemble_matrix()
-x = np.linspace(0.,1.,5)
-A = assemble_matrix(5 ,x , 1/5 , D.oscillation)
-sns.heatmap(A.todense() - f10._A.todense())
+A = f10._A
+sparsity = np.full(A.shape , np.nan)
+Idx = A.nonzero()
+sparsity[Idx] = A.todense()[Idx]
+sns.heatmap(sparsity)
 plt.title("Sparsity Patter of A")
 #+end_src
 
-#+RESULTS:
-[[file:images/A-sparsity.png]]
-#+begin_src python
-0.2 * 100
-#+end_src
+#+RESULTS: A Sparsity
+[[file:images/A-sparsity.svg]]
 
-#+RESULTS:
-: 20.0
-
-#+begin_src python :results output table
-print(A.todense())
-#+end_src
-
-#+RESULTS:
-|   1 |           0 |          0 |           0 |   0 |
-| -50 |         100 |        -50 |           0 |   0 |
-|   0 | -1.28205128 | 2.56410256 | -1.28205128 |   0 |
-|   0 |           0 |        -50 |         100 | -50 |
-|   0 |           0 |          0 |           0 |   1 |
-
-* Multiscale
+* Multiscale :noexport:
 In 1D
 #+name: Microscale Transmissions
 #+begin_src python :eval never
    def set_multiscale_transmissions(self, resolution)->NDArray[np.float64]:
       self.resolution = resolution
-      micro_basis = np.zeros((self.N -1)*resolution)
+      micro_basis = np.zeros((self.N-1)*resolution)
       for i in range(1,self.N):
-         micro_fv = FVSolver(resolution , self.D , domain=(self.x[i-1] , self.x[i]))
+         micro_fv = FVSolver(resolution , self.D , domain=(self.x[i-1], self.x[i]))
          micro_fv.set_boundary(bc=(0.,1.))
          micro_fv.assemble_matrix()
          phi = micro_fv.solve()
 
-         micro_basis[resolution * i:resolution*(i+1)] = phi
+         micro_basis[resolution * (i-1):resolution*i] = phi
          hm = micro_fv.h
-         self._T[i] = -hm * np.sum(((phi[1:] - phi[:-1])/hm)**2 * self.D(micro_fv.x[:-1]))
+         self._T[i-1] = -hm * np.sum(((phi[1:] - phi[:-1])/hm)**2 * self.D(micro_fv.x[:-1]))
       self.micro_basis = micro_basis
       return micro_basis
 
@@ -401,18 +473,26 @@ import src.diffusion as D
 reload(src.fvsolver)
 reload(D)
 fv = FVSolver(10 ,  D.oscillation)
-fv_ref = FVSolver(100000 ,  D.oscillation)
+fv.assemble_matrix()
 fv.set_boundary()
+c_course = fv.solve()
+
+fv_ref = FVSolver(100000 ,  D.oscillation)
 fv_ref.set_boundary()
 fv_ref.assemble_matrix()
 c_fine = fv_ref.solve()
-mb = fv.set_multiscale_transmissions(100)
-fv.assemble_matrix()
-c_course = fv.solve()
-fv.reconstruct_multiscale()
+
+fvmulti = FVSolver(6 ,  D.oscillation)
+mb = fvmulti.set_multiscale_transmissions(100)
+fvmulti.set_boundary()
+fvmulti.assemble_matrix()
+c_multi = fvmulti.solve()
+fvmulti.reconstruct_multiscale()
+
 plt.plot(fv.x , c_course)
-x_fine = np.linspace(0,1, len(fv.micro_basis))
-plt.plot(x_fine,fv.reconstruction)
+plt.plot(fvmulti.x , c_multi)
+x_fine = np.linspace(0,1, len(fvmulti.micro_basis))
+plt.plot(x_fine,fvmulti.reconstruction)
 plt.plot(fv_ref.x,c_fine)
 #+end_src
 
@@ -452,7 +532,10 @@ plt.ylabel(r"$c(x)$")
 plt.legend(["macro" , "multiscale", "multi_fine" , "reference"])
 #+end_src
 
-* Cleanup
+#+RESULTS:
+[[file:images/multiscaleplot.svg]]
+
+* Cleanup :noexport:
 
 #+RESULTS:
 : None
@@ -464,7 +547,7 @@ from src.fvsolver import FVSolver
 reload(src.fvsolver)
 epsilon = 0.1
 D = lambda x: 1 / (2+1.9 * np.cos(2 * np.pi* x / epsilon))
-fv = FVSolver(100 ,  D)
+fv = FVSolver(10 ,  D)
 fv.assemble_matrix()
 fv.set_boundary()
 c_course = fv.solve()
@@ -490,7 +573,7 @@ plt.plot(c_multi)
 
 #+RESULTS:
 [[file:images/multi1D.png]]
-* 2D
+* 2D :noexport:
 #+begin_src python :tangle src/fvsolver.py :noweb no-export
 import scipy as sp
 import numpy as np
@@ -532,15 +615,15 @@ class FVSolver2D:
 
 
 #+name: Init 2D
-#+begin_src python
+#+begin_src python :eval never
    def __init__(self ,
                 N:int,
                 M:int ,
                 D :Callable  ,
                 domain=np.array([[0.,0.] , [1.,1.]]),
                 )->None:
-      self.h_x = (domain[1,0] - domain[0,0]) / N
-      self.h_y = (domain[1,1] - domain[0,1]) / M
+      self.h_x = (domain[1,0] - domain[0,0]) / (N-1)
+      self.h_y = (domain[1,1] - domain[0,1]) / (M-1)
       self.x = np.linspace(domain[0,0] , domain[1,0] , N)
       self.y = np.linspace(domain[0,1] , domain[1,1] , M)
       x_h = self.x[:-1] + 0.5 * self.h_x
@@ -555,6 +638,7 @@ class FVSolver2D:
       self.f = self.h_x * self.h_y* np.ones((N, M))
 
 #+end_src
+
 
 #+name: Assemble 2D Matrix
 #+begin_src python :eval never
@@ -640,8 +724,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 #+end_src
 
-#+RESULTS:
-[[file:images/2D_Diffusion.png]]
 
 
 #+begin_src python :results file graphics output :file images/spy.svg
@@ -691,33 +773,33 @@ ax.plot_surface(grid[0] ,grid[1],c , cmap="magma")
 
 #+RESULTS:
 [[file:images/2d-surf.png]]
-* 2D Multiscale
+* 2D Multiscale :noexport:
 #+name:2D Microscale Transmissions
 #+begin_src python :eval never
    def set_multiscale_transmissions(self, resolution):
       self.microscale_basis_x = np.zeros((self._T_x.shape[0] , self._T_x.shape[1] , resolution))
       self.microscale_basis_y = np.zeros((self._T_y.shape[0] , self._T_y.shape[1] , resolution))
-      for i in range(self._T_x.shape[0]):
+      for i in range(1 ,self._T_x.shape[0]+1):
          for j in range(self._T_x.shape[1]):
             #Do mircroscale x
             D_micro = lambda x: self.D(x, self.y[j])
-            fv_micro = FVSolver(resolution , D_micro, domain=(self.x[i] , self.x[i+1]))
+            fv_micro = FVSolver(resolution , D_micro, domain=(self.x[i-1] , self.x[i]))
             fv_micro.assemble_matrix()
             fv_micro.set_boundary(bc=(0.,1.))
             phi =fv_micro.solve()
-            microscale_basis_x[i,j,:] = phi
-            self._T_x[i,j] =   -fv_micro.h * self.h_y* np.sum(((phi[1:] - phi[:-1])/fv_micro.h)**2 * D_micro(fv_micro.x[:-1]))
+            self.microscale_basis_x[i-1,j,:] = phi
+            self._T_x[i-1,j] =   -fv_micro.h * self.h_y* np.sum(((phi[1:] - phi[:-1])/fv_micro.h)**2 * D_micro(fv_micro.x[:-1]))
 
       for i in range(self._T_y.shape[0]):
-         for j in range(self._T_y.shape[1]):
+         for j in range(1,self._T_y.shape[1]+1):
             # Do microscale y
             D_micro = lambda y: self.D(self.x[i], y)
-            fv_micro = FVSolver(resolution , D_micro, domain=(self.y[j] , self.y[j+1]))
+            fv_micro = FVSolver(resolution , D_micro, domain=(self.y[j-1] , self.y[j]))
             fv_micro.assemble_matrix()
             fv_micro.set_boundary(bc=(0.,1.))
             phi =fv_micro.solve()
-            microscale_basis_y[i,j,:] = phi
-            self._T_y[i,j] =   -fv_micro.h * self.h_x  * np.sum(((phi[1:] - phi[:-1])/fv_micro.h)**2 * D_micro(fv_micro.x[:-1]))
+            self.microscale_basis_y[i,j-1,:] = phi
+            self._T_y[i,j-1] =   -fv_micro.h * self.h_x  * np.sum(((phi[1:] - phi[:-1])/fv_micro.h)**2 * D_micro(fv_micro.x[:-1]))
 
       return self.microscale_basis_x , self.microscale_basis_y
 
@@ -725,9 +807,10 @@ ax.plot_surface(grid[0] ,grid[1],c , cmap="magma")
 
 #+begin_src python :results file graphics output :file images/2d-multi-result.png :async t
 reload(src.fvsolver)
+reload(D)
 from src.fvsolver import FVSolver2D
-fv2D = FVSolver2D(100,100,D)
-mx,my = fv2D.set_multiscale_transmissions(100)
+fv2D = FVSolver2D(100,100,D.noise2D)
+mx,my = fv2D.set_multiscale_transmissions(10000)
 fv2D.assemble_matrix()
 fv2D.set_boundary()
 c = fv2D.solve()
@@ -744,6 +827,7 @@ sns.heatmap(c, cmap="magma")
 
 
 * Reference Solution
+** Reference
 Solution of the 2D Laplace equation:
 \begin{align}
 \label{eq:poisson}

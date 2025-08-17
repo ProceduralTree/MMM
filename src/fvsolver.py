@@ -1,9 +1,4 @@
-# #+title: Multiscale Finite Volume Method
-# #+author: Karl Louis Glänzer \\ Jonathan Ulmer
-# #+startup: latexpreview
-# #+latex_compiler: lualatex
-# #+property: header-args:python :session :tangle fv.py :comments org :exports both :eval never-export
-
+# Preamble :noexport:
 
 from typing import Callable
 import numpy as np
@@ -11,8 +6,7 @@ from scipy.sparse import spdiags
 from scipy.sparse.linalg import spsolve
 from numpy.typing import NDArray
 
-# Program Structure
-# For convenience in Explanation and Execution, we bundle all required information for solving a 1D system into a python class, which is structured as follows
+# Class Structure
 
 class FVSolver:
    N : int
@@ -23,17 +17,15 @@ class FVSolver:
    f : NDArray[np.float64]
    c : NDArray[np.float64]
    micro_basis : NDArray[np.float64]
-
    _T : NDArray[np.float64]
 
    def __init__(self , N :int , D :Callable  , domain=(0.,1.))->None:
-       self.h = (domain[1] - domain[0]) / N
+       self.h = (domain[1] - domain[0]) / (N-1)
        self.N = N
        self.D = D
        self.x = np.linspace(domain[0] , domain[1] , N)
-       self._T =  -1/self.h * D((self.x[:-1] + self.x[1:])/2)
+       self._T =  -1/self.h * D((self.x[:-1] + self.x[1:])*0.5)
        self.f = self.h* np.ones(N)
-
 
    def assemble_matrix(self)-> None:
       diagp1 = np.zeros(self.N)
@@ -43,32 +35,28 @@ class FVSolver:
       diag0 = np.ones(self.N)
       diag0[1:-1] = -1 * (self._T[1:] + self._T[:-1])
       self._A = spdiags([diagm1 , diag0 , diagp1] , np.array( [-1, 0, 1] ))
-
    def set_boundary(self , bc=(0.,0.)):
       self.f[0] = bc[0]
       self.f[-1] = bc[1]
-
 
    def solve(self):
       self.c = spsolve(self._A.tocsr() , self.f)
       return self.c
 
-
    def set_multiscale_transmissions(self, resolution)->NDArray[np.float64]:
       self.resolution = resolution
-      micro_basis = np.zeros((self.N -1)*resolution)
+      micro_basis = np.zeros((self.N-1)*resolution)
       for i in range(1,self.N):
-         micro_fv = FVSolver(resolution , self.D , domain=(self.x[i-1] , self.x[i]))
+         micro_fv = FVSolver(resolution , self.D , domain=(self.x[i-1], self.x[i]))
          micro_fv.set_boundary(bc=(0.,1.))
          micro_fv.assemble_matrix()
          phi = micro_fv.solve()
 
-         micro_basis[resolution * i:resolution*(i+1)] = phi
+         micro_basis[resolution * (i-1):resolution*i] = phi
          hm = micro_fv.h
-         self._T[i] = -hm * np.sum(((phi[1:] - phi[:-1])/hm)**2 * self.D(micro_fv.x[:-1]))
+         self._T[i-1] = -hm * np.sum(((phi[1:] - phi[:-1])/hm)**2 * self.D(micro_fv.x[:-1]))
       self.micro_basis = micro_basis
       return micro_basis
-
 
 
    def reconstruct_multiscale(self)->NDArray[np.float64]:
@@ -78,7 +66,7 @@ class FVSolver:
             t = self.micro_basis[n*i:n*(i+1)]
             self.reconstruction[n*i:n*(i+1)] = (1-t) * self.c[i] + t * self.c[i+1]
 
-# 2D
+# 2D :noexport:
 
 import scipy as sp
 import numpy as np
@@ -106,8 +94,8 @@ class FVSolver2D:
                 D :Callable  ,
                 domain=np.array([[0.,0.] , [1.,1.]]),
                 )->None:
-      self.h_x = (domain[1,0] - domain[0,0]) / N
-      self.h_y = (domain[1,1] - domain[0,1]) / M
+      self.h_x = (domain[1,0] - domain[0,0]) / (N-1)
+      self.h_y = (domain[1,1] - domain[0,1]) / (M-1)
       self.x = np.linspace(domain[0,0] , domain[1,0] , N)
       self.y = np.linspace(domain[0,1] , domain[1,1] , M)
       x_h = self.x[:-1] + 0.5 * self.h_x
@@ -158,26 +146,26 @@ class FVSolver2D:
    def set_multiscale_transmissions(self, resolution):
       self.microscale_basis_x = np.zeros((self._T_x.shape[0] , self._T_x.shape[1] , resolution))
       self.microscale_basis_y = np.zeros((self._T_y.shape[0] , self._T_y.shape[1] , resolution))
-      for i in range(self._T_x.shape[0]):
+      for i in range(1 ,self._T_x.shape[0]+1):
          for j in range(self._T_x.shape[1]):
             #Do mircroscale x
             D_micro = lambda x: self.D(x, self.y[j])
-            fv_micro = FVSolver(resolution , D_micro, domain=(self.x[i] , self.x[i+1]))
+            fv_micro = FVSolver(resolution , D_micro, domain=(self.x[i-1] , self.x[i]))
             fv_micro.assemble_matrix()
             fv_micro.set_boundary(bc=(0.,1.))
             phi =fv_micro.solve()
-            microscale_basis_x[i,j,:] = phi
-            self._T_x[i,j] =   -fv_micro.h * self.h_y* np.sum(((phi[1:] - phi[:-1])/fv_micro.h)**2 * D_micro(fv_micro.x[:-1]))
+            self.microscale_basis_x[i-1,j,:] = phi
+            self._T_x[i-1,j] =   -fv_micro.h * self.h_y* np.sum(((phi[1:] - phi[:-1])/fv_micro.h)**2 * D_micro(fv_micro.x[:-1]))
 
       for i in range(self._T_y.shape[0]):
-         for j in range(self._T_y.shape[1]):
+         for j in range(1,self._T_y.shape[1]+1):
             # Do microscale y
             D_micro = lambda y: self.D(self.x[i], y)
-            fv_micro = FVSolver(resolution , D_micro, domain=(self.y[j] , self.y[j+1]))
+            fv_micro = FVSolver(resolution , D_micro, domain=(self.y[j-1] , self.y[j]))
             fv_micro.assemble_matrix()
             fv_micro.set_boundary(bc=(0.,1.))
             phi =fv_micro.solve()
-            microscale_basis_y[i,j,:] = phi
-            self._T_y[i,j] =   -fv_micro.h * self.h_x  * np.sum(((phi[1:] - phi[:-1])/fv_micro.h)**2 * D_micro(fv_micro.x[:-1]))
+            self.microscale_basis_y[i,j-1,:] = phi
+            self._T_y[i,j-1] =   -fv_micro.h * self.h_x  * np.sum(((phi[1:] - phi[:-1])/fv_micro.h)**2 * D_micro(fv_micro.x[:-1]))
 
       return self.microscale_basis_x , self.microscale_basis_y
