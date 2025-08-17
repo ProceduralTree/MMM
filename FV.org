@@ -174,17 +174,30 @@ plt.title("1D Diffusion Coefficient")
 To test numerical stability of our methods we introduce a box constrain condition, that traps some concentration in the center.
 *** Code
 #+begin_src python :tangle src/diffusion.py :eval never
-alpha = 1.
+alpha = 0.99
 gamma = 0.002
-depth = 1e-6
+depth = -1e-3
+a = 4
+b = 200
 
+exp_kernel_smooth = lambda r: 1. - 0.99 * np.exp(-(1.1**b) * a*r**a)
 exp_kernel = lambda r: alpha * np.exp( - r / gamma)
 
 def R(x,y , p=2):
     center = np.array([0.5,0.5])
     r = 0.2
-    thicc = 0.03
+    thicc = 0.005
     return np.maximum(0. , np.abs((np.abs(x -center[0])**p + np.abs(y - center[1])**p)**(1/p) - r) - thicc)
+
+def radius(x,y , p=2):
+    center = np.array([0.5,0.5])
+    return np.abs((np.abs(x -center[0])**p + np.abs(y - center[1])**p)**(1/p))
+
+def smooth_box(x,y):
+    r = 0.2
+    return exp_kernel_smooth(np.abs(radius(x,y, p=100) - r))
+
+
 
 def box(x,y , p=2):
     return np.maximum(depth , 1. -  exp_kernel(R(x,y , p=100)))
@@ -209,7 +222,7 @@ M = 1000
 x = np.linspace(0.,1., N)
 y= np.linspace(0.,1., M)
 grid = np.meshgrid(x,y)
-diffusion_b = D.box(grid[0] , grid[1])
+diffusion_b = D.smooth_box(grid[0] , grid[1])
 diffusion_b = diffusion_b.reshape((N,M))
 diffusion_c = D.circle(grid[0] , grid[1])
 diffusion_c = diffusion_c.reshape((N,M))
@@ -232,6 +245,18 @@ fig.colorbar(im1 ,ax=axis , fraction=0.025)
 #+caption: Constraints restricting flow from the center of the Domain
 #+RESULTS: 2D Box Constraints
 [[file:images/box-constraints.svg]]
+
+
+#+begin_src python :results file graphics output :file images/test.png
+import src.diffusion as D
+reload(D)
+x = np.linspace(0. , 1. , 1000)
+plt.plot(D.exp_kernel_smooth(x - 0.2))
+#+end_src
+
+#+RESULTS:
+[[file:images/test.png]]
+
 ** 2D Oscillation
 *** Code
 #+begin_src python :tangle src/diffusion.py
@@ -784,32 +809,35 @@ ax.plot_surface(grid[0] ,grid[1],c , cmap="magma")
 #+RESULTS:
 [[file:images/2d-surf.png]]
 * 2D Multiscale :noexport:
+\begin{align*}
+T_{\pm } &= -\int_{Q} D(x,y) \phi_x'(x)  \phi_y'(y)\, \mathrm{d}x \mathrm{d}y
+\end{align*}
 #+name:2D Microscale Transmissions
 #+begin_src python :eval never
    def set_multiscale_transmissions(self, resolution):
       self.microscale_basis_x = np.zeros((self._T_x.shape[0] , self._T_x.shape[1] , resolution))
       self.microscale_basis_y = np.zeros((self._T_y.shape[0] , self._T_y.shape[1] , resolution))
-      for i in range(1 ,self._T_x.shape[0]+1):
+      for i in range(self._T_x.shape[0]):
          for j in range(self._T_x.shape[1]):
             #Do mircroscale x
             D_micro = lambda x: self.D(x, self.y[j])
-            fv_micro = FVSolver(resolution , D_micro, domain=(self.x[i-1] , self.x[i]))
+            fv_micro = FVSolver(resolution , D_micro, domain=(self.x[i] , self.x[i+1]))
             fv_micro.assemble_matrix()
             fv_micro.set_boundary(bc=(0.,1.))
             phi =fv_micro.solve()
-            self.microscale_basis_x[i-1,j,:] = phi
-            self._T_x[i-1,j] =   -fv_micro.h * self.h_y* np.sum(((phi[1:] - phi[:-1])/fv_micro.h)**2 * D_micro(fv_micro.x[:-1]))
+            self.microscale_basis_x[i,j,:] = phi
+            self._T_x[i,j] =   -fv_micro.h * self.h_y* np.sum(((phi[1:] - phi[:-1])/(fv_micro.h))**2 * D_micro(fv_micro.x[1:] - fv_micro.h/2))
 
       for i in range(self._T_y.shape[0]):
-         for j in range(1,self._T_y.shape[1]+1):
+         for j in range(self._T_y.shape[1]):
             # Do microscale y
             D_micro = lambda y: self.D(self.x[i], y)
-            fv_micro = FVSolver(resolution , D_micro, domain=(self.y[j-1] , self.y[j]))
+            fv_micro = FVSolver(resolution , D_micro, domain=(self.y[j] , self.y[j+1]))
             fv_micro.assemble_matrix()
             fv_micro.set_boundary(bc=(0.,1.))
             phi =fv_micro.solve()
-            self.microscale_basis_y[i,j-1,:] = phi
-            self._T_y[i,j-1] =   -fv_micro.h * self.h_x  * np.sum(((phi[1:] - phi[:-1])/fv_micro.h)**2 * D_micro(fv_micro.x[:-1]))
+            self.microscale_basis_y[i,j,:] = phi
+            self._T_y[i,j] =   -fv_micro.h * self.h_x  * np.sum(((phi[1:] - phi[:-1])/(fv_micro.h))**2 * D_micro(fv_micro.x[1:] - fv_micro.h/2))
 
       return self.microscale_basis_x , self.microscale_basis_y
 
@@ -819,13 +847,14 @@ ax.plot_surface(grid[0] ,grid[1],c , cmap="magma")
 reload(src.fvsolver)
 reload(D)
 from src.fvsolver import FVSolver2D
-fv2D = FVSolver2D(100,100,D.circle)
-#mx,my = fv2D.set_multiscale_transmissions(10000)
+fv2D = FVSolver2D(20,20,D.rhombus)
+mx,my = fv2D.set_multiscale_transmissions(200)
 fv2D.assemble_matrix()
 fv2D.set_boundary()
 c = fv2D.solve()
 c_slice = c[:,5]
 sns.heatmap(c, cmap="magma")
+#sns.heatmap(fv2D._T_x, cmap="magma")
 #plt.plot(c_slice)
 #+end_src
 
@@ -837,6 +866,16 @@ sns.heatmap(c, cmap="magma")
 
 #+end_src
 
+#+begin_src python :results file graphics output :file images/debug.png
+phi = fv2D.microscale_basis_y[10,:,:].ravel()
+D_micro = lambda y: fv2D.D(fv2D.x[10], y)
+y_smoll = np.linspace(0.,1. , 38000)
+plt.plot(y_smoll , D_micro(y_smoll))
+plt.plot(y_smoll , phi)
+#+end_src
+
+#+RESULTS:
+[[file:images/debug.png]]
 
 * Reference Solution
 ** Reference

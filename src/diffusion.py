@@ -13,17 +13,30 @@ def oscillation(x, eps = 0.1):
 
 # Code
 
-alpha = 1.
+alpha = 0.99
 gamma = 0.002
-depth = 1e-6
+depth = -1e-3
+a = 4
+b = 200
 
+exp_kernel_smooth = lambda r: 1. - 0.99 * np.exp(-(1.1**b) * a*r**a)
 exp_kernel = lambda r: alpha * np.exp( - r / gamma)
 
 def R(x,y , p=2):
     center = np.array([0.5,0.5])
     r = 0.2
-    thicc = 0.03
+    thicc = 0.005
     return np.maximum(0. , np.abs((np.abs(x -center[0])**p + np.abs(y - center[1])**p)**(1/p) - r) - thicc)
+
+def radius(x,y , p=2):
+    center = np.array([0.5,0.5])
+    return np.abs((np.abs(x -center[0])**p + np.abs(y - center[1])**p)**(1/p))
+
+def smooth_box(x,y):
+    r = 0.2
+    return exp_kernel_smooth(np.abs(radius(x,y, p=100) - r))
+
+
 
 def box(x,y , p=2):
     return np.maximum(depth , 1. -  exp_kernel(R(x,y , p=100)))

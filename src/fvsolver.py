@@ -146,26 +146,26 @@ class FVSolver2D:
    def set_multiscale_transmissions(self, resolution):
       self.microscale_basis_x = np.zeros((self._T_x.shape[0] , self._T_x.shape[1] , resolution))
       self.microscale_basis_y = np.zeros((self._T_y.shape[0] , self._T_y.shape[1] , resolution))
-      for i in range(1 ,self._T_x.shape[0]+1):
+      for i in range(self._T_x.shape[0]):
          for j in range(self._T_x.shape[1]):
             #Do mircroscale x
             D_micro = lambda x: self.D(x, self.y[j])
-            fv_micro = FVSolver(resolution , D_micro, domain=(self.x[i-1] , self.x[i]))
+            fv_micro = FVSolver(resolution , D_micro, domain=(self.x[i] , self.x[i+1]))
             fv_micro.assemble_matrix()
             fv_micro.set_boundary(bc=(0.,1.))
             phi =fv_micro.solve()
-            self.microscale_basis_x[i-1,j,:] = phi
-            self._T_x[i-1,j] =   -fv_micro.h * self.h_y* np.sum(((phi[1:] - phi[:-1])/fv_micro.h)**2 * D_micro(fv_micro.x[:-1]))
+            self.microscale_basis_x[i,j,:] = phi
+            self._T_x[i,j] =   -fv_micro.h * self.h_y* np.sum(((phi[1:] - phi[:-1])/(fv_micro.h))**2 * D_micro(fv_micro.x[1:] - fv_micro.h/2))
 
       for i in range(self._T_y.shape[0]):
-         for j in range(1,self._T_y.shape[1]+1):
+         for j in range(self._T_y.shape[1]):
             # Do microscale y
             D_micro = lambda y: self.D(self.x[i], y)
-            fv_micro = FVSolver(resolution , D_micro, domain=(self.y[j-1] , self.y[j]))
+            fv_micro = FVSolver(resolution , D_micro, domain=(self.y[j] , self.y[j+1]))
             fv_micro.assemble_matrix()
             fv_micro.set_boundary(bc=(0.,1.))
             phi =fv_micro.solve()
-            self.microscale_basis_y[i,j-1,:] = phi
-            self._T_y[i,j-1] =   -fv_micro.h * self.h_x  * np.sum(((phi[1:] - phi[:-1])/fv_micro.h)**2 * D_micro(fv_micro.x[:-1]))
+            self.microscale_basis_y[i,j,:] = phi
+            self._T_y[i,j] =   -fv_micro.h * self.h_x  * np.sum(((phi[1:] - phi[:-1])/(fv_micro.h))**2 * D_micro(fv_micro.x[1:] - fv_micro.h/2))
 
       return self.microscale_basis_x , self.microscale_basis_y
