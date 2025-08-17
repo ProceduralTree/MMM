@@ -128,7 +128,7 @@ class FVSolver2D:
        diag_west = diag_west.ravel()
        diag_east = diag_east.ravel()
 
-       A = sp.sparse.spdiags([main_diag , diag_north , diag_south ,  diag_west , diag_east] , [0 , -self.N  , self.N , 1 , -1] , self.N*self.M , self.M*self.N)
+       A = sp.sparse.spdiags([main_diag , diag_east , diag_west ,  diag_north , diag_south] , [0 , -self.N  , self.N , 1 , -1] , self.N*self.M , self.M*self.N)
        self._A = A.T
 
 

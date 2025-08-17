@@ -15,6 +15,7 @@ def oscillation(x, eps = 0.1):
 
 alpha = 1.
 gamma = 0.002
+depth = 1e-6
 
 exp_kernel = lambda r: alpha * np.exp( - r / gamma)
 
@@ -25,11 +26,11 @@ def R(x,y , p=2):
     return np.maximum(0. , np.abs((np.abs(x -center[0])**p + np.abs(y - center[1])**p)**(1/p) - r) - thicc)
 
 def box(x,y , p=2):
-    return np.maximum(0.0005 , 1. -  exp_kernel(R(x,y , p=100)))
+    return np.maximum(depth , 1. -  exp_kernel(R(x,y , p=100)))
 def circle(x,y , p=2):
-    return np.maximum(0.0005 , 1. -  exp_kernel(R(x,y , p=2)))
+    return np.maximum(depth , 1. -  exp_kernel(R(x,y , p=2)))
 def rhombus(x,y , p=2):
-    return np.maximum(0.0005 , 1. -  exp_kernel(R(x,y , p=1)))
+    return np.maximum(depth , 1. -  exp_kernel(R(x,y , p=1)))
 
 # Code
 

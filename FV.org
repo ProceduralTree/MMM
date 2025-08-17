@@ -10,7 +10,7 @@
 #+BEAMER_THEME: Madrid
 #+COLUMNS: %45ITEM %10BEAMER_ENV(Env) %10BEAMER_ACT(Act) %4BEAMER_COL(Col)
 #+BEAMER_FRAME_OPTIONS: allowframebreaks
-#+LATEX_HEADER: \setkeys{Gin}{width=0.7\textwidth}
+#+LATEX_HEADER: \setkeys{Gin}{width=0.6\textwidth}
 
 
 * Preamble :noexport:
@@ -176,6 +176,7 @@ To test numerical stability of our methods we introduce a box constrain conditio
 #+begin_src python :tangle src/diffusion.py :eval never
 alpha = 1.
 gamma = 0.002
+depth = 1e-6
 
 exp_kernel = lambda r: alpha * np.exp( - r / gamma)
 
@@ -186,11 +187,15 @@ def R(x,y , p=2):
     return np.maximum(0. , np.abs((np.abs(x -center[0])**p + np.abs(y - center[1])**p)**(1/p) - r) - thicc)
 
 def box(x,y , p=2):
-    return np.maximum(0.0005 , 1. -  exp_kernel(R(x,y , p=100)))
+    return np.maximum(depth , 1. -  exp_kernel(R(x,y , p=100)))
 def circle(x,y , p=2):
-    return np.maximum(0.0005 , 1. -  exp_kernel(R(x,y , p=2)))
+    return np.maximum(depth , 1. -  exp_kernel(R(x,y , p=2)))
 def rhombus(x,y , p=2):
-    return np.maximum(0.0005 , 1. -  exp_kernel(R(x,y , p=1)))
+    return np.maximum(depth , 1. -  exp_kernel(R(x,y , p=1)))
+#+end_src
+
+#+begin_src python
+
 #+end_src
 
 *** Diffusivity
@@ -472,7 +477,7 @@ from src.fvsolver import FVSolver
 import src.diffusion as D
 reload(src.fvsolver)
 reload(D)
-fv = FVSolver(10 ,  D.oscillation)
+fv = FVSolver(20 * 100 ,  D.oscillation)
 fv.assemble_matrix()
 fv.set_boundary()
 c_course = fv.solve()
@@ -482,7 +487,7 @@ fv_ref.set_boundary()
 fv_ref.assemble_matrix()
 c_fine = fv_ref.solve()
 
-fvmulti = FVSolver(6 ,  D.oscillation)
+fvmulti = FVSolver(20 ,  D.oscillation)
 mb = fvmulti.set_multiscale_transmissions(100)
 fvmulti.set_boundary()
 fvmulti.assemble_matrix()
@@ -494,6 +499,10 @@ plt.plot(fvmulti.x , c_multi)
 x_fine = np.linspace(0,1, len(fvmulti.micro_basis))
 plt.plot(x_fine,fvmulti.reconstruction)
 plt.plot(fv_ref.x,c_fine)
+plt.title("Comparison Of Different Solvers")
+plt.xlabel(r"$x$")
+plt.ylabel(r"$c(x)$")
+plt.legend(["macro" , "multiscale", "multi_fine" , "reference"])
 #+end_src
 
 #+RESULTS:
@@ -526,10 +535,6 @@ plt.plot(x,c)
 plt.plot(x,c_macro)
 plt.plot(x_multi,c_multi)
 plt.plot(x_fine , c_fine)
-plt.title("Comparison Of Different Solvers")
-plt.xlabel(r"$x$")
-plt.ylabel(r"$c(x)$")
-plt.legend(["macro" , "multiscale", "multi_fine" , "reference"])
 #+end_src
 
 #+RESULTS:
@@ -544,14 +549,19 @@ plt.legend(["macro" , "multiscale", "multi_fine" , "reference"])
 from importlib import reload
 import src.fvsolver
 from src.fvsolver import FVSolver
+import src.diffusion as D
 reload(src.fvsolver)
+reload(D)
 epsilon = 0.1
-D = lambda x: 1 / (2+1.9 * np.cos(2 * np.pi* x / epsilon))
-fv = FVSolver(10 ,  D)
+diff = lambda x: D.circle(x,0.5)
+fv = FVSolver(1000 , diff)
 fv.assemble_matrix()
 fv.set_boundary()
 c_course = fv.solve()
-plt.plot(c_course)
+wall = fv.D(fv.x)
+print(np.min(wall))
+plt.plot(fv.x,wall)
+plt.plot(fv.x,c_course)
 #+end_src
 
 #+RESULTS:
@@ -660,7 +670,7 @@ class FVSolver2D:
        diag_west = diag_west.ravel()
        diag_east = diag_east.ravel()
 
-       A = sp.sparse.spdiags([main_diag , diag_north , diag_south ,  diag_west , diag_east] , [0 , -self.N  , self.N , 1 , -1] , self.N*self.M , self.M*self.N)
+       A = sp.sparse.spdiags([main_diag , diag_east , diag_west ,  diag_north , diag_south] , [0 , -self.N  , self.N , 1 , -1] , self.N*self.M , self.M*self.N)
        self._A = A.T
 
 #+end_src
@@ -809,12 +819,14 @@ ax.plot_surface(grid[0] ,grid[1],c , cmap="magma")
 reload(src.fvsolver)
 reload(D)
 from src.fvsolver import FVSolver2D
-fv2D = FVSolver2D(100,100,D.noise2D)
-mx,my = fv2D.set_multiscale_transmissions(10000)
+fv2D = FVSolver2D(100,100,D.circle)
+#mx,my = fv2D.set_multiscale_transmissions(10000)
 fv2D.assemble_matrix()
 fv2D.set_boundary()
 c = fv2D.solve()
+c_slice = c[:,5]
 sns.heatmap(c, cmap="magma")
+#plt.plot(c_slice)
 #+end_src
 
 #+RESULTS:
