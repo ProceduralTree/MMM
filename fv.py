@@ -36,7 +36,7 @@ M = 1000
 x = np.linspace(0.,1., N)
 y= np.linspace(0.,1., M)
 grid = np.meshgrid(x,y)
-diffusion_b = D.box(grid[0] , grid[1])
+diffusion_b = D.smooth_box(grid[0] , grid[1])
 diffusion_b = diffusion_b.reshape((N,M))
 diffusion_c = D.circle(grid[0] , grid[1])
 diffusion_c = diffusion_c.reshape((N,M))
@@ -54,6 +54,19 @@ axis[2].set_title(r"Rhombus with $L^{1}$ norm")
 #fig.colorbar()
 fig.suptitle(r"2D Box Constraints")
 fig.colorbar(im1 ,ax=axis , fraction=0.025)
+
+
+
+# #+caption: Constraints restricting flow from the center of the Domain
+# #+RESULTS: 2D Box Constraints
+# [[file:images/box-constraints.svg]]
+
+
+
+import src.diffusion as D
+reload(D)
+x = np.linspace(0. , 1. , 1000)
+plt.plot(D.exp_kernel_smooth(x - 0.2))
 
 # Diffusion
 # #+name: 2D Ocillation
@@ -454,45 +467,49 @@ ax = fig.add_subplot(111, projection='3d')
 ax.plot_surface(grid[0] ,grid[1],c , cmap="magma")
 
 # 2D Multiscale :noexport:
+# \begin{align*}
+# T_{\pm } &= -\int_{Q} D(x,y) \phi_x'(x)  \phi_y'(y)\, \mathrm{d}x \mathrm{d}y
+# \end{align*}
 # #+name:2D Microscale Transmissions
 
    def set_multiscale_transmissions(self, resolution):
       self.microscale_basis_x = np.zeros((self._T_x.shape[0] , self._T_x.shape[1] , resolution))
       self.microscale_basis_y = np.zeros((self._T_y.shape[0] , self._T_y.shape[1] , resolution))
-      for i in range(1 ,self._T_x.shape[0]+1):
+      for i in range(self._T_x.shape[0]):
          for j in range(self._T_x.shape[1]):
             #Do mircroscale x
             D_micro = lambda x: self.D(x, self.y[j])
-            fv_micro = FVSolver(resolution , D_micro, domain=(self.x[i-1] , self.x[i]))
+            fv_micro = FVSolver(resolution , D_micro, domain=(self.x[i] , self.x[i+1]))
             fv_micro.assemble_matrix()
             fv_micro.set_boundary(bc=(0.,1.))
             phi =fv_micro.solve()
-            self.microscale_basis_x[i-1,j,:] = phi
-            self._T_x[i-1,j] =   -fv_micro.h * self.h_y* np.sum(((phi[1:] - phi[:-1])/fv_micro.h)**2 * D_micro(fv_micro.x[:-1]))
+            self.microscale_basis_x[i,j,:] = phi
+            self._T_x[i,j] =   -fv_micro.h * self.h_y* np.sum(((phi[1:] - phi[:-1])/(fv_micro.h))**2 * D_micro(fv_micro.x[1:] - fv_micro.h/2))
 
       for i in range(self._T_y.shape[0]):
-         for j in range(1,self._T_y.shape[1]+1):
+         for j in range(self._T_y.shape[1]):
             # Do microscale y
             D_micro = lambda y: self.D(self.x[i], y)
-            fv_micro = FVSolver(resolution , D_micro, domain=(self.y[j-1] , self.y[j]))
+            fv_micro = FVSolver(resolution , D_micro, domain=(self.y[j] , self.y[j+1]))
             fv_micro.assemble_matrix()
             fv_micro.set_boundary(bc=(0.,1.))
             phi =fv_micro.solve()
-            self.microscale_basis_y[i,j-1,:] = phi
-            self._T_y[i,j-1] =   -fv_micro.h * self.h_x  * np.sum(((phi[1:] - phi[:-1])/fv_micro.h)**2 * D_micro(fv_micro.x[:-1]))
+            self.microscale_basis_y[i,j,:] = phi
+            self._T_y[i,j] =   -fv_micro.h * self.h_x  * np.sum(((phi[1:] - phi[:-1])/(fv_micro.h))**2 * D_micro(fv_micro.x[1:] - fv_micro.h/2))
 
       return self.microscale_basis_x , self.microscale_basis_y
 
 reload(src.fvsolver)
 reload(D)
 from src.fvsolver import FVSolver2D
-fv2D = FVSolver2D(100,100,D.circle)
-#mx,my = fv2D.set_multiscale_transmissions(10000)
+fv2D = FVSolver2D(10,10,D.smooth_box)
+mx,my = fv2D.set_multiscale_transmissions(20)
 fv2D.assemble_matrix()
 fv2D.set_boundary()
 c = fv2D.solve()
 c_slice = c[:,5]
 sns.heatmap(c, cmap="magma")
+#sns.heatmap(fv2D._T_x, cmap="magma")
 #plt.plot(c_slice)
 
 
@@ -503,3 +520,9 @@ sns.heatmap(c, cmap="magma")
 # #+name: 2D Multiscale Reconstruction
 
 
+
+phi = fv2D.microscale_basis_y[10,:,:].ravel()
+D_micro = lambda y: fv2D.D(fv2D.x[10], y)
+y_smoll = np.linspace(0.,1. , 38000)
+plt.plot(y_smoll , D_micro(y_smoll))
+plt.plot(y_smoll , phi)
