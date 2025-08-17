@@ -23,6 +23,8 @@ plt.plot(x_highres , D.oscillation(x_highres))
 plt.legend([r"$D$ Sampled on a course grid" , r"$D$"] , loc="upper right")
 plt.title("1D Diffusion Coefficient")
 
+
+
 # Diffusivity
 # #+name: 2D Box Constraints
 
@@ -194,7 +196,7 @@ from src.fvsolver import FVSolver
 import src.diffusion as D
 reload(src.fvsolver)
 reload(D)
-fv = FVSolver(10 ,  D.oscillation)
+fv = FVSolver(20 * 100 ,  D.oscillation)
 fv.assemble_matrix()
 fv.set_boundary()
 c_course = fv.solve()
@@ -204,7 +206,7 @@ fv_ref.set_boundary()
 fv_ref.assemble_matrix()
 c_fine = fv_ref.solve()
 
-fvmulti = FVSolver(6 ,  D.oscillation)
+fvmulti = FVSolver(20 ,  D.oscillation)
 mb = fvmulti.set_multiscale_transmissions(100)
 fvmulti.set_boundary()
 fvmulti.assemble_matrix()
@@ -216,6 +218,10 @@ plt.plot(fvmulti.x , c_multi)
 x_fine = np.linspace(0,1, len(fvmulti.micro_basis))
 plt.plot(x_fine,fvmulti.reconstruction)
 plt.plot(fv_ref.x,c_fine)
+plt.title("Comparison Of Different Solvers")
+plt.xlabel(r"$x$")
+plt.ylabel(r"$c(x)$")
+plt.legend(["macro" , "multiscale", "multi_fine" , "reference"])
 
 
 
@@ -251,10 +257,6 @@ plt.plot(x,c)
 plt.plot(x,c_macro)
 plt.plot(x_multi,c_multi)
 plt.plot(x_fine , c_fine)
-plt.title("Comparison Of Different Solvers")
-plt.xlabel(r"$x$")
-plt.ylabel(r"$c(x)$")
-plt.legend(["macro" , "multiscale", "multi_fine" , "reference"])
 
 # Cleanup :noexport:
 
@@ -265,14 +267,19 @@ plt.legend(["macro" , "multiscale", "multi_fine" , "reference"])
 from importlib import reload
 import src.fvsolver
 from src.fvsolver import FVSolver
+import src.diffusion as D
 reload(src.fvsolver)
+reload(D)
 epsilon = 0.1
-D = lambda x: 1 / (2+1.9 * np.cos(2 * np.pi* x / epsilon))
-fv = FVSolver(10 ,  D)
+diff = lambda x: D.circle(x,0.5)
+fv = FVSolver(1000 , diff)
 fv.assemble_matrix()
 fv.set_boundary()
 c_course = fv.solve()
-plt.plot(c_course)
+wall = fv.D(fv.x)
+print(np.min(wall))
+plt.plot(fv.x,wall)
+plt.plot(fv.x,c_course)
 
 
 
@@ -342,7 +349,7 @@ plt.plot(c_multi)
        diag_west = diag_west.ravel()
        diag_east = diag_east.ravel()
 
-       A = sp.sparse.spdiags([main_diag , diag_north , diag_south ,  diag_west , diag_east] , [0 , -self.N  , self.N , 1 , -1] , self.N*self.M , self.M*self.N)
+       A = sp.sparse.spdiags([main_diag , diag_east , diag_west ,  diag_north , diag_south] , [0 , -self.N  , self.N , 1 , -1] , self.N*self.M , self.M*self.N)
        self._A = A.T
 
 # Numerical Flux in 2D
@@ -479,12 +486,14 @@ ax.plot_surface(grid[0] ,grid[1],c , cmap="magma")
 reload(src.fvsolver)
 reload(D)
 from src.fvsolver import FVSolver2D
-fv2D = FVSolver2D(100,100,D.noise2D)
-mx,my = fv2D.set_multiscale_transmissions(10000)
+fv2D = FVSolver2D(100,100,D.circle)
+#mx,my = fv2D.set_multiscale_transmissions(10000)
 fv2D.assemble_matrix()
 fv2D.set_boundary()
 c = fv2D.solve()
+c_slice = c[:,5]
 sns.heatmap(c, cmap="magma")
+#plt.plot(c_slice)
 
 
 
