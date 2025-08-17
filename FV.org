@@ -166,8 +166,6 @@ plt.title("1D Diffusion Coefficient")
 
 
 #+caption: Oscillating Diffusivity for 1D finite volume method
-#+RESULTS: 1D Diffusion
-[[file:images/D.svg]]
 
 
 ** 2D Box Condition
@@ -810,7 +808,7 @@ ax.plot_surface(grid[0] ,grid[1],c , cmap="magma")
 [[file:images/2d-surf.png]]
 * 2D Multiscale :noexport:
 \begin{align*}
-T_{\pm } &= -\int_{Q} D(x,y) \phi_x'(x)  \phi_y'(y)\, \mathrm{d}x \mathrm{d}y
+T_{\pm } &= -\int_{Q} D(x) \phi_x'(x)^2\, \mathrm{d}x
 \end{align*}
 #+name:2D Microscale Transmissions
 #+begin_src python :eval never
@@ -843,39 +841,81 @@ T_{\pm } &= -\int_{Q} D(x,y) \phi_x'(x)  \phi_y'(y)\, \mathrm{d}x \mathrm{d}y
 
 #+end_src
 
-#+begin_src python :results file graphics output :file images/2d-multi-result.png :async t
+#+begin_src python
+import src.fvsolver
+import src.diffusion as D
 reload(src.fvsolver)
 reload(D)
 from src.fvsolver import FVSolver2D
-fv2D = FVSolver2D(20,20,D.rhombus)
-mx,my = fv2D.set_multiscale_transmissions(200)
-fv2D.assemble_matrix()
-fv2D.set_boundary()
-c = fv2D.solve()
-c_slice = c[:,5]
-sns.heatmap(c, cmap="magma")
-#sns.heatmap(fv2D._T_x, cmap="magma")
-#plt.plot(c_slice)
+def plot_comparison(function , resolution , typestr):
+    fvref = FVSolver2D(1000, 1000,function)
+    fvref.set_boundary()
+    fvref.assemble_matrix()
+    c_ref = fvref.solve()
+    fv2D = FVSolver2D(resolution, resolution,function)
+    fv2D.assemble_matrix()
+    fv2D.set_boundary()
+    c_course = fv2D.solve()
+    mx,my = fv2D.set_multiscale_transmissions(2000)
+    fv2D.assemble_matrix()
+    fv2D.set_boundary()
+    c = fv2D.solve()
+    fig, axes = plt.subplots(1, 3, figsize=(13, 4))  # 1 row, 2 columns
+    fig.suptitle(f"{typestr} with {resolution}" + r"$\times$" + f"{resolution} Grid")
+    im1 = axes[0].imshow(c_course , cmap="magma" , extent=[0,1,0,1])
+    axes[0].set_title("Course")
+    im2 = axes[1].imshow(c , cmap="magma" , extent=[0,1,0,1])
+    axes[1].set_title("Multiscale")
+    im2 = axes[2].imshow(c_ref , cmap="magma" , extent=[0,1,0,1])
+    axes[2].set_title("Reference")
+    plt.colorbar(im1, ax=axes)
+    return fig
+
 #+end_src
 
 #+RESULTS:
-[[file:images/2d-multi-result.png]]
+: None
 
-#+name: 2D Multiscale Reconstruction
-#+begin_src python
 
-#+end_src
-
-#+begin_src python :results file graphics output :file images/debug.png
-phi = fv2D.microscale_basis_y[10,:,:].ravel()
-D_micro = lambda y: fv2D.D(fv2D.x[10], y)
-y_smoll = np.linspace(0.,1. , 38000)
-plt.plot(y_smoll , D_micro(y_smoll))
-plt.plot(y_smoll , phi)
+* 2D results
+** Box Conditions
+#+begin_src python :results file graphics output :file images/2d-multi-result-box.png :async t :exports results
+plot_comparison(D.box , 50 , "Box Obstacle")
 #+end_src
 
 #+RESULTS:
-[[file:images/debug.png]]
+[[file:images/2d-multi-result-box.png]]
+
+#+begin_src python :results file graphics output :file images/2d-multi-result-circle.png :async t :exports results
+plot_comparison(D.circle , 50 , "Circle Obstacle")
+#+end_src
+
+#+RESULTS:
+[[file:images/2d-multi-result-circle.png]]
+
+#+begin_src python :results file graphics output :file images/2d-multi-result-square.png :async t :exports results
+plot_comparison(D.rhombus , 50 , "Diamond Obstacle")
+#+end_src
+
+#+RESULTS:
+[[file:images/2d-multi-result-square.png]]
+
+** Oscillations
+*** Line
+#+begin_src python :results file graphics output :file images/2d-multi-result-line.png :async t :exports results
+plot_comparison(D.osc2D_line , 50)
+#+end_src
+
+#+RESULTS:
+[[file:images/2d-multi-result-line.png]]
+
+*** Point
+#+begin_src python :results file graphics output :file images/2d-multi-result-point.png :async t :exports results
+plot_comparison(D.osc2D_point , 50)
+#+end_src
+
+#+RESULTS:
+[[file:images/2d-multi-result-point.png]]
 
 * Reference Solution
 ** Reference

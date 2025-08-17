@@ -468,7 +468,7 @@ ax.plot_surface(grid[0] ,grid[1],c , cmap="magma")
 
 # 2D Multiscale :noexport:
 # \begin{align*}
-# T_{\pm } &= -\int_{Q} D(x,y) \phi_x'(x)  \phi_y'(y)\, \mathrm{d}x \mathrm{d}y
+# T_{\pm } &= -\int_{Q} D(x) \phi_x'(x)^2\, \mathrm{d}x
 # \end{align*}
 # #+name:2D Microscale Transmissions
 
@@ -499,30 +499,37 @@ ax.plot_surface(grid[0] ,grid[1],c , cmap="magma")
 
       return self.microscale_basis_x , self.microscale_basis_y
 
+import src.fvsolver
+import src.difusion as D
 reload(src.fvsolver)
 reload(D)
 from src.fvsolver import FVSolver2D
-fv2D = FVSolver2D(20,20,D.box)
-#mx,my = fv2D.set_multiscale_transmissions(200)
-fv2D.assemble_matrix()
-fv2D.set_boundary()
-c = fv2D.solve()
-c_slice = c[:,5]
-sns.heatmap(c, cmap="magma")
-#sns.heatmap(fv2D._T_x, cmap="magma")
-#plt.plot(c_slice)
+def plot_comparison(function , resolution):
+    fv2D = FVSolver2D(resolution, resolution,function)
+    fv2D.assemble_matrix()
+    fv2D.set_boundary()
+    c_course = fv2D.solve()
+    mx,my = fv2D.set_multiscale_transmissions(2000)
+    fv2D.assemble_matrix()
+    fv2D.set_boundary()
+    c = fv2D.solve()
+    fig, axes = plt.subplots(1, 2, figsize=(10, 4))  # 1 row, 2 columns
+    fig.suptitle("Diamond Obstacle")
+    im1 = axes[0].imshow(c_course , cmap="magma" , extent=[0,1,0,1])
+    axes[0].set_title("Course")
+    im2 = axes[1].imshow(c , cmap="magma" , extent=[0,1,0,1])
+    axes[1].set_title("Multiscale")
+    plt.colorbar(im1, ax=axes)
+    return fig
 
+# Box
 
+plot_comparison(D.box , 50)
 
-# #+RESULTS:
-# [[file:images/2d-multi-result.png]]
+# Circle
 
-# #+name: 2D Multiscale Reconstruction
+plot_comparison(D.circle , 50)
 
+# Square
 
-
-phi = fv2D.microscale_basis_y[10,:,:].ravel()
-D_micro = lambda y: fv2D.D(fv2D.x[10], y)
-y_smoll = np.linspace(0.,1. , 38000)
-plt.plot(y_smoll , D_micro(y_smoll))
-plt.plot(y_smoll , phi)
+plot_comparison(D.rhombus , 50)
