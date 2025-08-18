@@ -16,7 +16,7 @@ def oscillation(x, eps = 0.1):
 def osc2D_point(x,y , eps = 0.25):
     return oscillation(x, eps=eps) * oscillation(y, eps=eps)
 def osc2D_line(x,y , eps = 0.25):
-    return oscillation(x, eps=eps) + oscillation(y, eps=eps)
+    return np.maximum(oscillation(x, eps=eps) , oscillation(y, eps=eps))
 
 # 2D Box Condition
 # To test numerical stability of our methods we introduce a box constrain condition, that traps some concentration in the center.

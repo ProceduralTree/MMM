@@ -177,10 +177,12 @@ class FVSolver2D:
                  x_upper = self.microscale_basis_x[i, j+1, :]
                  y_lower = self.microscale_basis_y[i, j, :]
                  y_upper = self.microscale_basis_y[i+1, j, :]
-                 interp = np.linspace(0,1 , self.resolution)
-                 X = np.outer(x_lower,(1-interp)) + np.outer(x_upper,interp)
-                 Y = np.outer((1-interp) , y_lower) + np.outer(interp,y_upper)
-
+                 interp_x = 0.5*( y_upper + y_lower)
+                 interp_y = 0.5*( x_upper + x_lower)
+                 #interp_x = np.linspace(0,1,self.resolution)
+                 #interp_y = np.linspace(0,1,self.resolution)
+                 X = np.outer(x_lower,(1-interp_x)) + np.outer(x_upper,interp_x)
+                 Y = np.outer((1-interp_y) , y_lower) + np.outer(interp_y,y_upper)
                  w11 = (1 - X) * (1-Y)
                  w12 = (1-X) * Y
                  w21 = X * (1-Y)

@@ -318,7 +318,7 @@ def plot_error_2d(diffusionFunction  , gridCoarseLevels , gridCoarseLevelsMulti 
     multiScaleErrorLevels = []
     multiScaleReconstructErrorLevels = []
 
-    fineN = 500
+    fineN = 1000
     fineX = np.linspace(0, 1, fineN)
     fineY = np.linspace(0, 1, fineN)
     fineXX, fineYY = np.meshgrid(fineX, fineY)
@@ -400,7 +400,7 @@ def plot_error_2d(diffusionFunction  , gridCoarseLevels , gridCoarseLevelsMulti 
 
 # #+name: fig:error-2d-circle
 
-gridCoarseLevels = np.arange(5, 100, 2)
+gridCoarseLevels = np.arange(5, 200, 2)
 gridCoarseLevelsMulti = np.arange(5, 50, 2)
 fig = plot_error_2d(diffusionModule.circle  , gridCoarseLevels , gridCoarseLevelsMulti , "Circle Diffusion")
 
@@ -412,7 +412,7 @@ fig = plot_error_2d(diffusionModule.circle  , gridCoarseLevels , gridCoarseLevel
 
 # #+name: fig:error-2d-box
 
-gridCoarseLevels = np.arange(5, 50, 2)
+gridCoarseLevels = np.arange(5, 200, 2)
 gridCoarseLevelsMulti = np.arange(5, 50, 2)
 fig = plot_error_2d(diffusionModule.box  , gridCoarseLevels , gridCoarseLevelsMulti , "Box Diffusion")
 
@@ -423,7 +423,7 @@ fig = plot_error_2d(diffusionModule.box  , gridCoarseLevels , gridCoarseLevelsMu
 
 # #+name: fig:error-2d-diamond
 
-gridCoarseLevels = np.arange(5, 50, 2)
+gridCoarseLevels = np.arange(5, 200, 2)
 gridCoarseLevelsMulti = np.arange(5, 50, 2)
 fig = plot_error_2d(diffusionModule.rhombus  , gridCoarseLevels , gridCoarseLevelsMulti , "Diamond Diffusion")
 
@@ -434,7 +434,8 @@ fig = plot_error_2d(diffusionModule.rhombus  , gridCoarseLevels , gridCoarseLeve
 
 # #+name: fig:error-2d-line
 
-gridCoarseLevels = np.arange(5, 50, 2)
+reload(diffusionModule)
+gridCoarseLevels = np.arange(5, 200, 2)
 gridCoarseLevelsMulti = np.arange(5, 50, 2)
 fig = plot_error_2d(lambda x,y: diffusionModule.osc2D_line(x,y , eps = 1/5)  , gridCoarseLevels , gridCoarseLevelsMulti , "Line Diffusion 5 Spikes")
 
@@ -444,7 +445,7 @@ fig = plot_error_2d(lambda x,y: diffusionModule.osc2D_line(x,y , eps = 1/5)  , g
 # [[file:error-2d-line.png]]
 # #+name: fig:error-2d-point
 
-gridCoarseLevels = np.arange(5, 50, 2)
+gridCoarseLevels = np.arange(5, 200, 2)
 gridCoarseLevelsMulti = np.arange(5, 50, 2)
 fig = plot_error_2d(lambda x,y:diffusionModule.osc2D_point(x,y , eps=1/5)  , gridCoarseLevels , gridCoarseLevelsMulti , "Point Diffusion 5 Spikes")
 
@@ -740,23 +741,46 @@ import src.fvsolver
 import src.diffusion as D
 reload(src.fvsolver)
 reload(D)
+from scipy.interpolate import RegularGridInterpolator
 from src.fvsolver import FVSolver2D
-N = 30
-M = 30
+N = 19
+M = 19
+res = 50
 fv2D = FVSolver2D(N,M,D.rhombus)
 fv2D.set_boundary()
-fv2D.set_multiscale_transmissions(50)
+fv2D.set_multiscale_transmissions(res)
 fv2D.assemble_matrix()
 c = fv2D.solve()
 fv2D.reconstruct_multiscale()
-plt.subplots(figsize=(6,4))
-sns.heatmap(fv2D.reconstruction, cmap="magma")
-#sns.heatmap(c, cmap="magma")
+fig, ax = plt.subplots(figsize=(6,4))
+ax.set_xticks(np.linspace(0,1.,(N+1)))
+ax.set_yticks(np.linspace(0,1.,(M+1)))
+ax.grid(True)
+rg = np.linspace(0.,1. , N)
+interp = RegularGridInterpolator((rg,rg) , c, method="linear")
+rg_interp = np.linspace(0.,1. , N * res)
+grid_x,grid_y = np.meshgrid(rg_interp,rg_interp)
+
+finePoints = np.column_stack([grid_x.ravel(), grid_y.ravel()])
+c_interp = interp(finePoints).reshape((N*res , M * res))
+plt.imshow(fv2D.reconstruction, cmap="magma" ,extent=[0.,1.,0.,1.])
+#plt.imshow(c_interp, cmap="magma" , extent=[0. , 1., 0., 1.])
+#plt.imshow(c, cmap="magma" , extent=[0. , 1., 0., 1.])
 
 
 
 # #+RESULTS:
 # [[file:images/2d-result.png]]
+
+
+# #+name: fig:mircro-2d
+
+plt.plot(fv2D.microscale_basis_x[1,2,:])
+
+
+
+# #+RESULTS: fig:mircro-2d
+# [[file:mircro-2d.png]]
 
 
 error =np.linalg.norm(A@c_vec - f)
@@ -850,10 +874,12 @@ def plot_comparison(function , resolution , typestr):
                  x_upper = self.microscale_basis_x[i, j+1, :]
                  y_lower = self.microscale_basis_y[i, j, :]
                  y_upper = self.microscale_basis_y[i+1, j, :]
-                 interp = np.linspace(0,1 , self.resolution)
-                 X = np.outer(x_lower,(1-interp)) + np.outer(x_upper,interp)
-                 Y = np.outer((1-interp) , y_lower) + np.outer(interp,y_upper)
-
+                 interp_x = 0.5*( y_upper + y_lower)
+                 interp_y = 0.5*( x_upper + x_lower)
+                 #interp_x = np.linspace(0,1,self.resolution)
+                 #interp_y = np.linspace(0,1,self.resolution)
+                 X = np.outer(x_lower,(1-interp_x)) + np.outer(x_upper,interp_x)
+                 Y = np.outer((1-interp_y) , y_lower) + np.outer(interp_y,y_upper)
                  w11 = (1 - X) * (1-Y)
                  w12 = (1-X) * Y
                  w21 = X * (1-Y)
