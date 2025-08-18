@@ -13,9 +13,18 @@ def oscillation(x, eps = 0.1):
 
 # Code
 
+def osc2D_point(x,y , eps = 0.25):
+    return oscillation(x, eps=eps) * oscillation(y, eps=eps)
+def osc2D_line(x,y , eps = 0.25):
+    return oscillation(x, eps=eps) + oscillation(y, eps=eps)
+
+# 2D Box Condition
+# To test numerical stability of our methods we introduce a box constrain condition, that traps some concentration in the center.
+
+
 alpha = 0.99
 gamma = 0.002
-depth = -1e-3
+depth = 1e-3
 a = 4
 b = 200
 
@@ -44,13 +53,6 @@ def circle(x,y , p=2):
     return np.maximum(depth , 1. -  exp_kernel(R(x,y , p=2)))
 def rhombus(x,y , p=2):
     return np.maximum(depth , 1. -  exp_kernel(R(x,y , p=1)))
-
-# Code
-
-def osc2D_point(x,y , eps = 0.25):
-    return oscillation(x, eps=eps) * oscillation(y, eps=eps)
-def osc2D_line(x,y , eps = 0.25):
-    return oscillation(x, eps=eps) + oscillation(y, eps=eps)
 
 # Code
 

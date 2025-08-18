@@ -84,8 +84,6 @@ class FVSolver2D:
    _T_x : NDArray[np.float64]
    _T_y : NDArray[np.float64]
 
-   def reconstruct_multiscale(self):
-      pass
 
 
    def __init__(self ,
@@ -144,6 +142,7 @@ class FVSolver2D:
       return self.c
 
    def set_multiscale_transmissions(self, resolution):
+      self.resolution = resolution
       self.microscale_basis_x = np.zeros((self._T_x.shape[0] , self._T_x.shape[1] , resolution))
       self.microscale_basis_y = np.zeros((self._T_y.shape[0] , self._T_y.shape[1] , resolution))
       for i in range(self._T_x.shape[0]):
@@ -169,3 +168,30 @@ class FVSolver2D:
             self._T_y[i,j] =   -fv_micro.h * self.h_x  * np.sum(((phi[1:] - phi[:-1])/(fv_micro.h))**2 * D_micro(fv_micro.x[1:] - fv_micro.h/2))
 
       return self.microscale_basis_x , self.microscale_basis_y
+
+   def reconstruct_multiscale(self):
+       self.reconstruction = np.zeros(((self.N-1) * self.resolution  , (self.M-1) * self.resolution))
+       for i in range(self.N-1):
+           for j in range(self.M-1):
+                 x_lower = self.microscale_basis_x[i, j, :]
+                 x_upper = self.microscale_basis_x[i, j+1, :]
+                 y_lower = self.microscale_basis_y[i, j, :]
+                 y_upper = self.microscale_basis_y[i+1, j, :]
+                 interp = np.linspace(0,1 , self.resolution)
+                 X = np.outer(x_lower,(1-interp)) + np.outer(x_upper,interp)
+                 Y = np.outer((1-interp) , y_lower) + np.outer(interp,y_upper)
+
+                 w11 = (1 - X) * (1-Y)
+                 w12 = (1-X) * Y
+                 w21 = X * (1-Y)
+                 w22 = X * Y
+                 self.reconstruction[
+                     i * self.resolution : (i + 1) * self.resolution,
+                     j * self.resolution : (j + 1) * self.resolution,
+                 ] = (
+                     w11 * self.c[i, j]
+                     + w12 * self.c[i, j + 1]
+                     + w21 * self.c[i + 1, j]
+                     + w22 * self.c[i + 1, j + 1]
+                 )
+       return self.reconstruction
