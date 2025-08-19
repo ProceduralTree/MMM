@@ -1,5 +1,7 @@
 #+title: Multiscale Finite Volume Method
-#+author: Louis Glänzer / Jonathan Ulmer
+#+author: Louis Glänzer \\
+#+author: Jonathan Ulmer
+#+date: 20 August 2025
 #+startup: latexpreview
 #+startup: beamer
 #+latex_compiler: lualatex
