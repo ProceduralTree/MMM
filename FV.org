@@ -1,5 +1,5 @@
 #+title: Multiscale Finite Volume Method
-#+author: Karl Louis Glänzer / Jonathan Ulmer
+#+author: Louis Glänzer / Jonathan Ulmer
 #+startup: latexpreview
 #+startup: beamer
 #+latex_compiler: lualatex
@@ -10,8 +10,7 @@
 #+BEAMER_THEME: Madrid
 #+COLUMNS: %45ITEM %10BEAMER_ENV(Env) %10BEAMER_ACT(Act) %4BEAMER_COL(Col)
 #+BEAMER_FRAME_OPTIONS: allowframebreaks
-#+LATEX_HEADER: \setkeys{Gin}{width=0.6\textwidth}
-
+#+BEAMER_HEADER_EXTRA: \AtBeginSection{\frame{\sectionpage}}
 
 * Preamble :noexport:
 #+begin_src python :tangle src/fvsolver.py :noweb no-export :exports none
@@ -40,7 +39,7 @@ import numpy as np
 #+end_src
 
 
-* Standard Diffusion equation
+* Standard Diffusion Equation
 ** Numerical Problem :noexport:
 #+begin_abstract
 in our work, we solve the diffusion equation \eqref{eq:diffusion} with zero Dirichlet boundary and constant soure term \(f(x) = 1\). In order to investigate the effects of the multiscale method on the solution, we introduce a varied sample of diffusivity terms
@@ -90,6 +89,7 @@ Since the assumed solution is constant we approximate the source term \(f(\vec{x
   - \(Q_i \cap Q_j = \emptyset , i\neq  j\)
   - we assume constant solution \(c_i\) on \(Q_i\)
   - we assume constant source \(f(x) = f_i ,\, x \in Q_i\)
+** Derivation of the 1D Finite Volume Method
 *** Integral Form
 - since the Diffusion EQ.\eqref{eq:diffusion} holds on \(\Omega \), it holds for any integral.
 - \(\implies \) \eqref{eq:diffusion} holds for the integral over \(Q_i\)
@@ -101,10 +101,13 @@ Since the assumed solution is constant we approximate the source term \(f(\vec{x
 \end{aligned}
 \end{equation}
 - We use the constant source to evaluate the right hand side
+- We transform \eqref{eq:cell-integral} with the Stokes theorem
+  - reduces the derivative degree on \(c\) and \(D\)
 \begin{align}
 \label{eq:2}
 \int_{\partial Q_i} D(x) \nabla c \cdot \vec{n} \, \mathrm{d}S \, &=  |Q_i| f_i  & i&=1, \dots  , N
 \end{align}
+** Derivation of the 1D Finite Volume Method
 *** Numerical Flux
 - constant solution
 - \(c\) is discontinuous on \(\partial Q\)
@@ -127,6 +130,7 @@ Furthermore, we introduce transmissitivities \(T_{\pm }\) between both cells.
 g(c^+ , c^-) &= T_{\pm } * \left( c^+ - c^- \right) \\
 T_{\pm } &= - D(x^{\frac{1}{2}+}) \frac{1}{h}
 \end{align*}
+** Numerical flux approximation
 *** 2D Flux
 We define the flux term \(\vec{g} := (g_x , g_y)^T\) in 2 Dimensions very similar to those in one dimension.
 \begin{align}
@@ -210,61 +214,66 @@ n_{\mathrm{west}}  &=
   - one dimensional
   - for each normal
   - \(n\) subgrid cells
-- Calculates Transmissions \(T_{ij}\)
-  - with microscale solution \(\phi \)
+- Calculates Transmissions \(T_S\)
+  - with microscale solution \(\phi_{S} \)
 \begin{align*}
-T_{\pm } &= -\int_{Q} D(x) (\phi'_{\pm} (x))^2\, \mathrm{d}x
+T_{S} &= -\int_{S_0}^{S_1} D(x) (\phi'_{S} (\vec{x}))^2\, \mathrm{d}S
 \end{align*}
-* Example diffusion terms
+* Example Diffusion terms
 
 ** Diffusion 
 We investigate of single and multiscale solvers with different Diffusion functions, that we introduce in the following sections
 
 ** 1D
 
-Since the Aim of multiscale Finite Volume, is to improve the results for highly fluctuating diffusivities, we test with the following oscillating function
+Since the aim of multiscale Finite Volume is to improve the results for highly fluctuating diffusivities.
 *** Code
 #+begin_src python :tangle src/diffusion.py :eval never
 def oscillation(x, eps = 0.1):
     return 1 / (2+1.9 * np.cos(2 * np.pi* x / eps))
 #+end_src
 
-*** Diffusivity
+*** Diffusivity :B_ignoreheading:
+:PROPERTIES:
+:BEAMER_env: ignoreheading
+:END:
 #+name: 1D Diffusion
 #+begin_src python  :session :results output file graphics  :file images/D.svg :exports results
 import numpy as np
 import matplotlib.pyplot as plt
 import src.diffusion as D
 reload(D)
+fig ,ax = plt.subplots(figsize=(10,4) ,facecolor='none')
 x = np.linspace(0,1 ,10)
 plt.plot(x , D.oscillation(x))
 x_highres = np.linspace(0,1 , 100000)
 plt.plot(x_highres , D.oscillation(x_highres))
-plt.legend([r"$D$ Sampled on a course grid" , r"$D$"] , loc="upper right")
-plt.title("1D Diffusion Coefficient")
+plt.legend([r"$D$ Sampled on a course grid" , r"$D$"] , loc="upper right" , fontsize=14)
+plt.title("1D Diffusion Coefficient" , fontsize=16)
+plt.tight_layout()
 #+end_src
 
-#+caption: Oscillating Diffusivity for 1D finite volume method
 #+RESULTS: 1D Diffusion
 [[file:images/D.svg]]
 
 
 
 
+
 ** 2D Oscillation
 *** Code
-#+begin_src python :tangle src/diffusion.py
+#+begin_src python :tangle src/diffusion.py :eval never
 def osc2D_point(x,y , eps = 0.25):
     return oscillation(x, eps=eps) * oscillation(y, eps=eps)
 def osc2D_line(x,y , eps = 0.25):
     return np.maximum(oscillation(x, eps=eps) , oscillation(y, eps=eps))
-
 #+end_src
 
-#+RESULTS:
-: None
 
-*** Diffusion
+*** Diffusion :B_ignoreheading:
+:PROPERTIES:
+:BEAMER_env: ignoreheading
+:END:
 #+name: 2D Ocillation
 #+begin_src python :results graphics file output :file images/oscillation-2d.svg :exports results
 import src.diffusion as D
@@ -281,14 +290,14 @@ diffusion_b = diffusion_b.reshape((N,M))
 diffusion_c = D.osc2D_line(grid[0] , grid[1])
 diffusion_c = diffusion_c.reshape((N,M))
 
-fig,axis= plt.subplots(1,2 , figsize=(10,4))
+fig,axis= plt.subplots(1,2 , figsize=(10,4) , constrained_layout=True, facecolor='none')
 im1 = axis[0].imshow(diffusion_b , cmap="magma" , extent=[0,1,0,1])
-axis[0].set_title(r"0D Obstacles")
+axis[0].set_title(r"0D Conductance Points" , fontsize=14)
 im2 = axis[1].imshow(diffusion_c , cmap="magma" , extent=[0,1,0,1])
-axis[1].set_title(r"1D Obstacles")
+axis[1].set_title(r"1D Conductance Lines" ,fontsize=14)
 
 #fig.colorbar()
-fig.suptitle(r"Oscillating Diffusion")
+fig.suptitle(r"Oscillating Diffusion" , fontsize=16)
 fig.colorbar(im1 ,ax=axis , fraction=0.025)
 #+end_src
 
@@ -296,7 +305,7 @@ fig.colorbar(im1 ,ax=axis , fraction=0.025)
 [[file:images/oscillation-2d.svg]]
 
 ** 2D Box Condition
-To test numerical stability of our methods we introduce a box constrain condition, that traps some concentration in the center.
+To test numerical stability of our methods, we introduce a box constraint that traps some concentration in the center.
 
 #+begin_src python :tangle src/diffusion.py :eval never :exports none
 alpha = 0.99
@@ -333,7 +342,10 @@ def rhombus(x,y , p=2):
 #+end_src
 
 
-*** Diffusivity
+*** Diffusivity :B_ignoreheading:
+:PROPERTIES:
+:BEAMER_env: ignoreheading
+:END:
 #+name: 2D Box Constraints
 #+begin_src python :results graphics file output :file images/box-constraints.svg :exports results
 import src.diffusion as D
@@ -351,16 +363,16 @@ diffusion_c = diffusion_c.reshape((N,M))
 diffusion_r = D.rhombus(grid[0] , grid[1])
 diffusion_r = diffusion_r.reshape((N,M))
 
-fig,axis= plt.subplots(1,3 , figsize=(14,4))
+fig,axis= plt.subplots(1,3 , figsize=(14,5) , constrained_layout=True , facecolor='none')
 im1 = axis[0].imshow(diffusion_b , cmap="magma" , extent=[0,1,0,1])
-axis[0].set_title(r"Square with $L^{100}$ norm")
+axis[0].set_title(r"Square with $L^{100}$ norm" , fontsize=16)
 im2 = axis[1].imshow(diffusion_c , cmap="magma" , extent=[0,1,0,1])
-axis[1].set_title(r"Circle with $L^{2}$ norm")
+axis[1].set_title(r"Circle with $L^{2}$ norm" , fontsize=16)
 im2 = axis[2].imshow(diffusion_r , cmap="magma" , extent=[0,1,0,1])
-axis[2].set_title(r"Rhombus with $L^{1}$ norm")
+axis[2].set_title(r"Rhombus with $L^{1}$ norm" , fontsize=16)
 
 #fig.colorbar()
-fig.suptitle(r"2D Box Constraints")
+fig.suptitle(r"2D Box Constraints" , fontsize=22)
 fig.colorbar(im1 ,ax=axis , fraction=0.025)
 #+end_src
 
@@ -370,10 +382,8 @@ fig.colorbar(im1 ,ax=axis , fraction=0.025)
 
 
 
-* Finite Volume 1D
+* Finite Volume Solver
 ** Program Structure
-For convenience in Explanation and Execution, we bundle all required information for solving a 1D system into a python class, which is structured as follows
-
 *** Class Structure
 #+begin_src python :tangle src/fvsolver.py :noweb no-export
 class FVSolver:
@@ -395,7 +405,7 @@ class FVSolver:
 <<Reconstruct Microscale Solution>>
 #+end_src
 
-
+** Program Structure
 *** Initialization
 #+name: Init
 #+begin_src python :eval never
@@ -409,14 +419,7 @@ class FVSolver:
 
 #+end_src
 
-*** Solving
-#+name: Solve
-#+begin_src python :eval never
-   def solve(self):
-      self.c = spsolve(self._A.tocsr() , self.f)
-      return self.c
-
-#+end_src
+** Program Structure
 *** Boundary
 #+name: Boundary
 #+begin_src python :eval never
@@ -427,8 +430,15 @@ class FVSolver:
 #+end_src
 
 
+*** Solving
+#+name: Solve
+#+begin_src python :eval never
+   def solve(self):
+      self.c = spsolve(self._A.tocsr() , self.f)
+      return self.c
 
-*** Assembly of the linear system
+#+end_src
+** Program Structure
 *** Matrix Assembly
 #+name: Assemble Matrix
 #+begin_src python :eval never
@@ -442,37 +452,61 @@ class FVSolver:
       self._A = spdiags([diagm1 , diag0 , diagp1] , np.array( [-1, 0, 1] ))
 #+end_src
 
+** Program Structure
 *** Sparsity Pattern of the linear system
 #+name: A Sparsity
 #+begin_src python :session :results output graphics file :file images/A-sparsity.svg :exports results
+import matplotlib.pyplot as plt
 from importlib import reload
 import src.fvsolver
-from src.fvsolver import FVSolver
+import src.diffusion as D
+from src.fvsolver import FVSolver , FVSolver2D
 reload(src.fvsolver)
 f10 = FVSolver(20,  D.oscillation)
+f2D = FVSolver2D(5,5 , D.osc2D_line)
+f2D.assemble_matrix()
 f10.assemble_matrix()
 A = f10._A
+A2D = f2D._A
 sparsity = np.full(A.shape , np.nan)
+sparsity2D = np.full(A2D.shape , np.nan)
+Idxy = A2D.nonzero()
 Idx = A.nonzero()
 sparsity[Idx] = A.todense()[Idx]
-plt.imshow(sparsity , cmap="viridis")
-plt.title("Sparsity Patter of A")
+sparsity2D[Idxy] = A2D.todense()[Idxy]
+
+fig,axis= plt.subplots(1,2 , figsize=(10,4) , constrained_layout=True, facecolor='none')
+vmin = np.nanmin(sparsity2D)
+vmax = np.nanmax(sparsity2D)
+im1 = axis[0].imshow(sparsity , cmap="viridis" , extent=[0,1,0,1] , vmin=vmin , vmax=vmax)
+axis[0].set_title(r"1D" , fontsize=14)
+#axis[0].set_facecolor('none')
+axis[0].tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)
+im2 = axis[1].imshow(sparsity2D , cmap="viridis" , extent=[0,1,0,1],vmin=vmin , vmax=vmax)
+axis[1].set_title(r"2D" ,fontsize=14)
+#axis[1].set_facecolor('none')
+axis[1].tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)
+
+fig.colorbar(im1 ,ax=axis , fraction=0.025)
+fig.suptitle(r"Sparsity Pattern" , fontsize=22)
 #+end_src
 
+#+caption: Non zeros values of the system matricies for a 20 cell 1D and a \(5 \times 5\) cell 2D system.
 #+RESULTS: A Sparsity
 [[file:images/A-sparsity.svg]]
 
 
-* 1D Results
+* Simulation Results
+** 1D Oscillating Diffusion
 #+name: fig:comparison-1d
-#+begin_src python :results graphics file output :file comparison-1d.png :exports results
+#+begin_src python :results graphics file output :file comparison-1d.svg :exports results
 from importlib import reload
 import src.fvsolver
 from src.fvsolver import FVSolver
 import src.diffusion as D
 reload(src.fvsolver)
 reload(D)
-fv = FVSolver(10 ,  D.oscillation)
+fv = FVSolver(9 ,  D.oscillation)
 fv.assemble_matrix()
 fv.set_boundary()
 c_course = fv.solve()
@@ -482,169 +516,100 @@ fv_ref.set_boundary()
 fv_ref.assemble_matrix()
 c_fine = fv_ref.solve()
 
-fvmulti = FVSolver(10 ,  D.oscillation)
+fvmulti = FVSolver(9 ,  D.oscillation)
 mb = fvmulti.set_multiscale_transmissions(100)
 fvmulti.set_boundary()
 fvmulti.assemble_matrix()
 c_multi = fvmulti.solve()
 fvmulti.reconstruct_multiscale()
 
-fig , ax = plt.subplots(figsize=(10,4))
-plt.plot(fv.x , c_course)
-plt.plot(fvmulti.x , c_multi)
+fig , ax = plt.subplots(2,1,figsize=(10,8) , facecolor='none')
+ax[0].plot(fv.x , c_course)
+ax[0].plot(fvmulti.x , c_multi)
 x_fine = np.linspace(0,1, len(fvmulti.micro_basis))
-plt.plot(x_fine,fvmulti.reconstruction)
-plt.plot(fv_ref.x,c_fine)
-plt.title("Comparison Of Different Solvers\n with oscilating Diffusion" , fontsize=22)
-plt.xlabel(r"$x$")
-plt.ylabel(r"$c(x)$")
-plt.legend(["macro" , "multiscale", "multi_fine" , "reference"] , fontsize=14)
-plt.tight_layout()
-#+end_src
-
-#+RESULTS: fig:comparison-1d
-[[file:comparison-1d.png]]
-
-#+name: fig:microscale-basis
-#+begin_src python :results graphics file output :file mricroscale-basis.png :exports results
-import seaborn
-import seaborn as sns
-plt.style.use('default')
-fig , ax = plt.subplots(figsize=(10,4))
+ax[0].plot(x_fine,fvmulti.reconstruction)
+ax[0].plot(fv_ref.x,c_fine)
+ax[0].set_title("Solution with 9 cells" , fontsize=22)
+ax[0].set_xlabel(r"$x$" , fontsize=14)
+ax[0].set_ylabel(r"$c(x)$" , fontsize=14)
+ax[0].legend(["macro" , "multiscale", "multi_fine" , "reference"] , fontsize=14)
 for i , line in zip([3,5,9] , [":" , "-." , "--"]) :
     fv = FVSolver(i ,  D.oscillation)
     mb = fv.set_multiscale_transmissions(100)
     fineX = np.linspace(0.,1. , mb.shape[0] )
-    plt.plot(fineX,mb , linestyle=line)
-plt.title("Microscale Basis" , fontsize=22)
-plt.xlabel(r"$x$")
-plt.ylabel(r"$\phi(x)$")
-plt.legend(["3 Cells" , "5 Cells", "9 Cells"], fontsize=14)
+    ax[1].plot(fineX,mb , linestyle=line)
+ax[1].set_title("Microscale Basis" , fontsize=22)
+ax[1].legend(["3 Cells" , "5 Cells", "9 Cells"], fontsize=14)
+ax[1].set_xlabel(r"$x$" , fontsize=14)
+ax[1].set_ylabel(r"$\phi(x)$" , fontsize=14)
 plt.tight_layout()
 #+end_src
 
-#+RESULTS: fig:microscale-basis
-[[file:mricroscale-basis.png]]
+#+caption: Comparison between the coarse scale and the multiscale solution against a high resolution reference
+#+attr_latex: :width 0.8\linewidth
+#+RESULTS: fig:comparison-1d
+[[file:comparison-1d.svg]]
 
-* 2D results
-** Oscillations
-#+begin_src python :results file graphics output :file images/2d-multi-result-line.png :async t :exports results
-plot_comparison(D.osc2D_line , 50 , "Line Diffusion with 4 Spikes")
+
+** Line Diffusion
+#+name: fig:2d-multi-result-line
+#+begin_src python :results file graphics output :file images/2d-multi-result-line.svg  :exports results
+plot_comparison(D.osc2D_line , 25 , r"Line Diffusion with $4 \times 4$ Spikes")
 #+end_src
 
-#+RESULTS:
-[[file:images/2d-multi-result-line.png]]
+#+attr_latex: :width 0.55\linewidth
+#+caption: Comparison of different 2D solutions with a \(1000 \times  1000\) reference solution.
+#+RESULTS: fig:2d-multi-result-line
+[[file:images/2d-multi-result-line.svg]]
 
-#+begin_src python :results file graphics output :file images/2d-multi-result-point.png :async t :exports results
-plot_comparison(D.osc2D_point , 50 ,"Point Diffusion with 4 Spikes" )
+** Point Diffusion
+#+name: fig:2d-multi-result-point
+#+begin_src python :results file graphics output :file images/2d-multi-result-point.svg :exports results
+plot_comparison(D.osc2D_point , 25 ,r"Point Diffusion with $4\times 4$ Spikes" )
 #+end_src
 
-#+RESULTS:
-[[file:images/2d-multi-result-point.png]]
+#+attr_latex: :width 0.55\linewidth
+#+caption: Comparison of different 2D solutions with a \(1000 \times  1000\) reference solution.
+#+RESULTS: fig:2d-multi-result-point
+[[file:images/2d-multi-result-point.svg]]
 
-** Box Conditions
-#+begin_src python :results file graphics output :file images/2d-multi-result-box.png :async t :exports results
-plot_comparison(D.box , 50 , "Box Obstacle")
+** 2D Box
+#+name: fig:2d-multi-result-box
+#+begin_src python :results file graphics output :file images/2d-multi-result-box.svg  :exports results
+plot_comparison(D.box , 25 , "Box Obstacle")
 #+end_src
 
-#+RESULTS:
-[[file:images/2d-multi-result-box.png]]
-
-#+begin_src python :results file graphics output :file images/2d-multi-result-circle.png :async t :exports results
-plot_comparison(D.smooth_box , 50 , "Circle Obstacle")
+#+attr_latex: :width 0.55\linewidth
+#+caption: Comparison of different 2D solutions with a \(1000 \times  1000\) reference solution.
+#+attr_latex: :width 0.85\texwidth
+#+RESULTS: fig:2d-multi-result-box
+[[file:images/2d-multi-result-box.svg]]
+** 2D Circle
+#+name: fig:2d-multi-result-circle
+#+begin_src python :results file graphics output :file images/2d-multi-result-circle.svg  :exports results
+plot_comparison(D.circle , 25 , "Circle Obstacle")
 #+end_src
 
-#+RESULTS:
-[[file:images/2d-multi-result-circle.png]]
+#+attr_latex: :width 0.55\linewidth
+#+caption: Comparison of different 2D solutions with a \(1000 \times  1000\) reference solution.
+#+attr_latex: :width 0.85\texwidth
+#+RESULTS: fig:2d-multi-result-circle
+[[file:images/2d-multi-result-circle.svg]]
+** 2D Diamond
 
-#+begin_src python :results file graphics output :file images/2d-multi-result-square.png :async t :exports results
-plot_comparison(D.rhombus , 50 , "Diamond Obstacle")
+#+name: fig:2d-multi-result-diamond
+#+begin_src python :results file graphics output :file images/2d-multi-result-square.svg  :exports results
+plot_comparison(D.rhombus , 25 , "Diamond Obstacle")
 #+end_src
 
-#+RESULTS:
-[[file:images/2d-multi-result-square.png]]
-
-* Error
-** 1D Error
-
-#+name: fig:error-1d
-#+begin_src python :results graphics file output :file error.png :exports results
-import src.diffusion as diffusionModule
-import numpy as np
-import matplotlib.pyplot as plt
-from importlib import reload
-reload(diffusionModule)
-import src.fvsolver as fvModule
-reload(fvModule)
-diffusionFunction = lambda x: diffusionModule.oscillation(x,eps=1/20)
+#+attr_latex: :width 0.55\linewidth
+#+caption: Comparison of different 2D solutions with a \(1000 \times  1000\) reference solution.
+#+attr_latex: :width 0.85\texwidth
+#+RESULTS: fig:2d-multi-result-diamond
+[[file:images/2d-multi-result-square.svg]]
 
 
-fineX = np.linspace(0, 1, 10000)
-solver = fvModule.FVSolver(10000, diffusionFunction, (0,1))
-solver.set_boundary()
-solver.assemble_matrix()
-referenceSolution = solver.solve()
-
-# plt.plot(fineX , referenceSolution)
-
-gridCoarseLevels = np.arange(1, 500, 1)
-gridCoarseLevelsMulti = np.arange(2, 110, 1)
-
-singleScaleErrorLevels = []
-multiScaleErrorLevels = []
-multiScaleReconstructErrorLevels = []
-
-
-for coarseLevel in gridCoarseLevels:
-    # solve single scale
-    coarseX = np.linspace(0,1 ,coarseLevel)
-    solver = fvModule.FVSolver(coarseLevel, diffusionFunction, (0,1))
-    solver.set_boundary()
-    solver.assemble_matrix()
-    coarseSolution = solver.solve()
-    interpolatedCoarseSolution = np.interp(fineX, coarseX, coarseSolution)
-    error = np.sqrt(np.mean(np.square(referenceSolution - interpolatedCoarseSolution)))
-    singleScaleErrorLevels.append(error)
-
-for coarseLevel in gridCoarseLevelsMulti:
-    #solve multi scale
-    coarseX = np.linspace(0,1 ,coarseLevel)
-    solver = fvModule.FVSolver(coarseLevel, diffusionFunction, (0,1))
-    solver.set_boundary()
-    mb = solver.set_multiscale_transmissions(1000)
-    solver.assemble_matrix()
-    coarseSolution = solver.solve()
-    interpolatedCoarseSolution = np.interp(fineX, coarseX, coarseSolution)
-    error = np.sqrt(np.mean(np.square(referenceSolution - interpolatedCoarseSolution)))
-    multiScaleErrorLevels.append(error)
-
-
-    reconstructedSolution = solver.reconstruct_multiscale()
-    reconstructedX = np.linspace(0,1,len(solver.micro_basis))
-    interpolatedCoarseSolution = np.interp(fineX, reconstructedX, solver.reconstruction)
-    error = np.sqrt(np.mean(np.square(referenceSolution - interpolatedCoarseSolution)))
-    multiScaleReconstructErrorLevels.append(error)
-
-plt.figure(figsize=(6,4))
-plt.scatter(gridCoarseLevels, singleScaleErrorLevels, marker=".", label="single-scale")
-plt.scatter(gridCoarseLevelsMulti, multiScaleErrorLevels, marker="x", alpha=0.5, label="multi-scale")
-plt.scatter(gridCoarseLevelsMulti, multiScaleReconstructErrorLevels, marker="+", alpha=0.5, label="multi-scale reconstructed")
-
-plt.title("1D MSE Single vs Multiscale\n1000 subgrid cells\n1D Diffusion 20 Spikes")
-
-plt.xlabel("1D coarse grid resolution")
-plt.ylabel("Mean Square Error")
-plt.gca().set_xscale('log')
-plt.gca().set_yscale('log')
-plt.legend()
-plt.tight_layout()
-
-#+end_src
-
-#+RESULTS: fig:error-1d
-[[file:error.png]]
-
-** 2D Error
+* Error Analysis
 #+name: plot-2d-error
 #+begin_src python :exports none :results silent
 import src.diffusion as diffusionModule
@@ -659,6 +624,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import src.fvsolver as fvModule
 from scipy.interpolate import RegularGridInterpolator
+from matplotlib.ticker import ScalarFormatter
 reload(fvModule)
 
 def plot_error_2d(diffusionFunction  , gridCoarseLevels , gridCoarseLevelsMulti , subtitle):
@@ -726,77 +692,243 @@ def plot_error_2d(diffusionFunction  , gridCoarseLevels , gridCoarseLevelsMulti 
         multiScaleReconstructErrorLevels.append(error)
 
     # print(singleScaleErrorLevels.shape)
-    fig , ax = plt.subplots(figsize=(6,4))
+    fig , ax = plt.subplots(figsize=(8,4) , facecolor='none')
     ax.scatter(gridCoarseLevels, singleScaleErrorLevels, marker=".", label="single-scale")
     ax.scatter(gridCoarseLevelsMulti, multiScaleErrorLevels, marker="x", alpha=0.5, label="multi-scale")
     ax.scatter(gridCoarseLevelsMulti, multiScaleReconstructErrorLevels, marker="+", alpha=0.5, label="multiscale reconstructed")
 
-    fig.suptitle(f"2D MSE Single vs Multiscale\n{fineN} subgrid cells\n{subtitle}")
-
-    ax.set_xlabel("2D coarse grid resolution")
-    ax.set_ylabel("Mean Square Error")
-    ax.set_xscale('log')
+    fig.suptitle(f"2D MSE Single vs Multiscale" , fontsize=18)
+    ax.set_xlabel("2D coarse grid resolution" , fontsize=14)
+    ax.set_ylabel("Mean Square Error" , fontsize=14)
+    ax.set_xscale('log' , base=2)
     ax.set_yscale('log')
+    ax.xaxis.set_major_formatter(ScalarFormatter())
     ax.legend()
     fig.tight_layout()
     return fig
 
 #+end_src
+** 1D Oscillating Diffusion
+#+name: fig:error-1d
+#+begin_src python :results graphics file output :file error.svg :exports results
+import src.diffusion as diffusionModule
+import numpy as np
+import matplotlib.pyplot as plt
+from importlib import reload
+from matplotlib.ticker import ScalarFormatter
+reload(diffusionModule)
+import src.fvsolver as fvModule
+reload(fvModule)
+diffusionFunction = lambda x: diffusionModule.oscillation(x,eps=1/40)
+
+
+fineX = np.linspace(0, 1, 10000)
+solver = fvModule.FVSolver(10000, diffusionFunction, (0,1))
+solver.set_boundary()
+solver.assemble_matrix()
+referenceSolution = solver.solve()
+
+# plt.plot(fineX , referenceSolution)
+
+gridCoarseLevels = np.arange(2, 500, 1)
+gridCoarseLevelsMulti = np.arange(2, 110, 1)
+
+singleScaleErrorLevels = []
+multiScaleErrorLevels = []
+multiScaleReconstructErrorLevels = []
+
+
+for coarseLevel in gridCoarseLevels:
+    # solve single scale
+    coarseX = np.linspace(0,1 ,coarseLevel)
+    solver = fvModule.FVSolver(coarseLevel, diffusionFunction, (0,1))
+    solver.set_boundary()
+    solver.assemble_matrix()
+    coarseSolution = solver.solve()
+    interpolatedCoarseSolution = np.interp(fineX, coarseX, coarseSolution)
+    error = np.sqrt(np.mean(np.square(referenceSolution - interpolatedCoarseSolution)))
+    singleScaleErrorLevels.append(error)
+
+for coarseLevel in gridCoarseLevelsMulti:
+    #solve multi scale
+    coarseX = np.linspace(0,1 ,coarseLevel)
+    solver = fvModule.FVSolver(coarseLevel, diffusionFunction, (0,1))
+    solver.set_boundary()
+    mb = solver.set_multiscale_transmissions(100)
+    solver.assemble_matrix()
+    coarseSolution = solver.solve()
+    interpolatedCoarseSolution = np.interp(fineX, coarseX, coarseSolution)
+    error = np.sqrt(np.mean(np.square(referenceSolution - interpolatedCoarseSolution)))
+    multiScaleErrorLevels.append(error)
+
+
+    reconstructedSolution = solver.reconstruct_multiscale()
+    reconstructedX = np.linspace(0,1,len(solver.micro_basis))
+    interpolatedCoarseSolution = np.interp(fineX, reconstructedX, solver.reconstruction)
+    error = np.sqrt(np.mean(np.square(referenceSolution - interpolatedCoarseSolution)))
+    multiScaleReconstructErrorLevels.append(error)
+
+plt.figure(figsize=(8,4) , facecolor='none')
+plt.scatter(gridCoarseLevels, singleScaleErrorLevels, marker=".", label="single-scale")
+plt.scatter(gridCoarseLevelsMulti, multiScaleErrorLevels, marker="x", alpha=0.5, label="multi-scale")
+plt.scatter(gridCoarseLevelsMulti, multiScaleReconstructErrorLevels, marker="+", alpha=0.5, label="multi-scale reconstructed")
+
+plt.title("1D MSE Single vs Multiscale" , fontsize=18)
+
+plt.xlabel("1D coarse grid resolution" , fontsize=14)
+plt.ylabel("Mean Square Error" , fontsize=14)
+plt.gca().set_xscale('log', base=2)
+plt.gca().set_yscale('log')
+plt.gca().xaxis.set_major_formatter(ScalarFormatter())
+#plt.gca().xaxis.set_ticklabels([str(t) for t in xticks])
+legend =plt.legend()
+plt.tight_layout()
+
+#+end_src
+
+#+caption: Mean Square Error (MSE) against a reference solution with a 1000 cell reference grid. For a 1D diffusion with 20 spikes and a 1000 cell microscale resolution.
+#+attr_latex: :width 0.9\linewidth
+#+RESULTS: fig:error-1d
+[[file:error.svg]]
 
 
 
-
+** 2D Circle
 #+name: fig:error-2d-circle
-#+begin_src python :results graphics file output :file error-2d-circle.png :exports results :async t
+#+begin_src python :results graphics file output :file error-2d-circle.svg :exports results
 gridCoarseLevels = np.arange(5, 200, 2)
 gridCoarseLevelsMulti = np.arange(5, 100, 2)
 fig = plot_error_2d(diffusionModule.circle  , gridCoarseLevels , gridCoarseLevelsMulti , "Circle Diffusion")
 #+end_src
 
+#+caption: Mean Square Error (MSE) against a reference solution with a \(1000\times 1000\) cell reference grid. For a circular Obstacle and a 100 cell microscale resolution.
+#+attr_latex: :width 0.9\linewidth
 #+RESULTS: fig:error-2d-circle
-[[file:error-2d-circle.png]]
+[[file:error-2d-circle.svg]]
 
-
+** 2D Box
 #+name: fig:error-2d-box
-#+begin_src python :results graphics file output :file error-2d-box.png :exports results :async t
+#+begin_src python :results graphics file output :file error-2d-box.svg :exports results
 gridCoarseLevels = np.arange(5, 200, 2)
 gridCoarseLevelsMulti = np.arange(5, 100, 2)
 fig = plot_error_2d(diffusionModule.box  , gridCoarseLevels , gridCoarseLevelsMulti , "Box Diffusion")
 #+end_src
 
+#+attr_latex: :width 0.9\linewidth
+#+caption: Mean Square Error (MSE) against a reference solution with a \(1000\times 1000\) cell reference grid. For a box Obstacle and a 100 cell microscale resolution.
 #+RESULTS: fig:error-2d-box
-[[file:error-2d-box.png]]
+[[file:error-2d-box.svg]]
 
+** 2D Diamond
 #+name: fig:error-2d-diamond
-#+begin_src python :results graphics file output :file error-2d-diamond.png :exports results :async t
+#+begin_src python :results graphics file output :file error-2d-diamond.svg :exports results
 gridCoarseLevels = np.arange(5, 200, 2)
 gridCoarseLevelsMulti = np.arange(5, 100, 2)
 fig = plot_error_2d(diffusionModule.rhombus  , gridCoarseLevels , gridCoarseLevelsMulti , "Diamond Diffusion")
 #+end_src
 
+#+attr_latex: :width 0.9\linewidth
+#+caption: Mean Square Error (MSE) against a reference solution with a \(1000\times 1000\) cell reference grid. For a diamond obstacle and a 100 cell microscale resolution.
 #+RESULTS: fig:error-2d-diamond
-[[file:error-2d-diamond.png]]
+[[file:error-2d-diamond.svg]]
 
+** Line Diffusion
 #+name: fig:error-2d-line
-#+begin_src python :results graphics file output :file error-2d-line.png :exports results :async t
+#+begin_src python :results graphics file output :file error-2d-line.svg :exports results
 reload(diffusionModule)
 gridCoarseLevels = np.arange(5, 200, 2)
 gridCoarseLevelsMulti = np.arange(5, 100, 2)
-fig = plot_error_2d(lambda x,y: diffusionModule.osc2D_line(x,y , eps = 1/5)  , gridCoarseLevels , gridCoarseLevelsMulti , "Line Diffusion 5 Spikes")
+fig = plot_error_2d(lambda x,y: diffusionModule.osc2D_line(x,y , eps = 1/4)  , gridCoarseLevels , gridCoarseLevelsMulti , "Line Diffusion 5 Spikes")
 #+end_src
 
+#+attr_latex: :width 0.9\linewidth
+#+caption: Mean Square Error (MSE) against a reference solution with a \(1000\times 1000\) cell reference grid. For a line diffusion with \(4 \time 4\) spikes and a 100 cell microscale resolution.
 #+RESULTS: fig:error-2d-line
-[[file:error-2d-line.png]]
+[[file:error-2d-line.svg]]
+** Point Diffusion
 #+name: fig:error-2d-point
-#+begin_src python :results graphics file output :file error-2d-point.png :exports results :async t
+#+begin_src python :results graphics file output :file error-2d-point.svg :exports results
 gridCoarseLevels = np.arange(5, 200, 2)
 gridCoarseLevelsMulti = np.arange(5, 100, 2)
 fig = plot_error_2d(lambda x,y:diffusionModule.osc2D_point(x,y , eps=1/5)  , gridCoarseLevels , gridCoarseLevelsMulti , "Point Diffusion 5 Spikes")
-
 #+end_src
 
+#+attr_latex: :width 0.9\linewidth
+#+caption: Mean Square Error (MSE) against a reference solution with a \(1000\times 1000\) cell reference grid. For a point diffusion with \(4 \time 4\) spikes and a 100 cell microscale resolution.
 #+RESULTS: fig:error-2d-point
-[[file:error-2d-point.png]]
+[[file:error-2d-point.svg]]
+* Conclusion
+** Conclusion
+- works well for 1D
+  - no performance benefit
+  - expensive microscale simulations
+  - worse if single scale can resolve the details
+  - reconstruction works very well
+- works well for some 2D cases
+  - can resolve thin walls
+  - can reconstruct only orthogonal detail
+- no benefit in other cases
+  - no benefit for point and line diffusion
+- requires some differentiability conditions on \(D(\vec{x})\)
+** Further Considerations
+- multipoint flux approximation
+- higher order 2D reconstruction
+- realistic diffusion with interpolated high res data
+- 3D
+- irregular grid
+- parallelization to make use of independent microscale simulations
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 * Multiscale :noexport:
 In 1D
@@ -1226,6 +1358,7 @@ T_{\pm } &= -\int_{Q} D(x) \phi_x'(x)^2\, \mathrm{d}x
 #+end_src
 
 #+begin_src python
+from importlib import reload
 import src.fvsolver
 import src.diffusion as D
 reload(src.fvsolver)
@@ -1240,18 +1373,23 @@ def plot_comparison(function , resolution , typestr):
     fv2D.assemble_matrix()
     fv2D.set_boundary()
     c_course = fv2D.solve()
-    mx,my = fv2D.set_multiscale_transmissions(2000)
+    mx,my = fv2D.set_multiscale_transmissions(200)
     fv2D.assemble_matrix()
     fv2D.set_boundary()
     c = fv2D.solve()
-    fig, axes = plt.subplots(1, 3, figsize=(12, 4), constrained_layout=True)  # 1 row, 2 columns
-    fig.suptitle(f"{typestr} with {resolution}" + r"$\times$" + f"{resolution} Grid")
-    im1 = axes[0].imshow(c_course , cmap="magma" , extent=[0,1,0,1])
-    axes[0].set_title("Course")
-    im2 = axes[1].imshow(c , cmap="magma" , extent=[0,1,0,1])
-    axes[1].set_title("Multiscale")
-    im2 = axes[2].imshow(c_ref , cmap="magma" , extent=[0,1,0,1])
-    axes[2].set_title("Reference")
+    reconstructed = fv2D.reconstruct_multiscale()
+    vmin = np.min([np.min(c_course) , np.min(c_ref) , np.min(c) , np.min(reconstructed)])
+    vmax = np.max([np.max(c_course) , np.max(c_ref) , np.max(c) , np.max(reconstructed)])
+    fig, axes = plt.subplots(2, 2, figsize=(9, 8), constrained_layout=True , facecolor='none' )
+    fig.suptitle(f"{typestr} on a {resolution}" + r"$\times$" + f"{resolution} Grid" , fontsize=22)
+    im1 = axes[0,0].imshow(c_course , cmap="magma" , extent=[0,1,0,1] , vmin=vmin , vmax=vmax)
+    axes[0,0].set_title("Course" , fontsize=16)
+    im2 = axes[1,0].imshow(c , cmap="magma" , extent=[0,1,0,1], vmin=vmin , vmax=vmax)
+    axes[1,0].set_title("Multiscale" ,fontsize=16)
+    im2 = axes[1,1].imshow(reconstructed , cmap="magma" , extent=[0,1,0,1], vmin=vmin , vmax=vmax)
+    axes[1,1].set_title("Multiscale Reconstruction" , fontsize=16)
+    im2 = axes[0,1].imshow(c_ref , cmap="magma" , extent=[0,1,0,1], vmin=vmin , vmax=vmax)
+    axes[0,1].set_title("Reference" , fontsize=16)
     plt.colorbar(im1, ax=axes)
     return fig
 
