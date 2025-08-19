@@ -12,6 +12,15 @@
 #+BEAMER_FRAME_OPTIONS: allowframebreaks
 #+BEAMER_HEADER_EXTRA: \AtBeginSection{\frame{\sectionpage}}
 
+#+beamer_header: \AtBeginSection[]{
+#+beamer_header:   \begin{frame}
+#+beamer_header:   <beamer>
+#+beamer_header:  \frametitle{Outline}
+#+beamer_header:  \tableofcontents[currentsection]
+#+beamer_header:   \end{frame}
+#+beamer_header:
+#+beamer_header: }
+
 * Preamble :noexport:
 #+begin_src python :tangle src/fvsolver.py :noweb no-export :exports none
 from typing import Callable
@@ -220,9 +229,6 @@ n_{\mathrm{west}}  &=
 T_{S} &= -\int_{S_0}^{S_1} D(x) (\phi'_{S} (\vec{x}))^2\, \mathrm{d}S
 \end{align*}
 * Example Diffusion terms
-
-** Diffusion 
-We investigate of single and multiscale solvers with different Diffusion functions, that we introduce in the following sections
 
 ** 1D
 
