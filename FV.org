@@ -41,9 +41,9 @@ import numpy as np
 
 
 * Standard Diffusion equation
-** Numeral Problem
+** Numerical Problem :noexport:
 #+begin_abstract
-in our work, we solve the diffusion equation \eqref{eq:diffusion} with zero Dirichlet boundary and constant flux \(f(x) = 1\). In order to investigate the effects of the multiscale method on the solution, we introduce a varied sample of diffusivity terms
+in our work, we solve the diffusion equation \eqref{eq:diffusion} with zero Dirichlet boundary and constant soure term \(f(x) = 1\). In order to investigate the effects of the multiscale method on the solution, we introduce a varied sample of diffusivity terms
 \begin{align}
 \label{eq:diffusion}
 \nabla \cdot (D(x) \nabla c) &= f(x) & \text{in}& \, \Omega \\
@@ -51,7 +51,19 @@ c(x) &= 0 &  \text{on}& \, \partial \Omega
 \end{align}
 Our work provides a way to approximate a solution \(c\) to the PDE \eqref{eq:diffusion} with the Finite Volume method, and a multiscale adaptation.
 #+end_abstract
-** Derivation of the 1D Finite Volume Method
+** Numerical Problem
+*** Diffusion Equation
+- We solve the diffusion equation \eqref{eq:diffusion}
+\begin{align}
+\label{eq:diffusion}
+\nabla \cdot (D(x) \nabla c) &= f(x) & \text{in}& \, \Omega \\
+\label{eq:dirichlet}
+c(x) &= 0 &  \text{on}& \, \partial \Omega
+\end{align}
+- with Dirichlet boundary \eqref{eq:dirichlet}
+- We use constant source \(f(x) = 1 , x \in  \Omega \)
+- We use a Finite Volume solver
+** Derivation of the 1D Finite Volume Method :noexport:
 The Finite Volume method considers the differential equation in Integral form over disjunct (\(Q_i \cap Q_j = \emptyset , i\neq  j\)) reference cells \(Q_{i}\), \(\bigcup_{i=1}^N  Q_{i} = \Omega \) and calculates the integral over them, with an integral over the reference cell boundaries using Stokes integration.
 
 
@@ -71,10 +83,41 @@ Since the assumed solution is constant we approximate the source term \(f(\vec{x
 \label{eq:fv-discrete}
  \int_{\partial Q_i} g(c^+, c^-) \cdot \vec{n} \, \mathrm{d}S \,&=   |Q_i| f(x_i)  & i&=1, \dots  , N
 \end{align}
-
+** Derivation of the 1D Finite Volume Method
+*** Discretization
+- Divide \(\Omega \) into a uniform grid \(\{Q_i\}\)
+  - cells \(Q_i\) are disjunct
+  - \(Q_i \cap Q_j = \emptyset , i\neq  j\)
+  - we assume constant solution \(c_i\) on \(Q_i\)
+  - we assume constant source \(f(x) = f_i ,\, x \in Q_i\)
+*** Integral Form
+- since the Diffusion EQ.\eqref{eq:diffusion} holds on \(\Omega \), it holds for any integral.
+- \(\implies \) \eqref{eq:diffusion} holds for the integral over \(Q_i\)
+\begin{equation}
+\begin{aligned}
+\nabla \cdot (D(x) \nabla c) &= f(x) & \text{in}& \, \Omega \\
+\label{eq:cell-integral}
+\int_{Q_i} \nabla \cdot (D(x) \nabla c )  &= \int_{Q_i} f(x) \, \mathrm{d}x  & i&=1, \dots  , N
+\end{aligned}
+\end{equation}
+- We use the constant source to evaluate the right hand side
+\begin{align}
+\label{eq:2}
+\int_{\partial Q_i} D(x) \nabla c \cdot \vec{n} \, \mathrm{d}S \, &=  |Q_i| f_i  & i&=1, \dots  , N
+\end{align}
+*** Numerical Flux
+- constant solution
+- \(c\) is discontinuous on \(\partial Q\)
+- \(\nabla c\) is not defined on the cell boundary
+- we replace \(D(x) \nabla c\) with numerical flux \(\vec{g}\)
+- \(\vec{g}\) describes flux of the solution between neighbouring cells
+\begin{align}
+\int_{\partial Q_i} D(x) \nabla c \cdot \vec{n} \, \mathrm{d}S \, &=   \int_{Q_i} f(x) \, \mathrm{d} x & i&=1, \dots  , N\\
+\int_{\partial Q_i} \vec{g}(c^+, c^-) \cdot \vec{n} \, \mathrm{d}S \, &=   \int_{Q_i} f(x) \, \mathrm{d} x & i&=1, \dots  , N
+\end{align}
 ** Numerical flux approximation
 *** 1D Flux
-We employ the  flux approximation introduced in the MMM Lecture Since we only investigated diffusion terms with an analytical representation, we are able to calculate this value directly.
+We employ the  flux approximation introduced in the MMM Lecture. Since we only investigated diffusion terms with an analytical representation, we are able to calculate this value directly.
 \begin{align}
 \label{eq:flux-1d}
 g(c^+ , c^-) = - D(x^{\frac{1}{2} +}) \frac{c^+ - c^-}{h}
@@ -85,7 +128,7 @@ g(c^+ , c^-) &= T_{\pm } * \left( c^+ - c^- \right) \\
 T_{\pm } &= - D(x^{\frac{1}{2}+}) \frac{1}{h}
 \end{align*}
 *** 2D Flux
-We define the flux term in 2 Dimensions very similar to those in one dimension.
+We define the flux term \(\vec{g} := (g_x , g_y)^T\) in 2 Dimensions very similar to those in one dimension.
 \begin{align}
 \label{eq:flux-2d}
 g_{x}(c_{i+1,j} , c_{ij}) &= - \Delta_y D(x_{i+ \frac{1}{2},j }) \frac{c_{i+1,j} - c_{ij}}{\Delta_x}\\
@@ -97,17 +140,35 @@ g_x(c_{i+1j} , c_{ij}) &=   T^x_{i+1j} \left( c_{i+1j} - c_{ij}  \right)\\
 g_y(c_{ij+1} , c_{ij}) &=   T^y_{ij+1} \left( c_{i+1j} - c_{ij}  \right)
 \end{align*}
 ** Linearization
-*** TODO Image
+*** Reference Cell :BMCOL:
+:PROPERTIES:
+:BEAMER_col: 0.45
+:END:
+#+name: fig:reference-cell
+#+attr_latex: :width 0.9\textwidth
+[[file:images/reference-cell.svg]]
+*** Explanation :BMCOL:
+:PROPERTIES:
+:BEAMER_col: 0.45
+:END:
+- only 4 normals in 2D (2 in 1D)
+- integral simplifies
+\begin{align*}
+ \int_{\partial Q_i} \vec{g}(c^+, c^-) \cdot \vec{n} \, \mathrm{d}S \,&=   |Q_i| f_i\\
+\sum_{ n \in \partial Q}   \vec{g}(c_{ij+\vec{n}} , c_{ij}) \cdot \vec{n}  &=   |Q_i|  f_i
+\end{align*}
+*** Explanation :noexport:
 We implemented our finite Volume solver on a rectangular grid. therefore the normals on the boundaries are constant, and the flux integral (\ref{eq:fv-discrete}) simplifies to a sum
 \begin{align*}
- \int_{\partial Q_i} g(c^+, c^-) \cdot \vec{n} \, \mathrm{d}S \,&=   |Q_i| f(x_i)  & i&=1, \dots  , N \\
+ \int_{\partial Q_i} \vec{g}(c^+, c^-) \cdot \vec{n} \, \mathrm{d}S \,&=   |Q_i| f(x_i)  & i&=1, \dots  , N \\
 \sum_{ n \in \partial Q}   \vec{g}(c_{i+j+1} , c_{i+j}) \cdot \vec{n}  &=   |Q_i|  \overline{f}(x_{i})
 \end{align*}
-*** 1D
+
+*** 1D Flux :noexport:
 - In one dimension there are only two outward normals \(n \in \{-1,1\}\),
 - we use the 1D flux \eqref{eq:flux-1d}
 
-*** TODO 2D replace with image
+*** TODO 2D replace with image :noexport:
 
 - In two dimensions there are four outward cell normals
 \begin{align*}
@@ -134,6 +195,26 @@ n_{\mathrm{west}}  &=
 - we use the 2D flux \eqref{eq:flux-2d}
 
 ** Multiscale
+*** Image :BMCOL:
+:PROPERTIES:
+:BEAMER_col: 0.45
+:END:
+
+#+attr_latex: :width 0.9\textwidth
+[[file:images/microscale-reference.svg]]
+*** Explanation :BMCOL:
+:PROPERTIES:
+:BEAMER_col: 0.45
+:END:
+- Adds  microscale simulation
+  - one dimensional
+  - for each normal
+  - \(n\) subgrid cells
+- Calculates Transmissions \(T_{ij}\)
+  - with microscale solution \(\phi \)
+\begin{align*}
+T_{\pm } &= -\int_{Q} D(x) (\phi'_{\pm} (x))^2\, \mathrm{d}x
+\end{align*}
 * Example diffusion terms
 
 ** Diffusion 
@@ -420,6 +501,9 @@ plt.ylabel(r"$c(x)$")
 plt.legend(["macro" , "multiscale", "multi_fine" , "reference"] , fontsize=14)
 plt.tight_layout()
 #+end_src
+
+#+RESULTS: fig:comparison-1d
+[[file:comparison-1d.png]]
 
 #+name: fig:microscale-basis
 #+begin_src python :results graphics file output :file mricroscale-basis.png :exports results
@@ -735,9 +819,6 @@ In 1D
 
 #+end_src
 
-\begin{align*}
-T_{\pm } &= -\int_{Q} D(x) (\phi'_{\pm} (x))^2\, \mathrm{d}x
-\end{align*}
 
 
 #+name: Reconstruct Microscale Solution
@@ -1043,7 +1124,10 @@ sns.heatmap(fv2D._T_y, cmap="magma")
 #+RESULTS:
 [[file:images/_T_x.png]]
 
-#+begin_src python :results file graphics output :file images/2d-result.png :async t
+#+begin_src python :results file graphics output :file images/2d-result.png :async t :session py
+import matplotlib.pyplot as plt
+import numpy as np
+from importlib import reload
 import seaborn as sns
 import src.fvsolver
 import src.diffusion as D
@@ -1051,19 +1135,19 @@ reload(src.fvsolver)
 reload(D)
 from scipy.interpolate import RegularGridInterpolator
 from src.fvsolver import FVSolver2D
-N = 100
-M = 100
+N = 15
+M = 15
 res = 50
 fv2D = FVSolver2D(N,M,D.rhombus)
 fv2D.set_boundary()
 fv2D.set_multiscale_transmissions(res)
 fv2D.assemble_matrix()
 c = fv2D.solve()
-fv2D.reconstruct_multiscale()
+fv2D.reconstruct_cooked()
 fig, ax = plt.subplots(figsize=(6,4))
 ax.set_xticks(np.linspace(0,1.,(N+1)))
 ax.set_yticks(np.linspace(0,1.,(M+1)))
-ax.grid(False)
+ax.grid(True)
 rg = np.linspace(0.,1. , N)
 interp = RegularGridInterpolator((rg,rg) , c, method="cubic")
 rg_interp = np.linspace(0.,1. , N * res)
@@ -1072,6 +1156,7 @@ grid_x,grid_y = np.meshgrid(rg_interp,rg_interp)
 finePoints = np.column_stack([grid_x.ravel(), grid_y.ravel()])
 c_interp = interp(finePoints).reshape((N*res , M * res))
 plt.imshow(fv2D.reconstruction, cmap="magma" ,extent=[0.,1.,0.,1.])
+plt.colorbar()
 #plt.imshow(c_interp, cmap="magma" , extent=[0. , 1., 0., 1.])
 #plt.imshow(c, cmap="magma" , extent=[0. , 1., 0., 1.])
 #+end_src
@@ -1205,6 +1290,31 @@ def plot_comparison(function , resolution , typestr):
                      + w22 * self.c[i + 1, j + 1]
                  )
        return self.reconstruction
+   def reconstruct_cooked(self):
+       """
+       Taxicab interpolation
+       """
+       self.reconstruction = np.zeros(((self.N-1) * self.resolution  , (self.M-1) * self.resolution))
+       for i in range(self.N-1):
+           for j in range(self.M-1):
+                 x_lower = self.microscale_basis_x[i, j, :]
+                 x_upper = self.microscale_basis_x[i, j+1, :]
+                 y_lower = self.microscale_basis_y[i, j, :]
+                 y_upper = self.microscale_basis_y[i+1, j, :]
+                 interp_x = 0.5*( y_upper + y_lower)
+                 interp_y = 0.5*( x_upper + x_lower)
+                 interp = np.outer(interp_x , interp_y)
+
+                 C_lower =  np.outer(x_lower, y_lower,) > .25
+                 X = np.outer(x_lower,(1-interp_x)) + np.outer(x_upper,interp_x)
+
+                 #interp_x = np.linspace(0,1,self.resolution)
+                 #interp_y = np.linspace(0,1,self.resolution)
+                 self.reconstruction[
+                     i * self.resolution : (i + 1) * self.resolution,
+                     j * self.resolution : (j + 1) * self.resolution,
+                 ] = X
+       return self.reconstruction
 
 #+end_src
 
@@ -1285,3 +1395,19 @@ sns.heatmap(noise.reshape(N,M))
 
 #+RESULTS: 2D Noise
 [[file:images/noise-2D.png]]
+
+
+#+name: fig:interp-test
+#+begin_src python :results graphics file output :file interp-test.png :session py
+N
+x = np.linspace(0,1,N)
+sin = 1 / (1+ np.exp(-x))
+rx = np.arange(N)
+plt.plot(x,sin)
+xgrid = np.add.outer(rx,rx)
+xgrid[xgrid>=N] = 0
+plt.imshow(x[xgrid])
+#+end_src
+
+#+RESULTS: fig:interp-test
+[[file:interp-test.png]]

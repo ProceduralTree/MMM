@@ -197,3 +197,28 @@ class FVSolver2D:
                      + w22 * self.c[i + 1, j + 1]
                  )
        return self.reconstruction
+   def reconstruct_cooked(self):
+       """
+       Taxicab interpolation
+       """
+       self.reconstruction = np.zeros(((self.N-1) * self.resolution  , (self.M-1) * self.resolution))
+       for i in range(self.N-1):
+           for j in range(self.M-1):
+                 x_lower = self.microscale_basis_x[i, j, :]
+                 x_upper = self.microscale_basis_x[i, j+1, :]
+                 y_lower = self.microscale_basis_y[i, j, :]
+                 y_upper = self.microscale_basis_y[i+1, j, :]
+                 interp_x = 0.5*( y_upper + y_lower)
+                 interp_y = 0.5*( x_upper + x_lower)
+                 interp = np.outer(interp_x , interp_y)
+
+                 C_lower =  np.outer(x_lower, y_lower,) > .25
+                 X = np.outer(x_lower,(1-interp_x)) + np.outer(x_upper,interp_x)
+
+                 #interp_x = np.linspace(0,1,self.resolution)
+                 #interp_y = np.linspace(0,1,self.resolution)
+                 self.reconstruction[
+                     i * self.resolution : (i + 1) * self.resolution,
+                     j * self.resolution : (j + 1) * self.resolution,
+                 ] = X
+       return self.reconstruction

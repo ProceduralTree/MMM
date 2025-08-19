@@ -401,7 +401,7 @@ def plot_error_2d(diffusionFunction  , gridCoarseLevels , gridCoarseLevelsMulti 
 # #+name: fig:error-2d-circle
 
 gridCoarseLevels = np.arange(5, 200, 2)
-gridCoarseLevelsMulti = np.arange(5, 50, 2)
+gridCoarseLevelsMulti = np.arange(5, 100, 2)
 fig = plot_error_2d(diffusionModule.circle  , gridCoarseLevels , gridCoarseLevelsMulti , "Circle Diffusion")
 
 
@@ -413,7 +413,7 @@ fig = plot_error_2d(diffusionModule.circle  , gridCoarseLevels , gridCoarseLevel
 # #+name: fig:error-2d-box
 
 gridCoarseLevels = np.arange(5, 200, 2)
-gridCoarseLevelsMulti = np.arange(5, 50, 2)
+gridCoarseLevelsMulti = np.arange(5, 100, 2)
 fig = plot_error_2d(diffusionModule.box  , gridCoarseLevels , gridCoarseLevelsMulti , "Box Diffusion")
 
 
@@ -424,7 +424,7 @@ fig = plot_error_2d(diffusionModule.box  , gridCoarseLevels , gridCoarseLevelsMu
 # #+name: fig:error-2d-diamond
 
 gridCoarseLevels = np.arange(5, 200, 2)
-gridCoarseLevelsMulti = np.arange(5, 50, 2)
+gridCoarseLevelsMulti = np.arange(5, 100, 2)
 fig = plot_error_2d(diffusionModule.rhombus  , gridCoarseLevels , gridCoarseLevelsMulti , "Diamond Diffusion")
 
 
@@ -436,7 +436,7 @@ fig = plot_error_2d(diffusionModule.rhombus  , gridCoarseLevels , gridCoarseLeve
 
 reload(diffusionModule)
 gridCoarseLevels = np.arange(5, 200, 2)
-gridCoarseLevelsMulti = np.arange(5, 50, 2)
+gridCoarseLevelsMulti = np.arange(5, 100, 2)
 fig = plot_error_2d(lambda x,y: diffusionModule.osc2D_line(x,y , eps = 1/5)  , gridCoarseLevels , gridCoarseLevelsMulti , "Line Diffusion 5 Spikes")
 
 
@@ -446,7 +446,7 @@ fig = plot_error_2d(lambda x,y: diffusionModule.osc2D_line(x,y , eps = 1/5)  , g
 # #+name: fig:error-2d-point
 
 gridCoarseLevels = np.arange(5, 200, 2)
-gridCoarseLevelsMulti = np.arange(5, 50, 2)
+gridCoarseLevelsMulti = np.arange(5, 100, 2)
 fig = plot_error_2d(lambda x,y:diffusionModule.osc2D_point(x,y , eps=1/5)  , gridCoarseLevels , gridCoarseLevelsMulti , "Point Diffusion 5 Spikes")
 
 # Multiscale :noexport:
@@ -736,6 +736,9 @@ sns.heatmap(fv2D._T_y, cmap="magma")
 # [[file:images/_T_x.png]]
 
 
+import matplotlib.pyplot as plt
+import numpy as np
+from importlib import reload
 import seaborn as sns
 import src.fvsolver
 import src.diffusion as D
@@ -743,27 +746,28 @@ reload(src.fvsolver)
 reload(D)
 from scipy.interpolate import RegularGridInterpolator
 from src.fvsolver import FVSolver2D
-N = 19
-M = 19
+N = 15
+M = 15
 res = 50
 fv2D = FVSolver2D(N,M,D.rhombus)
 fv2D.set_boundary()
 fv2D.set_multiscale_transmissions(res)
 fv2D.assemble_matrix()
 c = fv2D.solve()
-fv2D.reconstruct_multiscale()
+fv2D.reconstruct_cooked()
 fig, ax = plt.subplots(figsize=(6,4))
 ax.set_xticks(np.linspace(0,1.,(N+1)))
 ax.set_yticks(np.linspace(0,1.,(M+1)))
 ax.grid(True)
 rg = np.linspace(0.,1. , N)
-interp = RegularGridInterpolator((rg,rg) , c, method="linear")
+interp = RegularGridInterpolator((rg,rg) , c, method="cubic")
 rg_interp = np.linspace(0.,1. , N * res)
 grid_x,grid_y = np.meshgrid(rg_interp,rg_interp)
 
 finePoints = np.column_stack([grid_x.ravel(), grid_y.ravel()])
 c_interp = interp(finePoints).reshape((N*res , M * res))
 plt.imshow(fv2D.reconstruction, cmap="magma" ,extent=[0.,1.,0.,1.])
+plt.colorbar()
 #plt.imshow(c_interp, cmap="magma" , extent=[0. , 1., 0., 1.])
 #plt.imshow(c, cmap="magma" , extent=[0. , 1., 0., 1.])
 
@@ -893,6 +897,31 @@ def plot_comparison(function , resolution , typestr):
                      + w21 * self.c[i + 1, j]
                      + w22 * self.c[i + 1, j + 1]
                  )
+       return self.reconstruction
+   def reconstruct_cooked(self):
+       """
+       Taxicab interpolation
+       """
+       self.reconstruction = np.zeros(((self.N-1) * self.resolution  , (self.M-1) * self.resolution))
+       for i in range(self.N-1):
+           for j in range(self.M-1):
+                 x_lower = self.microscale_basis_x[i, j, :]
+                 x_upper = self.microscale_basis_x[i, j+1, :]
+                 y_lower = self.microscale_basis_y[i, j, :]
+                 y_upper = self.microscale_basis_y[i+1, j, :]
+                 interp_x = 0.5*( y_upper + y_lower)
+                 interp_y = 0.5*( x_upper + x_lower)
+                 interp = np.outer(interp_x , interp_y)
+
+                 C_lower =  np.outer(x_lower, y_lower,) > .25
+                 X = np.outer(x_lower,(1-interp_x)) + np.outer(x_upper,interp_x)
+
+                 #interp_x = np.linspace(0,1,self.resolution)
+                 #interp_y = np.linspace(0,1,self.resolution)
+                 self.reconstruction[
+                     i * self.resolution : (i + 1) * self.resolution,
+                     j * self.resolution : (j + 1) * self.resolution,
+                 ] = X
        return self.reconstruction
 
 # Diffusion
